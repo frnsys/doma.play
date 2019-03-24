@@ -20,7 +20,6 @@ class Grid {
       this.grid[col] = [];
       for (let row=0; row<this.nRows; row++) {
         this.grid[col].push(null);
-        this.setCellAt(col, row, defaultColor);
       }
     }
   }

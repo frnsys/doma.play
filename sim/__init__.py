@@ -27,17 +27,78 @@ def radius_pos(pos, radius):
         for c_i in range(c_s, c_s+diameter+1):
             yield r_i, c_i
 
+oddAdjacentPositions = [
+  (-1,  0), # upper left
+  (-1,  1), # upper right
+  ( 0, -1), # left
+  ( 0,  1), # right
+  ( 1,  0), # bottom left
+  ( 1,  1)  # bottom right
+]
+
+evenAdjacentPositions = [
+  (-1, -1), # upper left
+  (-1,  0), # upper right
+  ( 0, -1), # left
+  ( 0,  1), # right
+  ( 1, -1), # bottom left
+  ( 1,  0)  # bottom right
+]
+
+def adjacent_pos(pos, n_rows, n_cols):
+    """for hex"""
+    row, col = pos
+    shifts = evenAdjacentPositions if row % 2 == 0 else oddAdjacentPositions
+    adjs = [(row+r, col+c) for r, c in shifts]
+    return [(r, c) for r, c in adjs if r >=0 and r < n_rows and c >= 0 and c < n_cols]
+
 
 class City:
     def __init__(self, rows, cols):
         self.rows = rows
         self.cols = cols
+        n_parcels = math.floor(rows*cols*0.7) # TEMP
 
         # Initialize grid structure
         self.grid = []
         for r in range(self.rows):
-            row = [Parcel((r, c), random.choice(neighborhoods)) for c in range(self.cols)]
+            row = [None for c in range(self.cols)]
             self.grid.append(row)
+
+        # Generate map parcels
+        # Start from roughly center
+        r_c, c_c = rows//2, cols//2
+        parcels = []
+        empty_spots = adjacent_pos((r_c, c_c), rows, cols)
+        parcel = Parcel((r_c, c_c))
+        self.grid[r_c][c_c] = parcel
+        parcels.append(parcel)
+        while len(parcels) < n_parcels:
+            next_pos = random.choice(empty_spots)
+            empty_spots = [p for p in empty_spots if p != next_pos]
+            r, c = next_pos
+            parcel = Parcel(next_pos)
+            self.grid[r][c] = parcel
+            parcels.append(parcel)
+            empty_spots += [p for p in adjacent_pos(next_pos, rows, cols) if self[p] is None]
+
+        # Assign neighborhoods
+        assigned = []
+        for neighb in neighborhoods:
+            parcel = random.choice(parcels)
+            parcel.neighborhood = neighb
+            assigned.append(parcel.pos)
+
+        next_to_assign = []
+        for p in assigned:
+            next_to_assign += [pos for pos in adjacent_pos(p, rows, cols) if self[pos] is not None and self[pos].neighborhood is None]
+        while len(assigned) < len(parcels):
+            to_assign = random.choice(next_to_assign)
+            neighbs = [self[pos].neighborhood for pos in adjacent_pos(to_assign, rows, cols) if self[pos] is not None and self[pos].neighborhood is not None]
+            self[to_assign].neighborhood = random.choice(neighbs)
+            next_to_assign += [pos for pos in adjacent_pos(to_assign, rows, cols) if self[pos] is not None and self[pos].neighborhood is None]
+            next_to_assign = [p for p in next_to_assign if self[p].neighborhood is None]
+            assigned.append(to_assign)
 
     def __getitem__(self, pos):
         r, c = pos
@@ -50,7 +111,9 @@ class City:
     def __iter__(self):
         for r in range(self.rows):
             for c in range(self.cols):
-                yield self.grid[r][c]
+                p = self.grid[r][c]
+                if p is not None: yield p
+
 
     def vacant_units(self):
         return sum((b.vacant_units for b in self.buildings), [])
@@ -179,7 +242,7 @@ class Developer:
                 u.rent *= 1.05
 
 class Parcel:
-    def __init__(self, pos, neighborhood, building=None):
+    def __init__(self, pos, neighborhood=None, building=None):
         self.pos = pos
         self.neighborhood = neighborhood
         self.build(building)
@@ -365,6 +428,7 @@ if __name__ == '__main__':
     # Initialize city buildings
     city = City(20, 20)
     for p in city:
+        if p is None: continue
         n_units = random.randint(1, 5)
         units = [
             Unit(
