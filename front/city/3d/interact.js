@@ -13,6 +13,7 @@ class InteractionLayer {
     this.selectables = selectables;
     this.mouse = new THREE.Vector2();
     this.raycaster = new THREE.Raycaster();
+    this.focused = null;
 
     this.scene.renderer.domElement.addEventListener('mousedown', this.onMouseDown.bind(this), false);
     this.scene.renderer.domElement.addEventListener('touchstart', this.onTouchStart.bind(this), false);
@@ -53,12 +54,24 @@ class InteractionLayer {
     this.updateMouse(ev);
     this.raycaster.setFromCamera(this.mouse, this.scene.camera);
 
+    // Re-set last focused cell color
+    if (this.focused) {
+      if (this.focused.obj.color) {
+        this.focused.obj.setColor(this.focused.obj.color);
+      }
+      this.focused = null;
+    }
+
     let intersects = this.raycaster.intersectObjects(this.selectables);
     if (intersects.length > 0) {
       let mesh = intersects[0].object,
           pos = intersects[0].point,
           obj = mesh.obj;
       if (obj.data.tooltip) {
+        this.focused = mesh;
+        if (this.focused.obj.color) {
+          mesh.obj.setColor(0xff0000);
+        }
         tooltip.style.display = 'block';
         tooltip.style.left = `${ev.pageX + 5}px`;
         let top = ev.pageY + 5;
@@ -79,4 +92,3 @@ class InteractionLayer {
 }
 
 export default InteractionLayer;
-

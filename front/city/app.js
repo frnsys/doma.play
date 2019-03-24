@@ -1,7 +1,7 @@
 import api from '../api';
 import Grid from './3d/grid';
 import Scene from './3d/scene';
-import * as THREE from 'three';
+import InteractionLayer from './3d/interact';
 
 const cellSize = 28;
 let color = 0x23ce61;
@@ -14,6 +14,7 @@ function makeGrid(map) {
   Object.keys(map.parcels).forEach((row) => {
     Object.keys(map.parcels[row]).forEach((col) => {
       let parcel = map.parcels[row][col];
+      parcel.tooltip = 'testing';
       grid.setCellAt(col, row, color, parcel);
     });
   });
@@ -30,5 +31,6 @@ api.get('/state', (state) => {
   // rotate, so we view the grid isometrically
   grid.group.rotation.x = -Math.PI / 2;
   scene.add(grid.group);
+  let ixn = new InteractionLayer(scene, grid.cells.map((c) => c.mesh));
   render();
 });
