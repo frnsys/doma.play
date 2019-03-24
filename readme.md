@@ -1,5 +1,10 @@
 # doma.play
 
+## Usage
+
+- `npm start` to start the frontend and API server, hen go to `localhost:5000` for the city view.
+- `python main.py` to run the simulation
+
 ## Architecture
 
 - Simulation process (Python)

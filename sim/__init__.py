@@ -1,118 +1,76 @@
 import math
-import json
-import redis
-import hashlib
+import random
 import itertools
 import numpy as np
 import statsmodels.api as sm
+from .grid import HexGrid
 from collections import defaultdict
 
 minArea = 50
 movingPenalty = 10
-neighborhoods = list(range(3))
-
-redis = redis.Redis(host='localhost', port=6379, db=1)
-
-def distance(a, b):
-    return math.sqrt((a[0] - b[0])**2 + (a[1] - b[1])**2)
-
-def radius_pos(pos, radius):
-    if radius == 0: return pos
-
-    r, c = pos
-    diameter = radius*2
-    r_s, c_s = r-radius, c-radius
-    for r_i in range(r_s, r_s+diameter+1):
-        for c_i in range(c_s, c_s+diameter+1):
-            yield r_i, c_i
-
-oddAdjacentPositions = [
-  (-1,  0), # upper left
-  (-1,  1), # upper right
-  ( 0, -1), # left
-  ( 0,  1), # right
-  ( 1,  0), # bottom left
-  ( 1,  1)  # bottom right
-]
-
-evenAdjacentPositions = [
-  (-1, -1), # upper left
-  (-1,  0), # upper right
-  ( 0, -1), # left
-  ( 0,  1), # right
-  ( 1, -1), # bottom left
-  ( 1,  0)  # bottom right
-]
-
-def adjacent_pos(pos, n_rows, n_cols):
-    """for hex"""
-    row, col = pos
-    shifts = evenAdjacentPositions if row % 2 == 0 else oddAdjacentPositions
-    adjs = [(row+r, col+c) for r, c in shifts]
-    return [(r, c) for r, c in adjs if r >=0 and r < n_rows and c >= 0 and c < n_cols]
 
 
 class City:
-    def __init__(self, rows, cols):
-        self.rows = rows
-        self.cols = cols
+    def __init__(self, size, neighborhoods):
+        rows, cols = size
+        self.grid = HexGrid(rows, cols)
+
+        self.neighborhoods = neighborhoods;
         n_parcels = math.floor(rows*cols*0.7) # TEMP
+        self.generate_map(n_parcels)
 
-        # Initialize grid structure
-        self.grid = []
-        for r in range(self.rows):
-            row = [None for c in range(self.cols)]
-            self.grid.append(row)
-
+    def generate_map(self, n_parcels):
         # Generate map parcels
         # Start from roughly center
-        r_c, c_c = rows//2, cols//2
-        parcels = []
-        empty_spots = adjacent_pos((r_c, c_c), rows, cols)
+        r_c, c_c = self.grid.rows//2, self.grid.cols//2
         parcel = Parcel((r_c, c_c))
-        self.grid[r_c][c_c] = parcel
-        parcels.append(parcel)
-        while len(parcels) < n_parcels:
-            next_pos = random.choice(empty_spots)
-            empty_spots = [p for p in empty_spots if p != next_pos]
-            r, c = next_pos
-            parcel = Parcel(next_pos)
-            self.grid[r][c] = parcel
-            parcels.append(parcel)
-            empty_spots += [p for p in adjacent_pos(next_pos, rows, cols) if self[p] is None]
+        self.grid[r_c, c_c] = parcel
+        parcels = [parcel]
 
-        # Assign neighborhoods
+        # Track empty spots as candidates for new parcels
+        empty_pos = self.grid.adjacent((r_c, c_c))
+        while len(parcels) < n_parcels:
+            next_pos = random.choice(empty_pos)
+            parcel = Parcel(next_pos)
+            parcels.append(parcel)
+            self.grid[next_pos] = parcel
+
+            # Update empty spots
+            empty_pos = [p for p in empty_pos + self.grid.adjacent(next_pos) if self[p] is None and p != next_pos]
+
+        # Assign initial neighborhoods
         assigned = []
-        for neighb in neighborhoods:
+        for neighb in self.neighborhoods:
             parcel = random.choice(parcels)
             parcel.neighborhood = neighb
             assigned.append(parcel.pos)
 
-        next_to_assign = []
-        for p in assigned:
-            next_to_assign += [pos for pos in adjacent_pos(p, rows, cols) if self[pos] is not None and self[pos].neighborhood is None]
+        # Track adjacent unassigned parcel positions
+        unassigned = []
+        for pos in assigned:
+            unassigned += [p for p in self.grid.adjacent(pos)
+                           if self[p] is not None and self[p].neighborhood is None]
+
+        # Assign neighborhoods to rest of parcels
         while len(assigned) < len(parcels):
-            to_assign = random.choice(next_to_assign)
-            neighbs = [self[pos].neighborhood for pos in adjacent_pos(to_assign, rows, cols) if self[pos] is not None and self[pos].neighborhood is not None]
-            self[to_assign].neighborhood = random.choice(neighbs)
-            next_to_assign += [pos for pos in adjacent_pos(to_assign, rows, cols) if self[pos] is not None and self[pos].neighborhood is None]
-            next_to_assign = [p for p in next_to_assign if self[p].neighborhood is None]
-            assigned.append(to_assign)
+            next_pos = random.choice(unassigned)
+
+            # Get assigned neighbors' neighborhoods
+            # and randomly choose one
+            neighbs = [self[p].neighborhood for p in self.grid.adjacent(next_pos)
+                       if self[p] is not None and self[p].neighborhood is not None]
+            self.grid[next_pos].neighborhood = random.choice(neighbs)
+
+            unassigned = [p for p in unassigned + self.grid.adjacent(next_pos)
+                          if self[p] is not None and self[p].neighborhood is None]
+            assigned.append(next_pos)
 
     def __getitem__(self, pos):
-        r, c = pos
-        return self.grid[r][c]
-
-    def __setitem__(self, pos, val):
-        r, c = pos
-        self.grid[r][c] = val
+        return self.grid[pos]
 
     def __iter__(self):
-        for r in range(self.rows):
-            for c in range(self.cols):
-                p = self.grid[r][c]
-                if p is not None: yield p
-
+        for p in self.grid:
+            if p is not None: yield p
 
     def vacant_units(self):
         return sum((b.vacant_units for b in self.buildings), [])
@@ -125,16 +83,18 @@ class City:
     def buildings(self):
         return [p.building for p in self]
 
+
 class Developer:
     _id = itertools.count()
 
-    def __init__(self):
+    def __init__(self, city):
+        self.city = city
         self.id = next(self._id)
 
         self.units = set()
-        self.rent_estimates = {neighb: [] for neighb in neighborhoods}
-        self.trend_estimates = {neighb: 0 for neighb in neighborhoods}
-        self.invest_estimates = {neighb: 0 for neighb in neighborhoods}
+        self.rent_estimates = {neighb: [] for neighb in city.neighborhoods}
+        self.trend_estimates = {neighb: 0 for neighb in city.neighborhoods}
+        self.invest_estimates = {neighb: 0 for neighb in city.neighborhoods}
 
     def estimate_rents(self, city, sample_size=10):
         """Estimate market rent per neighborhood,
@@ -176,7 +136,7 @@ class Developer:
         best_invest = max(self.invest_estimates.keys(), key=lambda n: self.invest_estimates[n])
 
         est_future_rent = self.trend_estimates[best_invest]
-        for u in random.sample(city.neighborhood_units(best_invest), sample_size):
+        for u in random.sample(self.city.neighborhood_units(best_invest), sample_size):
             if u.owner == self: continue
             five_year_income = u.rent_per_area * 5 * 12
             five_year_income_estimate = est_future_rent * 5 * 12
@@ -364,17 +324,17 @@ class Tenant:
             localMovingPenalty = 0
         else:
             localMovingPenalty = movingPenalty
-            elapsed = month - self.unit.leaseMonth
+            elapsed = time - self.unit.leaseMonth
             reconsider = elapsed > 0 and elapsed % 12 == 0
-            current_desirability = t.desirability(self.unit)
+            current_desirability = self.desirability(self.unit)
         if reconsider:
-            units = random.sample(city.vacant_units, sample_size)
-            vacancies = sorted(units, key=lambda u: t.desirability(u), reverse=True)
+            units = random.sample(city.vacant_units(), sample_size)
+            vacancies = sorted(units, key=lambda u: self.desirability(u), reverse=True)
 
             # Desirability of 0 means that tenant can't afford it
-            des = t.desirability(vacancies[0])
+            des = self.desirability(vacancies[0])
             if des - localMovingPenalty > current_desirability:
-                vacancies[0].move_in(t, time)
+                vacancies[0].move_in(self, time)
 
         transfers = []
         for u in self.units:
@@ -391,136 +351,3 @@ class Tenant:
         # as we iterate
         for u, dev in transfers:
             u.setOwner(dev)
-
-
-
-
-def jsonify(city):
-    buildings = {}
-    units = {}
-    parcels = defaultdict(dict)
-    for p in city:
-        b = p.building
-        parcels[p.pos[0]][p.pos[1]] = {
-            'neighb': p.neighborhood
-        }
-        buildings[b.id] = {
-            'units': [u.id for u in b.units]
-        }
-        for u in b.units:
-            units[u.id] = {
-                'id': u.id,
-                'rent': u.rent,
-                'area': u.area,
-                'tenants': [t.id for t in u.tenants],
-                'owner': {
-                    'id': u.owner.id,
-                    'type': type(u.owner).__name__
-                },
-                'monthsVacant': u.monthsVacant
-            }
-    return {
-        'map': {
-            'rows': city.rows,
-            'cols': city.cols,
-            'parcels': parcels
-        },
-        'buildings': buildings,
-        'units': units
-    }
-
-
-if __name__ == '__main__':
-    import random
-
-    # Initialize developers
-    developers = [Developer() for _ in range(10)]
-
-    # Initialize tenants
-    tenants = []
-    for _ in range(100):
-        # TODO better income distribution
-        income = random.randint(500, 5000)
-        tenant = Tenant(income)
-        tenants.append(tenant)
-
-    # Initialize city buildings
-    city = City(20, 20)
-    for p in city:
-        if p is None: continue
-        n_units = random.randint(1, 5)
-        units = [
-            Unit(
-                rent=random.randint(500, 6000),
-                occupancy=random.randint(1, 5),
-                area=random.randint(150, 800)
-            ) for _ in range(n_units)
-        ]
-        p.build(Building(units))
-
-    # Distribute units to tenants
-    random.shuffle(tenants)
-    for t in tenants:
-        month = random.randint(0, 11)
-        vacancies = city.vacant_units()
-        vacancies = sorted(vacancies, key=lambda u: t.desirability(u), reverse=True)
-
-        # Desirability of 0 means that tenant can't afford it
-        if t.desirability(vacancies[0]) > 0:
-            vacancies[0].move_in(t, month)
-
-    # Distribute ownership of units
-    def random_owner(unit):
-        roll = random.random()
-        if unit.tenants:
-            if roll < 0.33:
-                owner = random.choice(developers)
-            elif roll < 0.66:
-                owner = random.choice(tenants)
-            else:
-                owner = random.choice(list(unit.tenants))
-        else:
-            if roll < 0.5:
-                owner = random.choice(developers)
-            else:
-                owner = random.choice(tenants)
-        return owner
-    for p in city:
-        for u in p.building.units:
-            u.setOwner(random_owner(u))
-
-    from time import sleep
-
-    state = jsonify(city)
-    state_serialized = json.dumps(state)
-    state_key = hashlib.md5(state_serialized.encode('utf8')).hexdigest()
-    redis.set('state', state_serialized)
-    redis.set('state_key', state_key)
-
-    # Each tick is a month
-    # steps = 100
-    estimate_radius = 2
-    # for i in range(steps):
-    i = 0
-    while True:
-        print('Step', i)
-        random.shuffle(developers)
-        for d in developers:
-            d.step(i, city)
-
-        random.shuffle(tenants)
-        for t in tenants:
-            t.step(i, city)
-
-        state = jsonify(city)
-
-        # TODO look into more compact serializations?
-        state_serialized = json.dumps(state)
-        state_key = hashlib.md5(state_serialized.encode('utf8')).hexdigest()
-        redis.set('state', state_serialized)
-        redis.set('state_key', state_key)
-        i += 1
-        sleep(1)
-
-    # TODO/note: currently non-developer landlords
-    # don't adjust rent

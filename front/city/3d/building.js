@@ -1,32 +1,51 @@
+import config from '../config';
 import * as THREE from 'three';
 
-const unitHeight = 5;
-const unitSize = 10;
+// To reduce redundancy/improve performance
+const unitGeo = new THREE.BoxGeometry(
+  config.unitSize, config.unitSize, config.unitHeight);
+const materials = Object.keys(config.colors).reduce((acc, k) => {
+  acc[k] = new THREE.MeshLambertMaterial({
+    color: config.colors[k]
+  });
+  return acc;
+}, {});
+const focusMaterial = new THREE.MeshLambertMaterial({
+  color: config.focusColor
+});
 
-const colors = {
-  'Tenant': 0xfced1b,
-  'Developer': 0x1b84fc
-}
 
 class Unit {
   constructor(unit) {
-    this.color = colors[unit.owner.type];
-    let mat = new THREE.MeshLambertMaterial({color: this.color});
-    let geo = new THREE.BoxGeometry(unitSize, unitSize, unitHeight);
-    this.mesh = new THREE.Mesh(geo, mat);
+    this.owner = unit.owner;
+
+    let mat = materials[unit.owner.type];
+    this.mesh = new THREE.Mesh(unitGeo, mat);
     this.mesh.obj = this;
-    this.data = {
-      tooltip: `<div>Owner: ${unit.owner.type} ${unit.owner.id}</div><div>Rent: $${unit.rent.toFixed(2)}</div>`
-    };
+
+    this.data = {};
+    this.updateTooltip(unit);
   }
 
-  updateColor(owner) {
-    this.color = colors[owner.type];
-    this.setColor(this.color);
+  updateTooltip(unit) {
+    this.data.tooltip = `
+      <div>Owner: ${unit.owner.type} ${unit.owner.id}</div>
+      <div>Rent: $${unit.rent.toFixed(2)}</div>
+      <div>Months vacant: ${unit.monthsVacant}</div>
+    `;
   }
 
-  setColor(c) {
-    this.mesh.material.color.setHex(c);
+  updateOwner(owner) {
+    this.owner = owner;
+    this.mesh.material = materials[owner.type];
+  }
+
+  focus(c) {
+    this.mesh.material = focusMaterial;
+  }
+
+  unfocus() {
+    this.mesh.material = materials[this.owner.type];
   }
 }
 
@@ -34,19 +53,20 @@ class Building {
   constructor(units) {
     let nUnits = units.length;
     this.units = {};
-    this.unitMeshes = [];
-    let height = unitHeight * nUnits;
+    let height = config.unitHeight * nUnits;
 
+    // Create units as layers/floors in the building
     this.group = new THREE.Group();
     units.forEach((unit, i) => {
       let u = new Unit(unit);
-      u.mesh.position.z = i * unitHeight;
-      this.unitMeshes.push(u.mesh);
+      u.mesh.position.z = i * config.unitHeight;
       this.group.add(u.mesh);
       this.units[unit.id] = u;
     });
 
-    this.group.position.z = unitHeight/2;
+    // So bottom of building
+    // is flush with floor
+    this.group.position.z = config.unitHeight/2;
   }
 }
 

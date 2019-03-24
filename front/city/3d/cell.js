@@ -3,6 +3,7 @@ import * as THREE from 'three';
 const colorCache = {};
 const material = new THREE.MeshBasicMaterial({ vertexColors: THREE.VertexColors });
 
+
 class Cell {
   constructor(x, y, size, color, data) {
     this.x = x;
@@ -47,10 +48,16 @@ class Cell {
     });
     this.geometry.elementsNeedUpdate = true;
   }
+
+  focus() {
+    this.setColor(0xff0000);
+  }
+
+  unfocus() {
+    this.setColor(this.color);
+  }
 }
 
-// color order:
-// top right, top center, top left, bottom left, bottom center, bottom right
 function makeHexagon(size) {
   let vertices = [];
   let geometry = new THREE.Geometry();

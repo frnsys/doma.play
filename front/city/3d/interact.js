@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+
+// Hover tooltip
 const tooltip = document.createElement('div');
 tooltip.classList.add('tooltip');
 tooltip.style.position = 'absolute';
@@ -6,6 +8,7 @@ tooltip.style.display = 'none';
 tooltip.style.zIndex = '10';
 tooltip.style.pointerEvents = 'none';
 document.body.appendChild(tooltip);
+
 
 class InteractionLayer {
   constructor(scene, selectables) {
@@ -54,10 +57,9 @@ class InteractionLayer {
     this.updateMouse(ev);
     this.raycaster.setFromCamera(this.mouse, this.scene.camera);
 
-    // Re-set last focused cell color
     if (this.focused) {
-      if (this.focused.obj.color) {
-        this.focused.obj.setColor(this.focused.obj.color);
+      if (this.focused.obj.unfocus) {
+        this.focused.obj.unfocus();
       }
       this.focused = null;
     }
@@ -67,11 +69,13 @@ class InteractionLayer {
       let mesh = intersects[0].object,
           pos = intersects[0].point,
           obj = mesh.obj;
+
       if (obj.data.tooltip) {
         this.focused = mesh;
-        if (this.focused.obj.color) {
-          mesh.obj.setColor(0xff0000);
+        if (this.focused.obj.focus) {
+          this.focused.obj.focus();
         }
+
         tooltip.style.display = 'block';
         tooltip.style.left = `${ev.pageX + 5}px`;
         let top = ev.pageY + 5;

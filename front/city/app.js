@@ -1,39 +1,42 @@
 import api from '../api';
+import config from './config';
 import Grid from './3d/grid';
 import Scene from './3d/scene';
 import Building from './3d/building';
 import InteractionLayer from './3d/interact';
 
-const cellSize = 28;
 const scene = new Scene({});
 const main = document.getElementById('main');
-let neighbColors = [
-  0x26a842,
-  0x1aef48,
-  0x176828
-];
 main.appendChild(scene.renderer.domElement);
 
 let stateKey = null;
 const unitsLookup = {};
 
-function makeGrid(map, buildings, units) {
-  let grid = new Grid(map.cols, map.rows, cellSize);
+function makeGrid(state) {
+  let {map, buildings, units} = state;
+  let grid = new Grid(map.cols, map.rows, config.cellSize);
   Object.keys(map.parcels).forEach((row) => {
     Object.keys(map.parcels[row]).forEach((col) => {
       let parcel = map.parcels[row][col];
       parcel.tooltip = `Neighborhood ${parcel.neighb}`;
-      let color = neighbColors[parcel.neighb];
+      let color = config.neighbColors[parcel.neighb];
       let cell = grid.setCellAt(col, row, color, parcel);
+
       let b = buildings[`${row}_${col}`];
       let building = new Building(b.units.map(u => units[u]));
+      cell.building = building;
+      cell.mesh.add(building.group);
+
+      // Make units easily accessible by id
+      // so we can update them
       Object.keys(building.units).forEach((id) => {
         unitsLookup[id] = building.units[id];
       });
-      cell.building = building;
-      cell.mesh.add(building.group);
     });
   });
+
+  // Rotate, so we view the grid isometrically
+  grid.group.rotation.x = -Math.PI/2;
   return grid;
 }
 
@@ -52,13 +55,17 @@ function render(time) {
 
 function update() {
   api.get('/state/key', (data) => {
+    // Compare state keys to
+    // see if state changed
     if (data.key !== stateKey) {
       api.get('/state', (state) => {
         stateKey = state.key;
+
+        // Update units
         Object.values(state.units).forEach((u) => {
           let unit = unitsLookup[u.id];
-          unit.data.tooltip = `<div>Owner: ${u.owner.type} ${u.owner.id}</div><div>Rent: $${u.rent.toFixed(2)}</div><div>Months vacant: ${u.monthsVacant}</div>`;
-          unit.updateColor(u.owner);
+          unit.updateOwner(u.owner);
+          unit.updateTooltip(u);
         });
       });
     }
@@ -68,16 +75,16 @@ function update() {
 // Initial setup
 api.get('/state', (state) => {
   stateKey = state.key;
-  let grid = makeGrid(state.map, state.buildings, state.units);
-  // rotate, so we view the grid isometrically
-  grid.group.rotation.x = -Math.PI / 2;
+  let grid = makeGrid(state);
   scene.add(grid.group);
-  let selectables = grid.cells.filter((c) => c).map((c) => c.mesh);
-  let buildings = grid.cells.filter((c) => c && c.building).map((c) => c.building);
-  let units = buildings.reduce((acc, b) => {
-    return acc.concat(b.unitMeshes);
-  }, []);
-  selectables = selectables.concat(units);
+
+  let selectables = [];
+  grid.cells.filter((c) => c).forEach((c) => {
+    selectables.push(c.mesh);
+    if (c.building) {
+      selectables = selectables.concat(Object.values(c.building.units).map((u) => u.mesh));
+    }
+  });
   let ixn = new InteractionLayer(scene, selectables);
   render();
 });
