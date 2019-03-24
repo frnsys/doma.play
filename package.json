@@ -19,15 +19,6 @@
     "@babel/preset-react": "^7.0.0-beta.39",
     "babel-loader": "^8.0.0-beta.0",
     "concurrently": "^3.5.0",
-    "css-loader": "^0.28.4",
-    "extract-text-webpack-plugin": "^2.1.2",
-    "manifest-revision-webpack-plugin": "^0.4.0",
-    "node-sass": "^3.13.1",
-    "raw-loader": "^0.5.1",
-    "sass-loader": "^4.0.0",
-    "style-loader": "^0.18.2",
-    "url-loader": "^0.5.9",
-    "webpack": "^2.6.1",
-    "webpack-dev-server": "^2.4.5"
+    "webpack": "^2.6.1"
   }
 }
