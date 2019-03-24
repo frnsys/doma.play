@@ -1,11 +1,18 @@
 import math
+import json
+import redis
+# import hashlib
+import itertools
 import numpy as np
 import statsmodels.api as sm
 from collections import defaultdict
+# from jsondiff import diff
 
 minArea = 50
 movingPenalty = 10
 neighborhoods = list(range(3))
+
+redis = redis.Redis(host='localhost', port=6379, db=1)
 
 def distance(a, b):
     return math.sqrt((a[0] - b[0])**2 + (a[1] - b[1])**2)
@@ -57,7 +64,11 @@ class City:
         return [p.building for p in self]
 
 class Developer:
+    _id = itertools.count()
+
     def __init__(self):
+        self.id = next(self._id)
+
         self.units = set()
         self.rent_estimates = {neighb: [] for neighb in neighborhoods}
         self.trend_estimates = {neighb: 0 for neighb in neighborhoods}
@@ -177,10 +188,10 @@ class Parcel:
         self.building = building
         if building is not None:
             building.parcel = self
+            building.id = '{}_{}'.format(*self.pos)
 
 class Building:
     def __init__(self, units):
-        self.tenants = {}
         self.units = units
         for u in self.units:
             u.building = self
@@ -197,7 +208,10 @@ class Building:
 
 
 class Unit:
+    _id = itertools.count()
+
     def __init__(self, rent, occupancy, area, owner=None):
+        self.id = next(self._id)
         self.rent = rent
         self.occupancy = occupancy
         self.area = area
@@ -248,7 +262,11 @@ class Unit:
 
 
 class Tenant:
+    _id = itertools.count()
+
     def __init__(self, income):
+        self.id = next(self._id)
+
         # Monthly income
         self.income = income
 
@@ -295,6 +313,34 @@ class Tenant:
             des = t.desirability(vacancies[0])
             if des - localMovingPenalty > current_desirability:
                 vacancies[0].move_in(t, time)
+
+def jsonify(city):
+    buildings = {}
+    units = {}
+    for p in city:
+        b = p.building
+        buildings[b.id] = {
+            'units': [u.id for u in b.units]
+        }
+        for u in b.units:
+            units[u.id] = {
+                'rent': u.rent,
+                'area': u.area,
+                'tenants': [t.id for t in u.tenants],
+                'owner': {
+                    'id': u.owner.id,
+                    'type': type(u.owner).__name__
+                },
+                'monthsVacant': u.monthsVacant
+            }
+    return {
+        'map': {
+            'rows': city.rows,
+            'cols': city.cols
+        },
+        'buildings': buildings,
+        'units': units
+    }
 
 
 if __name__ == '__main__':
@@ -355,6 +401,10 @@ if __name__ == '__main__':
         for u in p.building.units:
             u.setOwner(random_owner(u))
 
+    state = jsonify(city)
+    # state_serialized = json.dumps(state)
+    # state_key = hashlib.md5(state_serialized.encode('utf8')).hexdigest()
+
     # Each tick is a month
     steps = 100
     estimate_radius = 2
@@ -366,6 +416,27 @@ if __name__ == '__main__':
         random.shuffle(tenants)
         for t in tenants:
             t.step(i, city)
+
+        last_state = state
+
+        # Keep track of last state key
+        # so we know if the client is out of sync
+        # and then instead requests the full state
+        # rather than just the diff
+        # redis.set('last_state_key', state_key)
+
+        state = jsonify(city)
+
+        # This slows it down A LOT (> 2x)
+        # To reduce redundant data,
+        # we can just send a state diff
+        # state_diff = diff(last_state, state)
+        # redis.set('state_diff', json.dumps(state_diff))
+
+        # TODO look into more compact serializations?
+        state_serialized = json.dumps(state)
+        # state_key = hashlib.md5(state_serialized.encode('utf8')).hexdigest()
+        redis.set('state', state_serialized)
 
     # TODO/note: currently non-developer landlords
     # don't adjust rent

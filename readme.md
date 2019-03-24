@@ -2,8 +2,13 @@
 
 ## Architecture
 
-- Server (Python)
+- Simulation process (Python)
     - Runs simulation
+    - Reads commands from Redis
+    - Outputs simulation state to Redis
+- API server (Python)
+    - Reads simulation state from Redis
+    - Writes commands to Redis
     - Provides API for querying simulation state and executing actions in the simulation
     - Continues running in absence of players (i.e. persistent)
 - Visualization client (JS, desktop)
