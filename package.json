@@ -1,0 +1,33 @@
+{
+  "name": "doma.play",
+  "version": "0.0.0",
+  "scripts": {
+    "start": "concurrently -n \"WEBPACK,FLASK\" -c \"bgBlue.bold,bgGreen.bold\" \"npm run webpack\" \"npm run flask\"",
+    "build": "NODE_ENV=production webpack --progress --colors -p",
+    "webpack": "webpack --watch --progress",
+    "flask": "FLASK_APP=app.py FLASK_DEBUG=1 flask run"
+  },
+  "dependencies": {
+    "@babel/polyfill": "^7.0.0",
+    "three": "^0.97.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.0.0-beta.39",
+    "@babel/plugin-proposal-class-properties": "^7.0.0-beta.42",
+    "@babel/plugin-proposal-object-rest-spread": "^7.0.0-beta.42",
+    "@babel/preset-env": "^7.0.0-beta.39",
+    "@babel/preset-react": "^7.0.0-beta.39",
+    "babel-loader": "^8.0.0-beta.0",
+    "concurrently": "^3.5.0",
+    "css-loader": "^0.28.4",
+    "extract-text-webpack-plugin": "^2.1.2",
+    "manifest-revision-webpack-plugin": "^0.4.0",
+    "node-sass": "^3.13.1",
+    "raw-loader": "^0.5.1",
+    "sass-loader": "^4.0.0",
+    "style-loader": "^0.18.2",
+    "url-loader": "^0.5.9",
+    "webpack": "^2.6.1",
+    "webpack-dev-server": "^2.4.5"
+  }
+}
