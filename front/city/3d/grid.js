@@ -47,8 +47,9 @@ class Grid {
 
     // Adjust cell positions
     // so center of group is center of grid
-    cell.mesh.position.x = -this.width/2;
-    cell.mesh.position.y = this.height/3;
+    cell.mesh.position.x += -this.width/2;
+    cell.mesh.position.y += this.height/3;
+    return cell;
   }
 
   // odd-r positioning

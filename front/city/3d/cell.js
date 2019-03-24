@@ -10,8 +10,10 @@ class Cell {
     this.data = data || {};
     this.color = color;
 
-    this.geometry = makeHexagon(x, y, size);
+    this.geometry = makeHexagon(size);
     this.mesh = new THREE.Mesh(this.geometry, material);
+    this.mesh.position.x = x;
+    this.mesh.position.y = y;
     this.setColor(color);
 
     // to recover this object from raycasting intersection
@@ -49,14 +51,14 @@ class Cell {
 
 // color order:
 // top right, top center, top left, bottom left, bottom center, bottom right
-function makeHexagon(x, y, size) {
+function makeHexagon(size) {
   let vertices = [];
   let geometry = new THREE.Geometry();
   for (let i=0; i<6; i++) {
     let angle_deg = 60 * i + 30;
     let angle_rad = Math.PI / 180 * angle_deg;
-    let vx = x + size * Math.cos(angle_rad);
-    let vy = y + size * Math.sin(angle_rad);
+    let vx = size * Math.cos(angle_rad);
+    let vy = size * Math.sin(angle_rad);
     vertices.push(new THREE.Vector3(vx, vy, 0));
   }
   geometry.vertices = vertices;
