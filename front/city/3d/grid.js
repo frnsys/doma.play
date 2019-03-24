@@ -23,8 +23,6 @@ class Grid {
         this.setCellAt(col, row, defaultColor);
       }
     }
-    this.group.position.x = -this.width/2;
-    this.group.position.y = this.height/2;
   }
 
   get cells() {
@@ -46,6 +44,11 @@ class Grid {
     cell.row = row;
     this.grid[col][row] = cell;
     this.group.add(cell.mesh);
+
+    // Adjust cell positions
+    // so center of group is center of grid
+    cell.mesh.position.x = -this.width/2;
+    cell.mesh.position.y = this.height/3;
   }
 
   // odd-r positioning

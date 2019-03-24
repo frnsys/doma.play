@@ -1,6 +1,7 @@
 import api from '../api';
 import Grid from './3d/grid';
 import Scene from './3d/scene';
+import * as THREE from 'three';
 
 const cellSize = 28;
 let color = 0x23ce61;
@@ -26,7 +27,8 @@ function render(time) {
 
 api.get('/state', (state) => {
   let grid = makeGrid(state.map);
+  // rotate, so we view the grid isometrically
+  grid.group.rotation.x = -Math.PI / 2;
   scene.add(grid.group);
-
   render();
 });

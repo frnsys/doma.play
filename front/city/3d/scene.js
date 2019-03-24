@@ -1,8 +1,7 @@
 import * as THREE from 'three';
 import OrbitControls from './orbit';
 
-const VIEW_ANGLE = 45;
-const NEAR = 0.1;
+const NEAR = 0;
 const FAR = 10000;
 const D = 1;
 
@@ -23,8 +22,11 @@ class Scene {
 
     let aspect = opts.width/opts.height;
     this.camera = new THREE.OrthographicCamera(-D*aspect, D*aspect, D, -D, NEAR, FAR);
-    this.camera.zoom = 0.01;
-    this.camera.position.z = 10;
+    this.camera.zoom = 0.005;
+    this.camera.position.z = 400;
+    this.camera.position.y = 400;
+    this.camera.position.x = 400;
+    this.camera.lookAt(this.scene.position);
     this.camera.updateProjectionMatrix();
 
     window.addEventListener('resize', () => {
@@ -40,13 +42,9 @@ class Scene {
     }, false);
 
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
-    this.controls.enableRotate = false;
-    // for orthographic
+    this.controls.enableRotate = true;
     this.controls.maxZoom = 0.4;
     this.controls.minZoom = 0.001;
-    // for perspective
-    // this.controls.minDistance = 400;
-    // this.controls.maxDistance = 1200;
   }
 
   add(mesh) {
