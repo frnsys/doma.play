@@ -317,8 +317,12 @@ class Tenant:
 def jsonify(city):
     buildings = {}
     units = {}
+    parcels = defaultdict(dict)
     for p in city:
         b = p.building
+        parcels[p.pos[0]][p.pos[1]] = {
+            'neighb': p.neighborhood
+        }
         buildings[b.id] = {
             'units': [u.id for u in b.units]
         }
@@ -336,7 +340,8 @@ def jsonify(city):
     return {
         'map': {
             'rows': city.rows,
-            'cols': city.cols
+            'cols': city.cols,
+            'parcels': parcels
         },
         'buildings': buildings,
         'units': units
