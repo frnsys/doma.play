@@ -8,31 +8,42 @@ const colors = {
   'Developer': 0x1b84fc
 }
 
+class Unit {
+  constructor(unit) {
+    this.color = colors[unit.owner.type];
+    let mat = new THREE.MeshLambertMaterial({color: this.color});
+    let geo = new THREE.BoxGeometry(unitSize, unitSize, unitHeight);
+    this.mesh = new THREE.Mesh(geo, mat);
+    this.mesh.obj = this;
+    this.data = {
+      tooltip: `<div>Owner: ${unit.owner.type} ${unit.owner.id}</div><div>Rent: $${unit.rent.toFixed(2)}</div>`
+    };
+  }
+
+  updateColor(owner) {
+    this.color = colors[owner.type];
+    this.setColor(this.color);
+  }
+
+  setColor(c) {
+    this.mesh.material.color.setHex(c);
+  }
+}
+
 class Building {
   constructor(units) {
     let nUnits = units.length;
-    this.units = units;
+    this.units = {};
     this.unitMeshes = [];
     let height = unitHeight * nUnits;
 
     this.group = new THREE.Group();
     units.forEach((unit, i) => {
-      let color = colors[unit.owner.type];
-      let mat = new THREE.MeshLambertMaterial({color: color});
-      let geo = new THREE.BoxGeometry(unitSize, unitSize, unitHeight);
-      let mesh = new THREE.Mesh(geo, mat);
-      mesh.position.z = i * unitHeight;
-      mesh.obj = {
-        color: color,
-        setColor: (c) => {
-          mesh.material.color.setHex(c);
-        },
-        data: {
-          tooltip: `Owner: ${unit.owner.type} ${unit.owner.id}`
-        }
-      };
-      this.unitMeshes.push(mesh);
-      this.group.add(mesh);
+      let u = new Unit(unit);
+      u.mesh.position.z = i * unitHeight;
+      this.unitMeshes.push(u.mesh);
+      this.group.add(u.mesh);
+      this.units[unit.id] = u;
     });
 
     this.group.position.z = unitHeight/2;

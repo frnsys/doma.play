@@ -18,7 +18,16 @@ def play():
 @app.route('/state')
 def state():
     """Query current state"""
-    return jsonify(json.loads(redis.get('state')))
+    state = json.loads(redis.get('state'))
+    state['key'] = redis.get('state_key').decode('utf8')
+    return jsonify(state)
+
+
+@app.route('/state/key')
+def state_key():
+    """Query current state key"""
+    return jsonify(key=redis.get('state_key').decode('utf8'))
+
 
 if __name__ == '__main__':
     app.run(port=5000, debug=True)

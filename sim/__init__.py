@@ -1,12 +1,11 @@
 import math
 import json
 import redis
-# import hashlib
+import hashlib
 import itertools
 import numpy as np
 import statsmodels.api as sm
 from collections import defaultdict
-# from jsondiff import diff
 
 minArea = 50
 movingPenalty = 10
@@ -377,6 +376,25 @@ class Tenant:
             if des - localMovingPenalty > current_desirability:
                 vacancies[0].move_in(t, time)
 
+        transfers = []
+        for u in self.units:
+            if not u.offers: continue
+            est_future_rent = u.rent * 5 * 12
+            considered_offers = [(d, o) for d, o in u.offers if o > est_future_rent]
+            if considered_offers:
+                # Transfer ownership to the highest bidder
+                dev, offer = max(considered_offers, key=lambda off: off[-1])
+                transfers.append((u, dev))
+
+        # Have to do this here
+        # so we don't modify self.units
+        # as we iterate
+        for u, dev in transfers:
+            u.setOwner(dev)
+
+
+
+
 def jsonify(city):
     buildings = {}
     units = {}
@@ -391,6 +409,7 @@ def jsonify(city):
         }
         for u in b.units:
             units[u.id] = {
+                'id': u.id,
                 'rent': u.rent,
                 'area': u.area,
                 'tenants': [t.id for t in u.tenants],
@@ -470,14 +489,21 @@ if __name__ == '__main__':
         for u in p.building.units:
             u.setOwner(random_owner(u))
 
+    from time import sleep
+
     state = jsonify(city)
-    # state_serialized = json.dumps(state)
-    # state_key = hashlib.md5(state_serialized.encode('utf8')).hexdigest()
+    state_serialized = json.dumps(state)
+    state_key = hashlib.md5(state_serialized.encode('utf8')).hexdigest()
+    redis.set('state', state_serialized)
+    redis.set('state_key', state_key)
 
     # Each tick is a month
-    steps = 100
+    # steps = 100
     estimate_radius = 2
-    for i in range(steps):
+    # for i in range(steps):
+    i = 0
+    while True:
+        print('Step', i)
         random.shuffle(developers)
         for d in developers:
             d.step(i, city)
@@ -486,26 +512,15 @@ if __name__ == '__main__':
         for t in tenants:
             t.step(i, city)
 
-        last_state = state
-
-        # Keep track of last state key
-        # so we know if the client is out of sync
-        # and then instead requests the full state
-        # rather than just the diff
-        # redis.set('last_state_key', state_key)
-
         state = jsonify(city)
-
-        # This slows it down A LOT (> 2x)
-        # To reduce redundant data,
-        # we can just send a state diff
-        # state_diff = diff(last_state, state)
-        # redis.set('state_diff', json.dumps(state_diff))
 
         # TODO look into more compact serializations?
         state_serialized = json.dumps(state)
-        # state_key = hashlib.md5(state_serialized.encode('utf8')).hexdigest()
+        state_key = hashlib.md5(state_serialized.encode('utf8')).hexdigest()
         redis.set('state', state_serialized)
+        redis.set('state_key', state_key)
+        i += 1
+        sleep(1)
 
     # TODO/note: currently non-developer landlords
     # don't adjust rent

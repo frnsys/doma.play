@@ -14,6 +14,9 @@ let neighbColors = [
 ];
 main.appendChild(scene.renderer.domElement);
 
+let stateKey = null;
+const unitsLookup = {};
+
 function makeGrid(map, buildings, units) {
   let grid = new Grid(map.cols, map.rows, cellSize);
   Object.keys(map.parcels).forEach((row) => {
@@ -24,6 +27,9 @@ function makeGrid(map, buildings, units) {
       let cell = grid.setCellAt(col, row, color, parcel);
       let b = buildings[`${row}_${col}`];
       let building = new Building(b.units.map(u => units[u]));
+      Object.keys(building.units).forEach((id) => {
+        unitsLookup[id] = building.units[id];
+      });
       cell.building = building;
       cell.mesh.add(building.group);
     });
@@ -31,12 +37,37 @@ function makeGrid(map, buildings, units) {
   return grid;
 }
 
+let lastTime = null;
 function render(time) {
+  // update every 2000ms
+  if (!lastTime) {
+    lastTime = time;
+  } else if (time - lastTime > 2000) {
+    lastTime = time;
+    update();
+  }
   scene.render();
   requestAnimationFrame(render);
 }
 
+function update() {
+  api.get('/state/key', (data) => {
+    if (data.key !== stateKey) {
+      api.get('/state', (state) => {
+        stateKey = state.key;
+        Object.values(state.units).forEach((u) => {
+          let unit = unitsLookup[u.id];
+          unit.data.tooltip = `<div>Owner: ${u.owner.type} ${u.owner.id}</div><div>Rent: $${u.rent.toFixed(2)}</div><div>Months vacant: ${u.monthsVacant}</div>`;
+          unit.updateColor(u.owner);
+        });
+      });
+    }
+  });
+}
+
+// Initial setup
 api.get('/state', (state) => {
+  stateKey = state.key;
   let grid = makeGrid(state.map, state.buildings, state.units);
   // rotate, so we view the grid isometrically
   grid.group.rotation.x = -Math.PI / 2;
