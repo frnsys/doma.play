@@ -9,8 +9,8 @@ export default {
     0x44eaaa
   ],
   colors: {
-    'Tenant': 0xfced1b,
-    'Developer': 0x1b84fc
+    'Tenant': 0x5370f4,
+    'Developer': 0xf48e53
   },
   focusColor: 0xff0000
 }

@@ -1,28 +1,45 @@
 import config from '../config';
 import * as THREE from 'three';
+import {shadeColor} from './color';
 
-// To reduce redundancy/improve performance
-const unitGeo = new THREE.BoxGeometry(
-  config.unitSize, config.unitSize, config.unitHeight);
-const materials = Object.keys(config.colors).reduce((acc, k) => {
-  acc[k] = new THREE.MeshLambertMaterial({
-    color: config.colors[k]
+const colorCache = {};
+const mat = new THREE.MeshBasicMaterial({ vertexColors: THREE.VertexColors });
+
+function setColor(geo, color) {
+  let colors = [
+    0xffb5d0,
+    color,
+    shadeColor(color, -0.25),
+    color,
+    color,
+    shadeColor(color, 0.4),
+    0xffb5d0,
+    color,
+  ];
+  colors = colors.map((c) => {
+    if (!(c in colorCache)) {
+      colorCache[c] = new THREE.Color(c);
+    }
+    return colorCache[c];
   });
-  return acc;
-}, {});
-const focusMaterial = new THREE.MeshLambertMaterial({
-  color: config.focusColor
-});
-
+  geo.faces.forEach(function(face) {
+    face.vertexColors[0] = colors[face['a']];
+    face.vertexColors[1] = colors[face['b']];
+    face.vertexColors[2] = colors[face['c']];
+  });
+  geo.elementsNeedUpdate = true;
+}
 
 class Unit {
   constructor(unit) {
     this.owner = unit.owner;
 
-    let mat = materials[unit.owner.type];
-    this.mesh = new THREE.Mesh(unitGeo, mat);
-    this.mesh.obj = this;
+    let color = config.colors[unit.owner.type];
+    let geo = new THREE.BoxGeometry(config.unitSize, config.unitSize, config.unitHeight);
+    this.mesh = new THREE.Mesh(geo, mat);
+    setColor(geo, color);
 
+    this.mesh.obj = this;
     this.data = {};
     this.updateTooltip(unit);
   }
@@ -37,15 +54,15 @@ class Unit {
 
   updateOwner(owner) {
     this.owner = owner;
-    this.mesh.material = materials[owner.type];
   }
 
   focus(c) {
-    this.mesh.material = focusMaterial;
+    setColor(this.mesh.geometry, 0xff0000);
   }
 
   unfocus() {
-    this.mesh.material = materials[this.owner.type];
+    let color = config.colors[this.owner.type];
+    setColor(this.mesh.geometry, color);
   }
 }
 

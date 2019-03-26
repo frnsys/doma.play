@@ -1,11 +1,9 @@
 import * as THREE from 'three';
-import {shadeColor} from './color';
 
 const colorCache = {};
 const material = new THREE.MeshBasicMaterial({ vertexColors: THREE.VertexColors });
 
-
-class Cell {
+class Unit {
   constructor(x, y, size, color, data) {
     this.x = x;
     this.y = y;
@@ -51,7 +49,7 @@ class Cell {
   }
 
   focus() {
-    this.setColor(0xff0000);
+    this.setColor(config.focusColor);
   }
 
   unfocus() {
@@ -59,25 +57,9 @@ class Cell {
   }
 }
 
-function makeHexagon(size) {
-  let vertices = [];
-  let geometry = new THREE.Geometry();
-  for (let i=0; i<6; i++) {
-    let angle_deg = 60 * i + 30;
-    let angle_rad = Math.PI / 180 * angle_deg;
-    let vx = size * Math.cos(angle_rad);
-    let vy = size * Math.sin(angle_rad);
-    vertices.push(new THREE.Vector3(vx, vy, 0));
-  }
-  geometry.vertices = vertices;
-  let triangles = THREE.ShapeUtils.triangulateShape(vertices, []);
-  for(let i=0; i<triangles.length; i++) {
-    let face = new THREE.Face3(triangles[i][0], triangles[i][1], triangles[i][2]);
-    geometry.faces.push(face);
-  }
-  return geometry;
+function shadeColor(color, percent) {
+  let f=color,t=percent<0?0:255,p=percent<0?percent*-1:percent,R=f>>16,G=f>>8&0x00FF,B=f&0x0000FF;
+  return 0x1000000+(Math.round((t-R)*p)+R)*0x10000+(Math.round((t-G)*p)+G)*0x100+(Math.round((t-B)*p)+B);
 }
 
-
-
-export default Cell;
+export default Unit;
