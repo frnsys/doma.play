@@ -1,18 +1,21 @@
 import random
+import logging
 from .util import sync
 from .city import City, Building, Unit
 from .agent import Developer, Tenant
 
+logger = logging.getLogger('DOMA-SIM')
+
 
 class Simulation:
-    def __init__(self, size, neighborhoods):
+    def __init__(self, size, neighborhoods, percent_filled=0.7):
         # Each tick is a month
         self._step = 0
 
         self.neighborhoods = list(range(neighborhoods))
 
         # Initialize city buildings
-        self.city = City(size, self.neighborhoods)
+        self.city = City(size, self.neighborhoods, percent_filled)
 
         for p in self.city:
             if p is None: continue
@@ -70,9 +73,10 @@ class Simulation:
         return owner
 
     def sync(self):
-        sync(self.city, self._step)
+        sync(self.city, self.stats(), self._step)
 
     def step(self):
+        logger.info('Step {}'.format(self._step))
         random.shuffle(self.developers)
         for d in self.developers:
             d.step(self._step, self.city)
@@ -85,3 +89,10 @@ class Simulation:
 
         # TODO/note: currently non-developer landlords
         # don't adjust rent
+
+    def stats(self):
+        units = self.city.units
+        return {
+            'mean_rent_per_area': sum(u.rent_per_area for u in units)/len(units),
+            'mean_months_vacant': sum(u.monthsVacant for u in units)/len(units)
+        }

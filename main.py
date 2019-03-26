@@ -1,5 +1,8 @@
+import logging
 from time import sleep
 from sim import Simulation
+
+logging.basicConfig(level=logging.INFO)
 
 
 if __name__ == '__main__':

@@ -11,3 +11,15 @@ html, body {
   padding: 0.5em;
   border: 2px solid black;
 }
+
+#stats {
+  position: fixed;
+  top: 0;
+  left: 0;
+  padding: 1em;
+}
+ul, li {
+  margin: 0;
+  padding: 0;
+  list-style-type: none;
+}

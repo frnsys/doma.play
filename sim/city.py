@@ -5,12 +5,12 @@ from .grid import HexGrid
 
 
 class City:
-    def __init__(self, size, neighborhoods):
+    def __init__(self, size, neighborhoods, percent_filled=0.7):
         rows, cols = size
         self.grid = HexGrid(rows, cols)
 
         self.neighborhoods = neighborhoods;
-        n_parcels = math.floor(rows*cols*0.7) # TEMP
+        n_parcels = math.floor(rows*cols*percent_filled)
         self.generate_map(n_parcels)
 
     def generate_map(self, n_parcels):
@@ -76,6 +76,10 @@ class City:
     @property
     def buildings(self):
         return [p.building for p in self]
+
+    @property
+    def units(self):
+        return sum([p.building.units for p in self], [])
 
 
 class Parcel:

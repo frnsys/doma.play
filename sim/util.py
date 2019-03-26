@@ -43,10 +43,11 @@ def jsonify(city, time):
     }
 
 
-def sync(city, time):
+def sync(city, stats, time):
     """Synchronize city's state to redis"""
     # TODO look into more compact serializations?
     state = jsonify(city, time)
+    state['stats'] = stats
     state_serialized = json.dumps(state)
     state_key = hashlib.md5(state_serialized.encode('utf8')).hexdigest()
     redis.set('state', state_serialized)

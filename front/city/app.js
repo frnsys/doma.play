@@ -9,6 +9,8 @@ const scene = new Scene({});
 const main = document.getElementById('main');
 main.appendChild(scene.renderer.domElement);
 
+const stats = document.getElementById('stats');
+
 let stateKey = null;
 const unitsLookup = {};
 
@@ -53,6 +55,14 @@ function render(time) {
   requestAnimationFrame(render);
 }
 
+function updateStats(state) {
+  stats.innerHTML = `<ul>
+    <li>Step ${state.time}</li>
+    <li>Mean rent/sqft $${state.stats.mean_rent_per_area.toLocaleString()}</li>
+    <li>Mean months vacant ${Math.round(state.stats.mean_months_vacant)}</li>
+  </ul>`;
+}
+
 function update() {
   api.get('/state/key', (data) => {
     // Compare state keys to
@@ -60,6 +70,7 @@ function update() {
     if (data.key !== stateKey) {
       api.get('/state', (state) => {
         stateKey = state.key;
+        updateStats(state);
 
         // Update units
         Object.values(state.units).forEach((u) => {
@@ -86,5 +97,7 @@ api.get('/state', (state) => {
     }
   });
   let ixn = new InteractionLayer(scene, selectables);
+
+  updateStats(state);
   render();
 });
