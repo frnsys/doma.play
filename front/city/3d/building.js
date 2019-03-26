@@ -5,15 +5,16 @@ import {shadeColor} from './color';
 const colorCache = {};
 const mat = new THREE.MeshBasicMaterial({ vertexColors: THREE.VertexColors });
 
-function setColor(geo, color) {
+function setColor(geo, color, highlight) {
+  highlight = highlight || 0xffb5d0;
   let colors = [
-    0xffb5d0,
+    highlight,
     color,
     shadeColor(color, -0.25),
     color,
     color,
     shadeColor(color, 0.4),
-    0xffb5d0,
+    highlight,
     color,
   ];
   colors = colors.map((c) => {
@@ -32,37 +33,40 @@ function setColor(geo, color) {
 
 class Unit {
   constructor(unit) {
-    this.owner = unit.owner;
-
-    let color = config.colors[unit.owner.type];
     let geo = new THREE.BoxGeometry(config.unitSize, config.unitSize, config.unitHeight);
     this.mesh = new THREE.Mesh(geo, mat);
-    setColor(geo, color);
 
     this.mesh.obj = this;
     this.data = {};
-    this.updateTooltip(unit);
+    this.update(unit);
   }
 
-  updateTooltip(unit) {
+  update(unit) {
+    this.owner = unit.owner;
+    let color = config.colors[this.owner.type];
+    let highlight;
+    if (unit.tenants.length == 0) {
+      color = shadeColor(color, -0.3)
+      highlight = 0x000000;
+    }
     this.data.tooltip = `
       <div>Owner: ${unit.owner.type} ${unit.owner.id}</div>
       <div>Rent: $${unit.rent.toFixed(2)}</div>
+      <div>Tenants: ${unit.tenants.length}</div>
       <div>Months vacant: ${unit.monthsVacant}</div>
     `;
-  }
-
-  updateOwner(owner) {
-    this.owner = owner;
+    if (color !== this.color) {
+      setColor(this.mesh.geometry, color, highlight);
+    }
+    this.color = color;
   }
 
   focus(c) {
-    setColor(this.mesh.geometry, 0xff0000);
+    setColor(this.mesh.geometry, config.focusColor);
   }
 
   unfocus() {
-    let color = config.colors[this.owner.type];
-    setColor(this.mesh.geometry, color);
+    setColor(this.mesh.geometry, this.color);
   }
 }
 

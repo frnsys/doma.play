@@ -41,7 +41,8 @@ function createChart(state) {
       legend: {
         labels: {
           boxWidth: 2,
-          fontSize: 9
+          fontSize: 9,
+          fontFamily: 'monospace'
         }
       }
     }
@@ -124,8 +125,7 @@ function update() {
         // Update units
         Object.values(state.units).forEach((u) => {
           let unit = unitsLookup[u.id];
-          unit.updateOwner(u.owner);
-          unit.updateTooltip(u);
+          unit.update(u);
         });
       });
     }
