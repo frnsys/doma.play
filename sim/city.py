@@ -137,6 +137,10 @@ class Unit:
             self.owner.units.add(self)
 
     @property
+    def vacant(self):
+        return not self.tenants
+
+    @property
     def vacancies(self):
         return self.occupancy - len(self.tenants)
 

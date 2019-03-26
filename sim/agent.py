@@ -31,7 +31,8 @@ class Developer:
 
         for neighb, rent_history in self.rent_estimates.items():
             rents = neighborhoods.get(neighb, [])
-            rents += [u.rent_per_area for u in random.sample(city.neighborhood_units(neighb), sample_size)]
+            units = city.neighborhood_units(neighb)
+            rents += [u.rent_per_area for u in random.sample(units, min(len(units), sample_size))]
             # TODO should also look at radii around buildings, or margins of
             # neigborhoods, so neighborhoods can bleed over? or, if
             # the desirability of units have a geospatial component, that will
@@ -61,7 +62,8 @@ class Developer:
         best_invest = max(self.invest_estimates.keys(), key=lambda n: self.invest_estimates[n])
 
         est_future_rent = self.trend_estimates[best_invest]
-        for u in random.sample(self.city.neighborhood_units(best_invest), sample_size):
+        units = self.city.neighborhood_units(best_invest)
+        for u in random.sample(units, min(len(units), sample_size)):
             if u.owner == self: continue
             five_year_income = u.rent_per_area * 5 * 12
             five_year_income_estimate = est_future_rent * 5 * 12
@@ -171,13 +173,15 @@ class Tenant:
             reconsider = elapsed > 0 and elapsed % 12 == 0
             current_desirability = self.desirability(self.unit)
         if reconsider:
-            units = random.sample(city.vacant_units(), sample_size)
-            vacancies = sorted(units, key=lambda u: self.desirability(u), reverse=True)
+            vacants = city.vacant_units()
+            if vacants:
+                units = random.sample(vacants, min(len(vacants), sample_size))
+                vacancies = sorted(units, key=lambda u: self.desirability(u), reverse=True)
 
-            # Desirability of 0 means that tenant can't afford it
-            des = self.desirability(vacancies[0])
-            if des - localMovingPenalty > current_desirability:
-                vacancies[0].move_in(self, time)
+                # Desirability of 0 means that tenant can't afford it
+                des = self.desirability(vacancies[0])
+                if des - localMovingPenalty > current_desirability:
+                    vacancies[0].move_in(self, time)
 
         transfers = []
         for u in self.units:

@@ -12,11 +12,12 @@ html, body {
   border: 2px solid black;
 }
 
-#stats {
+#hud {
   position: fixed;
   top: 0;
   left: 0;
   padding: 1em;
+  max-width: 16em;
 }
 ul, li {
   margin: 0;

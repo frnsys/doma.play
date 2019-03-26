@@ -1,14 +1,20 @@
 import random
 import logging
 from .util import sync
+from scipy.stats import truncnorm
 from .city import City, Building, Unit
 from .agent import Developer, Tenant
 
 logger = logging.getLogger('DOMA-SIM')
 
 
+def get_truncated_normal(mean=0, sd=1, low=0, upp=10):
+    return truncnorm(
+        (low - mean) / sd, (upp - mean) / sd, loc=mean, scale=sd)
+
+
 class Simulation:
-    def __init__(self, size, neighborhoods, percent_filled=0.7):
+    def __init__(self, size, neighborhoods, n_tenants, n_developers, max_units=5, percent_filled=0.7):
         # Each tick is a month
         self._step = 0
 
@@ -17,9 +23,10 @@ class Simulation:
         # Initialize city buildings
         self.city = City(size, self.neighborhoods, percent_filled)
 
+        tn = get_truncated_normal(mean=(max_units-1)//2, sd=3, low=1, upp=max_units)
         for p in self.city:
             if p is None: continue
-            n_units = random.randint(1, 5)
+            n_units = int(round(tn.rvs()))
             units = [
                 Unit(
                     rent=random.randint(500, 6000),
@@ -30,11 +37,11 @@ class Simulation:
             p.build(Building(units))
 
         # Initialize developers
-        self.developers = [Developer(self.city) for _ in range(10)]
+        self.developers = [Developer(self.city) for _ in range(n_developers)]
 
         # Initialize tenants
         self.tenants = []
-        for _ in range(100):
+        for _ in range(n_tenants):
             # TODO better income distribution
             income = random.randint(500, 5000)
             tenant = Tenant(income)
@@ -93,6 +100,8 @@ class Simulation:
     def stats(self):
         units = self.city.units
         return {
+            'percent_homeless': sum(1 for t in self.tenants if t.unit is None)/len(self.tenants),
+            'percent_vacant': sum(1 for u in units if u.vacant)/len(units),
             'mean_rent_per_area': sum(u.rent_per_area for u in units)/len(units),
             'mean_months_vacant': sum(u.monthsVacant for u in units)/len(units)
         }

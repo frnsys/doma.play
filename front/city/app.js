@@ -4,12 +4,57 @@ import Grid from './3d/grid';
 import Scene from './3d/scene';
 import Building from './3d/building';
 import InteractionLayer from './3d/interact';
+import Chart from 'chart.js';
 
 const scene = new Scene({});
 const main = document.getElementById('main');
 main.appendChild(scene.renderer.domElement);
 
+const hud = document.getElementById('hud');
 const stats = document.getElementById('stats');
+
+Chart.defaults.scale.ticks.display = false;
+const statHistoryLength = 10;
+const chartStats = ['mean_rent_per_area'];
+
+function createChart(state) {
+  let chart = document.createElement('canvas');
+  hud.appendChild(chart);
+
+  return new Chart(chart, {
+    type: 'line',
+    data: {
+      labels: [...Array(statHistoryLength)].map((_, i) => -i).reverse(),
+      datasets: chartStats.map((k) => {
+        return {
+          label: k,
+          fill: false,
+          borderWidth: 1,
+          pointRadius: 0,
+          backgroundColor: 'rgb(255,0,0)',
+          borderColor: 'rgb(255,0,0)',
+          data: [state.stats[k]]
+        };
+      })
+    },
+    options: {
+      legend: {
+        labels: {
+          boxWidth: 2,
+          fontSize: 9
+        }
+      }
+    }
+  });
+}
+
+function updateChart(chart, state) {
+  chart.data.datasets.forEach((dataset) => {
+    dataset.data.push(state.stats[dataset.label]);
+    dataset.data = dataset.data.splice(Math.max(0, dataset.data.length - statHistoryLength))
+  });
+  chart.update();
+}
 
 let stateKey = null;
 const unitsLookup = {};
@@ -58,6 +103,9 @@ function render(time) {
 function updateStats(state) {
   stats.innerHTML = `<ul>
     <li>Step ${state.time}</li>
+    <li>Num units ${Object.keys(unitsLookup).length}</li>
+    <li>Vacant ${(state.stats.percent_vacant*100).toFixed(2)}%</li>
+    <li>Homeless ${(state.stats.percent_homeless*100).toFixed(2)}%</li>
     <li>Mean rent/sqft $${state.stats.mean_rent_per_area.toLocaleString()}</li>
     <li>Mean months vacant ${Math.round(state.stats.mean_months_vacant)}</li>
   </ul>`;
@@ -71,6 +119,7 @@ function update() {
       api.get('/state', (state) => {
         stateKey = state.key;
         updateStats(state);
+        updateChart(statsChart, state);
 
         // Update units
         Object.values(state.units).forEach((u) => {
@@ -82,6 +131,8 @@ function update() {
     }
   });
 }
+
+let statsChart;
 
 // Initial setup
 api.get('/state', (state) => {
@@ -99,5 +150,6 @@ api.get('/state', (state) => {
   let ixn = new InteractionLayer(scene, selectables);
 
   updateStats(state);
+  statsChart = createChart(state);
   render();
 });
