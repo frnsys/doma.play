@@ -37,24 +37,31 @@ class HexGrid:
         return [(r, c) for r, c in adjs if r >=0 and r < self.rows and c >= 0 and c < self.cols]
 
     def __getitem__(self, pos):
+        """Return data at position"""
         r, c = pos
         return self.grid[r][c]
 
     def __setitem__(self, pos, val):
+        """Set data at position"""
         r, c = pos
         self.grid[r][c] = val
 
     def __iter__(self):
+        """Iterate over rows"""
         for r in range(self.rows):
             yield self.grid[r]
 
     @property
     def cells(self):
+        """Iterate over cells"""
         for r in range(self.rows):
             for c in range(self.cols):
                 yield self.grid[r][c]
 
     def path(self, start, end, valid_pos=lambda pos: True):
+        """Find path from start to end position.
+        Optionally specify a predicate determining
+        if a position is a valid successor"""
         seen = set()
         fringe = [[start]]
         while fringe:

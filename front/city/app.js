@@ -21,7 +21,7 @@ const hud = document.getElementById('hud');
 const stats = document.getElementById('stats');
 
 Chart.defaults.scale.ticks.display = false;
-const statHistoryLength = 10;
+const statHistoryLength = 50;
 const chartStats = ['mean_rent_per_area'];
 
 function createChart(state) {

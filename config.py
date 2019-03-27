@@ -29,5 +29,9 @@ SIM = {
     }],
     'n_tenants': 4000,
     'n_landlords': 10,
-    'percent_filled': 0.7
+    'n_parcels': 20*20*0.8,
+    'tenant_prefs': {
+        'moving_penalty': 10,
+        'min_area': 50
+    }
 }

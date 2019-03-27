@@ -1,8 +1,8 @@
 import math
 import random
-import itertools
 from enum import Enum
 from .grid import HexGrid
+
 
 class ParcelType(Enum):
     Residential = 0
@@ -10,13 +10,16 @@ class ParcelType(Enum):
     Park = 2
     River = 3
 
+
 class City:
-    def __init__(self, size, neighborhoods, percent_filled=0.7):
+    def __init__(self, size, neighborhoods, n_parcels):
         rows, cols = size
         self.grid = HexGrid(rows, cols)
 
+        if n_parcels > rows * cols:
+            raise Exception('Too many parcels for grid dimensions')
+
         self.neighborhoods = {i: neighb for i, neighb in enumerate(neighborhoods)}
-        n_parcels = math.floor(rows*cols*percent_filled)
         self.generate_map(n_parcels)
 
     def generate_map(self, n_parcels):
@@ -30,15 +33,16 @@ class City:
         # Track empty spots as candidates for new parcels
         empty_pos = self.grid.adjacent((r_c, c_c))
         while len(parcels) < n_parcels:
-            next_pos = random.choice(empty_pos)
-            parcel = Parcel(next_pos)
+            pos = random.choice(empty_pos)
+            parcel = Parcel(pos)
             parcels.append(parcel)
-            self.grid[next_pos] = parcel
+            self.grid[pos] = parcel
 
             # Update empty spots
-            empty_pos = [p for p in empty_pos + self.grid.adjacent(next_pos) if self[p] is None and p != next_pos]
+            empty_pos = [p for p in empty_pos + self.grid.adjacent(pos)
+                         if self[p] is None and p != pos]
 
-        # Assign parks and rivers
+        # Generate rivers
         # TODO river algorithm needs work;
         # also it bisects the map which leads to
         # some places not being assigned neighborhoods
@@ -64,78 +68,60 @@ class City:
         # for pos in river_path:
         #     self[pos].type = ParcelType.River
 
+        needs_neighb = lambda pos: self[pos].neighborhood is None\
+            and self[pos].type is not ParcelType.River
+
         # Assign initial neighborhoods
         assigned = []
-        pppp = [p for p in parcels if p.type not in [ParcelType.River]]
-        for neighb_id in self.neighborhoods.keys():
-            parcel = random.choice(pppp)
-            parcel.neighborhood = neighb_id
-            assigned.append(parcel.pos)
+        cands = filter(needs_neighb, [p.pos for p in parcels])
+        cands = random.sample(list(cands), len(self.neighborhoods))
+        for pos, neighb_id in zip(cands, self.neighborhoods.keys()):
+            self[pos].neighborhood = neighb_id
+            assigned.append(pos)
 
         # Track adjacent unassigned parcel positions
         unassigned = []
         for pos in assigned:
-            unassigned += [p for p in self.grid.adjacent(pos)
-                           if self[p] is not None and self[p].neighborhood is None and self[p].type not in [ParcelType.River]]
+            unassigned += filter(needs_neighb, self.adjacent(pos))
 
         # Assign neighborhoods to rest of parcels
         while unassigned:
-            next_pos = random.choice(unassigned)
+            pos = random.choice(unassigned)
 
             # Get assigned neighbors' neighborhoods
             # and randomly choose one
-            neighbs = [self[p].neighborhood for p in self.grid.adjacent(next_pos)
-                       if self[p] is not None and self[p].neighborhood is not None]
-            self.grid[next_pos].neighborhood = random.choice(neighbs)
+            neighbs = [self[p].neighborhood for p in self.adjacent(pos)
+                       if self[p].neighborhood is not None]
+            self.grid[pos].neighborhood = random.choice(neighbs)
 
-            unassigned = [p for p in unassigned + self.grid.adjacent(next_pos)
-                          if self[p] is not None and self[p].neighborhood is None and self[p].type not in [ParcelType.River]]
-            assigned.append(next_pos)
+            unassigned = list(filter(needs_neighb, unassigned + self.adjacent(pos)))
+            assigned.append(pos)
 
-        # Assign commercial areas
-        for neighb, data in self.neighborhoods.items():
-            if data['commercial'] > 0:
-                ps = [p for p in self if p.neighborhood == neighb]
-                n_commercial = math.floor(data['commercial'] * len(ps))
-                p = random.choice(ps)
-                p.type = ParcelType.Commercial
-                n_assigned = 1
-                unassigned = [pt for pt in self.grid.adjacent(p.pos)
-                              if self[pt] is not None and self[pt].neighborhood == neighb
-                              and self[pt].type != ParcelType.Commercial]
-                while n_assigned < n_commercial:
-                    p = random.choice(unassigned)
-                    self[p].type = ParcelType.Commercial
-                    n_assigned += 1
-                    unassigned = [pt for pt in unassigned + self.grid.adjacent(p)
-                                if self[pt] is not None and self[pt].neighborhood == neighb
-                                and self[pt].type != ParcelType.Commercial]
+        # Assign zones in each neighborhood
+        zones = [ParcelType.Commercial, ParcelType.Park]
+        for zone in zones:
+            for neighb_id, data in self.neighborhoods.items():
+                prop = data[zone.name.lower()]
+                needs_zone = lambda p: self[p].neighborhood == neighb_id \
+                    and self[p].type not in zones
 
+                if prop > 0:
+                    parcels = [p for p in self if p.neighborhood == neighb_id]
+                    n_to_assign = math.floor(prop * len(parcels))
+                    parcel = random.choice(parcels)
+                    parcel.type = zone
+                    n_assigned = 1
 
-        # Assign parks
-        for neighb, data in self.neighborhoods.items():
-            if data['park'] > 0:
-                ps = [p for p in self if p.neighborhood == neighb]
-                n_park = math.floor(data['park'] * len(ps))
-                cands = [p for p in ps if p.type != ParcelType.Commercial]
-                if not cands: continue
-                p = random.choice(cands)
-                p.type = ParcelType.Park
-                n_assigned = 1
-                unassigned = [pt for pt in self.grid.adjacent(p.pos)
-                              if self[pt] is not None and self[pt].neighborhood == neighb
-                              and self[pt].type not in [ParcelType.Commercial, ParcelType.Park]]
-                while n_assigned < n_park:
-                    p = random.choice(unassigned)
-                    self[p].type = ParcelType.Park
-                    n_assigned += 1
-                    unassigned = [pt for pt in unassigned + self.grid.adjacent(p)
-                                if self[pt] is not None and self[pt].neighborhood == neighb
-                                and self[pt].type not in [ParcelType.Commercial, ParcelType.Park]]
+                    unassigned = list(filter(needs_zone, self.adjacent(parcel.pos)))
+                    while n_assigned < n_to_assign:
+                        pos = random.choice(unassigned)
+                        self[pos].type = zone
+                        unassigned = list(filter(needs_zone, unassigned + self.adjacent(pos)))
+                        n_assigned += 1
 
         # Compute desireability of parcels
-        parks = [p for p in self if p.type == ParcelType.Park]
-        comms = [p for p in self if p.type == ParcelType.Commercial]
+        parks = self.parcels_of_type(ParcelType.Park)
+        comms = self.parcels_of_type(ParcelType.Commercial)
         for p in self:
             if p.type == ParcelType.Residential:
                 # Closest park
@@ -144,16 +130,36 @@ class City:
                 comm_dist = min(self.grid.distance(p.pos, o.pos) for o in comms)
                 p.desirability = (1/(comm_dist+park_dist) * 10) + self.neighborhoods[p.neighborhood]['desirability']
 
+        # Build residences
+        for p in self.parcels_of_type(ParcelType.Residential):
+            neighb = self.neighborhoods[p.neighborhood]
+            n_units = random.randint(*neighb['units'])
+            # TODO parameterize elsewhere
+            units = [
+                Unit(
+                    rent=random.randint(500, 6000) * math.sqrt(neighb['desirability']),
+                    occupancy=random.randint(1, 5),
+                    area=random.randint(150, 800)
+                ) for _ in range(n_units)
+            ]
+            p.build(Building('{}_{}'.format(*p.pos), units))
+
+
+    def adjacent(self, pos):
+        """Get adjacent parcels to position"""
+        return [p for p in self.grid.adjacent(pos) if self[p] is not None]
 
     def __getitem__(self, pos):
+        """Get parcel at position"""
         return self.grid[pos]
 
     def __iter__(self):
+        """Iterate over parcels"""
         for p in self.grid.cells:
             if p is not None: yield p
 
-    def vacant_units(self):
-        return sum((b.vacant_units for b in self.buildings), [])
+    def units_with_vacancies(self):
+        return sum((b.units_with_vacancies for b in self.buildings), [])
 
     def neighborhood_units(self, neighb):
         ps = [p for p in self if p.neighborhood == neighb and p.building is not None]
@@ -165,34 +171,35 @@ class City:
 
     @property
     def units(self):
-        return sum([p.building.units for p in self if p.building is not None], [])
+        return sum([b.units for b in self.buildings], [])
+
+    def parcels_of_type(self, type):
+        return [p for p in self if p.type == type]
 
 
 class Parcel:
-    def __init__(self, pos, neighborhood=None, building=None):
+    def __init__(self, pos):
         self.pos = pos
         self.type = ParcelType.Residential
-        self.neighborhood = neighborhood
         self.desirability = -1
-        self.build(building)
+        self.building = None
+        self.neighborhood = None
 
     def build(self, building):
         self.building = building
-        if building is not None:
-            building.parcel = self
-            building.id = '{}_{}'.format(*self.pos)
+        building.parcel = self
 
 
 class Building:
-    def __init__(self, units):
+    def __init__(self, id, units):
+        self.id = id
         self.units = units
-        for u in self.units:
+        for i, u in enumerate(self.units):
+            u.id = '{}__{}'.format(self.id, i)
             u.building = self
 
     @property
-    def vacant_units(self):
-        # TODO prob shouldn't call this "vacant_units"
-        # but "units_with_vacancies"
+    def units_with_vacancies(self):
         return [u for u in self.units if u.vacancies > 0]
 
     @property
@@ -201,10 +208,7 @@ class Building:
 
 
 class Unit:
-    _id = itertools.count()
-
     def __init__(self, rent, occupancy, area, owner=None):
-        self.id = next(self._id)
         self.rent = rent
         self.occupancy = occupancy
         self.area = area
@@ -213,6 +217,7 @@ class Unit:
         self.setOwner(owner)
         self.monthsVacant = 0
 
+        # Purchase offers
         self.offers = set()
 
     def setOwner(self, owner):
@@ -231,10 +236,6 @@ class Unit:
     @property
     def vacancies(self):
         return self.occupancy - len(self.tenants)
-
-    @property
-    def occupants(self):
-        return len(self.tenants)
 
     @property
     def rent_per_area(self):

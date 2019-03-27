@@ -2,9 +2,13 @@ import json
 import redis
 import config
 import hashlib
+from enum import Enum
 from collections import defaultdict
 
 redis = redis.Redis(**config.REDIS)
+
+class Command(Enum):
+    RESTART = 0
 
 
 def jsonify(city, time):
@@ -26,7 +30,6 @@ def jsonify(city, time):
                 units[u.id] = {
                     'id': u.id,
                     'rent': u.rent,
-                    'area': u.area,
                     'tenants': [t.id for t in u.tenants],
                     'owner': {
                         'id': u.owner.id,
@@ -57,13 +60,15 @@ def sync(city, stats, time):
     redis.set('state', state_serialized)
     redis.set('state_key', state_key)
 
+
 def get_commands():
     cmds = [json.loads(r.decode('utf8')) for r
             in redis.lrange('cmds', 0, -1)]
     redis.delete('cmds')
-    return cmds
+    return [(Command(t), d) for t, d in cmds]
 
-def send_command(cmd, data=None):
-    data = {'cmd': cmd, 'data': data}
+
+def send_command(type, data=None):
+    data = (type.value, data)
     data = json.dumps(data)
     redis.lpush('cmds', data)

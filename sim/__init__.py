@@ -1,45 +1,27 @@
-import math
 import random
 import logging
 from .util import sync
-from scipy.stats import truncnorm
-from .city import City, Building, Unit, ParcelType
+from .city import City
 from .agent import Landlord, Tenant
 
 logger = logging.getLogger('DOMA-SIM')
 
 
-def get_truncated_normal(mean=0, sd=1, low=0, upp=10):
-    return truncnorm(
-        (low - mean) / sd, (upp - mean) / sd, loc=mean, scale=sd)
-
 
 class Simulation:
-    def __init__(self, size, neighborhoods, n_tenants, n_landlords, percent_filled=0.7):
+    def __init__(self, size, neighborhoods, n_tenants, n_landlords, n_parcels, tenant_prefs):
         # Each tick is a month
-        self._step = 0
+        self.time = 0
 
-        # Initialize city buildings
-        self.city = City(size, neighborhoods, percent_filled)
-
-        for p in self.city:
-            if p is None or p.type != ParcelType.Residential: continue
-            neighb = self.city.neighborhoods[p.neighborhood]
-            n_units = random.randint(*neighb['units'])
-            units = [
-                Unit(
-                    rent=random.randint(500, 6000) * math.sqrt(neighb['desirability']),
-                    occupancy=random.randint(1, 5),
-                    area=random.randint(150, 800)
-                ) for _ in range(n_units)
-            ]
-            p.build(Building(units))
+        # Initialize city
+        self.city = City(size, neighborhoods, n_parcels)
 
         # Initialize landlords
         self.landlords = [Landlord(self.city) for _ in range(n_landlords)]
 
         # Initialize tenants
         self.tenants = []
+        self.tenant_prefs = tenant_prefs
         for _ in range(n_tenants):
             # TODO better income distribution
             income = random.randint(500, 5000)
@@ -50,11 +32,11 @@ class Simulation:
         random.shuffle(self.tenants)
         for t in self.tenants:
             month = random.randint(0, 11)
-            vacancies = self.city.vacant_units()
-            vacancies = sorted(vacancies, key=lambda u: t.desirability(u), reverse=True)
+            vacancies = self.city.units_with_vacancies()
+            vacancies = sorted(vacancies, key=lambda u: t.desirability(u, self.tenant_prefs), reverse=True)
 
             # Desirability of 0 means that tenant can't afford it
-            if t.desirability(vacancies[0]) > 0:
+            if t.desirability(vacancies[0], self.tenant_prefs) > 0:
                 vacancies[0].move_in(t, month)
 
         # Distribute ownership of units
@@ -79,19 +61,19 @@ class Simulation:
         return owner
 
     def sync(self):
-        sync(self.city, self.stats(), self._step)
+        sync(self.city, self.stats(), self.time)
 
     def step(self):
-        logger.info('Step {}'.format(self._step))
+        logger.info('Step {}'.format(self.time))
         random.shuffle(self.landlords)
         for d in self.landlords:
-            d.step(self._step, self.city)
+            d.step(self)
 
         random.shuffle(self.tenants)
         for t in self.tenants:
-            t.step(self._step, self.city)
+            t.step(self)
 
-        self._step += 1
+        self.time += 1
 
         # TODO/note: currently non-developer landlords
         # don't adjust rent
