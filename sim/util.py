@@ -63,7 +63,7 @@ def get_commands():
     redis.delete('cmds')
     return cmds
 
-def add_command(cmd, data=None):
+def send_command(cmd, data=None):
     data = {'cmd': cmd, 'data': data}
     data = json.dumps(data)
     redis.lpush('cmds', data)
