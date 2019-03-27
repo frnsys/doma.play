@@ -117,7 +117,9 @@ class City:
             if data['park'] > 0:
                 ps = [p for p in self if p.neighborhood == neighb]
                 n_park = math.floor(data['park'] * len(ps))
-                p = random.choice([p for p in ps if p.type != ParcelType.Commercial])
+                cands = [p for p in ps if p.type != ParcelType.Commercial]
+                if not cands: continue
+                p = random.choice(cands)
                 p.type = ParcelType.Park
                 n_assigned = 1
                 unassigned = [pt for pt in self.grid.adjacent(p.pos)

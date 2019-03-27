@@ -56,3 +56,14 @@ def sync(city, stats, time):
     state_key = hashlib.md5(state_serialized.encode('utf8')).hexdigest()
     redis.set('state', state_serialized)
     redis.set('state_key', state_key)
+
+def get_commands():
+    cmds = [json.loads(r.decode('utf8')) for r
+            in redis.lrange('cmds', 0, -1)]
+    redis.delete('cmds')
+    return cmds
+
+def add_command(cmd, data=None):
+    data = {'cmd': cmd, 'data': data}
+    data = json.dumps(data)
+    redis.lpush('cmds', data)
