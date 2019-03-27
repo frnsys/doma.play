@@ -4,7 +4,7 @@ import logging
 from .util import sync
 from scipy.stats import truncnorm
 from .city import City, Building, Unit, ParcelType
-from .agent import Developer, Tenant
+from .agent import Landlord, Tenant
 
 logger = logging.getLogger('DOMA-SIM')
 
@@ -15,7 +15,7 @@ def get_truncated_normal(mean=0, sd=1, low=0, upp=10):
 
 
 class Simulation:
-    def __init__(self, size, neighborhoods, n_tenants, n_developers, max_units=5, percent_filled=0.7):
+    def __init__(self, size, neighborhoods, n_tenants, n_landlords, percent_filled=0.7):
         # Each tick is a month
         self._step = 0
 
@@ -35,8 +35,8 @@ class Simulation:
             ]
             p.build(Building(units))
 
-        # Initialize developers
-        self.developers = [Developer(self.city) for _ in range(n_developers)]
+        # Initialize landlords
+        self.landlords = [Landlord(self.city) for _ in range(n_landlords)]
 
         # Initialize tenants
         self.tenants = []
@@ -66,14 +66,14 @@ class Simulation:
         roll = random.random()
         if unit.tenants:
             if roll < 0.33:
-                owner = random.choice(self.developers)
+                owner = random.choice(self.landlords)
             elif roll < 0.66:
                 owner = random.choice(self.tenants)
             else:
                 owner = random.choice(list(unit.tenants))
         else:
             if roll < 0.5:
-                owner = random.choice(self.developers)
+                owner = random.choice(self.landlords)
             else:
                 owner = random.choice(self.tenants)
         return owner
@@ -83,8 +83,8 @@ class Simulation:
 
     def step(self):
         logger.info('Step {}'.format(self._step))
-        random.shuffle(self.developers)
-        for d in self.developers:
+        random.shuffle(self.landlords)
+        for d in self.landlords:
             d.step(self._step, self.city)
 
         random.shuffle(self.tenants)

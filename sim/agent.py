@@ -9,7 +9,7 @@ movingPenalty = 10
 
 
 
-class Developer:
+class Landlord:
     _id = itertools.count()
 
     def __init__(self, city):
