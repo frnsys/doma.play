@@ -159,7 +159,7 @@ class Tenant:
         # TODO tweak
         #return 1/commute + niceness - ratio + spaciousness
         # return niceness - ratio + spaciousness
-        return ratio + spaciousness
+        return ratio + spaciousness + unit.building.parcel.desirability
 
     def step(self, time, city):
         sample_size = 20

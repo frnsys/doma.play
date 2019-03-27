@@ -131,6 +131,17 @@ class City:
                                 if self[pt] is not None and self[pt].neighborhood == neighb
                                 and self[pt].type not in [ParcelType.Commercial, ParcelType.Park]]
 
+        # Compute desireability of parcels
+        parks = [p for p in self if p.type == ParcelType.Park]
+        comms = [p for p in self if p.type == ParcelType.Commercial]
+        for p in self:
+            if p.type == ParcelType.Residential:
+                # Closest park
+                park_dist = min(self.grid.distance(p.pos, o.pos) for o in parks)
+                # Closest commercial area
+                comm_dist = min(self.grid.distance(p.pos, o.pos) for o in comms)
+                p.desirability = (1/(comm_dist+park_dist) * 10) + self.neighborhoods[p.neighborhood]['desirability']
+
 
     def __getitem__(self, pos):
         return self.grid[pos]
@@ -160,6 +171,7 @@ class Parcel:
         self.pos = pos
         self.type = ParcelType.Residential
         self.neighborhood = neighborhood
+        self.desirability = -1
         self.build(building)
 
     def build(self, building):

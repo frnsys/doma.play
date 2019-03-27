@@ -18,10 +18,6 @@ evenAdjacentPositions = [
   ( 1,  0)  # bottom right
 ]
 
-def distance(a, b):
-    """2D euclidean distance"""
-    return math.sqrt((a[0] - b[0])**2 + (a[1] - b[1])**2)
-
 class HexGrid:
     def __init__(self, rows, cols):
         self.rows = rows
@@ -76,3 +72,7 @@ class HexGrid:
             fringe = [path + [succ] for succ in successors] + fringe
             fringe = sorted(fringe, key=lambda path: len(path))
         return path
+
+    def distance(self, a, b):
+        """2D euclidean distance"""
+        return math.sqrt((a[0] - b[0])**2 + (a[1] - b[1])**2)

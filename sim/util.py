@@ -14,7 +14,8 @@ def jsonify(city, time):
     for p in city:
         parcels[p.pos[0]][p.pos[1]] = {
             'neighb': p.neighborhood,
-            'type': p.type.name
+            'type': p.type.name,
+            'desirability': p.desirability
         }
         if p.building is not None:
             b = p.building

@@ -78,7 +78,7 @@ function makeGrid(state) {
         parcel.tooltip = `
           <div>Type ${parcel.type}</div>
           <div>Neighborhood ${parcel.neighb}</div>
-          <div>Desirability: ${neighb.desirability}</div>
+          <div>Desirability: ${parcel.desirability.toFixed(2)}</div>
         `;
         let color = config.neighbColors[parcel.neighb];
         if (parcel.type == 'Commercial') {
