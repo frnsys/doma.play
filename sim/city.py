@@ -9,7 +9,7 @@ class City:
         rows, cols = size
         self.grid = HexGrid(rows, cols)
 
-        self.neighborhoods = neighborhoods;
+        self.neighborhoods = {i: neighb for i, neighb in enumerate(neighborhoods)}
         n_parcels = math.floor(rows*cols*percent_filled)
         self.generate_map(n_parcels)
 
@@ -34,9 +34,9 @@ class City:
 
         # Assign initial neighborhoods
         assigned = []
-        for neighb in self.neighborhoods:
+        for neighb_id in self.neighborhoods.keys():
             parcel = random.choice(parcels)
-            parcel.neighborhood = neighb
+            parcel.neighborhood = neighb_id
             assigned.append(parcel.pos)
 
         # Track adjacent unassigned parcel positions

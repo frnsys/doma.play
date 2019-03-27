@@ -1,3 +1,4 @@
+import math
 import random
 import logging
 from .util import sync
@@ -18,18 +19,16 @@ class Simulation:
         # Each tick is a month
         self._step = 0
 
-        self.neighborhoods = list(range(neighborhoods))
-
         # Initialize city buildings
-        self.city = City(size, self.neighborhoods, percent_filled)
+        self.city = City(size, neighborhoods, percent_filled)
 
-        tn = get_truncated_normal(mean=(max_units-1)//2, sd=3, low=1, upp=max_units)
         for p in self.city:
             if p is None: continue
-            n_units = int(round(tn.rvs()))
+            neighb = self.city.neighborhoods[p.neighborhood]
+            n_units = random.randint(*neighb['units'])
             units = [
                 Unit(
-                    rent=random.randint(500, 6000),
+                    rent=random.randint(500, 6000) * math.sqrt(neighb['desirability']),
                     occupancy=random.randint(1, 5),
                     area=random.randint(150, 800)
                 ) for _ in range(n_units)

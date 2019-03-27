@@ -17,9 +17,9 @@ class Developer:
         self.id = next(self._id)
 
         self.units = set()
-        self.rent_estimates = {neighb: [] for neighb in city.neighborhoods}
-        self.trend_estimates = {neighb: 0 for neighb in city.neighborhoods}
-        self.invest_estimates = {neighb: 0 for neighb in city.neighborhoods}
+        self.rent_estimates = {neighb: [] for neighb in city.neighborhoods.keys()}
+        self.trend_estimates = {neighb: 0 for neighb in city.neighborhoods.keys()}
+        self.invest_estimates = {neighb: 0 for neighb in city.neighborhoods.keys()}
 
     def estimate_rents(self, city, sample_size=10):
         """Estimate market rent per neighborhood,

@@ -39,7 +39,8 @@ def jsonify(city, time):
             'parcels': parcels
         },
         'buildings': buildings,
-        'units': units
+        'units': units,
+        'neighborhoods': city.neighborhoods
     }
 
 

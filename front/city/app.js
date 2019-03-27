@@ -61,12 +61,16 @@ let stateKey = null;
 const unitsLookup = {};
 
 function makeGrid(state) {
-  let {map, buildings, units} = state;
+  let {map, buildings, units, neighborhoods} = state;
   let grid = new Grid(map.cols, map.rows, config.cellSize);
   Object.keys(map.parcels).forEach((row) => {
     Object.keys(map.parcels[row]).forEach((col) => {
       let parcel = map.parcels[row][col];
-      parcel.tooltip = `Neighborhood ${parcel.neighb}`;
+      let neighb = neighborhoods[parcel.neighb];
+      parcel.tooltip = `
+        <div>Neighborhood ${parcel.neighb}</div>
+        <div>Desirability: ${neighb.desirability}</div>
+      `;
       let color = config.neighbColors[parcel.neighb];
       let cell = grid.setCellAt(col, row, color, parcel);
 
