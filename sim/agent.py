@@ -5,6 +5,14 @@ import statsmodels.api as sm
 from collections import defaultdict
 
 
+class Offer:
+    def __init__(self, landlord, unit, amount):
+        self.landlord = landlord
+        self.unit = unit
+        self.amount = amount
+        self.accepted = None
+
+
 class Landlord:
     _id = itertools.count()
 
@@ -13,6 +21,7 @@ class Landlord:
         self.id = next(self._id)
 
         self.units = set()
+        self.out_offers = set()
 
         # Keep track of estimates
         # for making decisions
@@ -56,34 +65,62 @@ class Landlord:
             self.trend_ests[neighb] = est_future_rent
             self.invest_ests[neighb] = est_future_rent - rent_history[-1]
 
-    def make_purchase_offers(self, sample_size=20):
+    def make_purchase_offers(self, sim, sample_size=20):
         """Make purchase offers for units
         based on investment value estimates"""
-        best_invest = max(self.invest_ests.keys(), key=lambda n: self.invest_ests[n])
+        # Check offer responses
+        new_offers = set()
+        offered_units = set()
+        for offer in self.out_offers:
+            if offer.accepted: continue
+            new_offer = offer.amount * 0.95 # TODO what to set this at?
+            est_future_rent = self.trend_ests[offer.unit.building.parcel.neighborhood]
+            if est_future_rent > new_offer:
+                offer.amount = new_offer
+                new_offers.add(offer)
+                offered_units.add(offer.unit)
 
+        best_invest = max(self.invest_ests.keys(), key=lambda n: self.invest_ests[n])
         est_future_rent = self.trend_ests[best_invest]
         units = self.city.neighborhood_units(best_invest)
         for u in random.sample(units, min(len(units), sample_size)):
-            if u.owner == self: continue
-            # TODO how to determine this??
-            five_year_income = u.rent_per_area * 5 * 12
-            five_year_income_estimate = est_future_rent * 5 * 12
-            if five_year_income_estimate > five_year_income:
-                u.offers.add((self, five_year_income))
+            if u.owner == self or u in offered_units: continue
+            income = u.rent_per_area * sim.conf['pricing_horizon']
+            income_est = est_future_rent * sim.conf['pricing_horizon']
+            if income_est > income:
+                offer = Offer(self, u, income)
+                u.offers.add(offer)
+                new_offers.add(offer)
+        self.out_offers = new_offers
 
-    def check_purchase_offers(self):
+
+    def check_purchase_offers(self, sim):
         """Check purchase offers on units"""
         transfers = []
         for u in self.units:
             if not u.offers: continue
 
             neighb = u.building.parcel.neighborhood
-            est_future_rent = self.trend_ests[neighb] * 5 * 12 # TODO
-            considered_offers = [(d, o) for d, o in u.offers if o > est_future_rent]
-            if considered_offers:
-                # Transfer ownership to the highest bidder
-                dev, offer = max(considered_offers, key=lambda off: off[-1])
-                transfers.append((u, dev))
+            est_future_rent = self.trend_ests[neighb] * sim.conf['pricing_horizon']
+
+            # Find best offer, if any
+            # and mark offers as rejected or accepted
+            best_offer = None
+            for o in u.offers:
+                if o.amount <= est_future_rent:
+                    o.accepted = False
+                else:
+                    if best_offer is None:
+                        best_offer = o
+                        best_offer.accepted = True
+                    else:
+                        if o.amount > best_offer.amonut:
+                            best_offer.accepted = False
+
+                            best_offer = o
+                            best_offer.accepted = True
+            if best_offer is not None:
+                transfers.append((u, best_offer.landlord))
 
         # Have to do this here
         # so we don't modify self.units
@@ -101,8 +138,8 @@ class Landlord:
         self.manage_occupied_units(sim.time)
 
         # Buy/sells
-        self.make_purchase_offers()
-        self.check_purchase_offers()
+        self.make_purchase_offers(sim)
+        self.check_purchase_offers(sim)
 
     @property
     def vacant_units(self):
@@ -185,20 +222,20 @@ class Tenant:
         # rents only change b/w leases
         else:
             # TODO should this be different for each tenant?
-            moving_penalty = sim.tenant_prefs['moving_penalty']
+            moving_penalty = sim.conf['tenants']['moving_penalty']
             elapsed = sim.time - self.unit.leaseMonth
             reconsider = elapsed > 0 and elapsed % 12 == 0
-            current_desirability = self.desirability(self.unit, sim.tenant_prefs)
+            current_desirability = self.desirability(self.unit, sim.conf['tenants'])
 
         if reconsider:
             vacants = sim.city.units_with_vacancies()
             if vacants:
                 samp_size = min(len(vacants), sample_size)
                 units = random.sample(vacants, samp_size)
-                vacancies = sorted(units, key=lambda u: self.desirability(u, sim.tenant_prefs), reverse=True)
+                vacancies = sorted(units, key=lambda u: self.desirability(u, sim.conf['tenants']), reverse=True)
 
                 # Desirability of 0 means that tenant can't afford it
-                des = self.desirability(vacancies[0], sim.tenant_prefs)
+                des = self.desirability(vacancies[0], sim.conf['tenants'])
                 if des - moving_penalty > current_desirability:
                     vacancies[0].move_in(self, sim.time)
 
@@ -207,12 +244,26 @@ class Tenant:
         transfers = []
         for u in self.units:
             if not u.offers: continue
-            est_future_rent = u.rent * 5 * 12 # TODO how to compute
-            considered_offers = [(d, o) for d, o in u.offers if o > est_future_rent]
-            if considered_offers:
-                # Transfer ownership to the highest bidder
-                dev, offer = max(considered_offers, key=lambda off: off[-1])
-                transfers.append((u, dev))
+            est_future_rent = u.rent * sim.conf['pricing_horizon']
+
+            # Find best offer, if any
+            # and mark offers as rejected or accepted
+            best_offer = None
+            for o in u.offers:
+                if o.amount <= est_future_rent:
+                    o.accepted = False
+                else:
+                    if best_offer is None:
+                        best_offer = o
+                        best_offer.accepted = True
+                    else:
+                        if o.amount > best_offer.amonut:
+                            best_offer.accepted = False
+
+                            best_offer = o
+                            best_offer.accepted = True
+            if best_offer is not None:
+                transfers.append((u, best_offer.landlord))
 
         # Have to do this here
         # so we don't modify self.units

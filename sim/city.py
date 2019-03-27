@@ -250,6 +250,7 @@ class Unit:
         # after a vacancy
         if not self.tenants:
             self.leaseMonth = month
+            self.monthsVacant = 0
 
         self.tenants.add(tenant)
         tenant.unit = self

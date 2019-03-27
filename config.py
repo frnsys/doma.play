@@ -30,7 +30,8 @@ SIM = {
     'n_tenants': 4000,
     'n_landlords': 10,
     'n_parcels': 20*20*0.8,
-    'tenant_prefs': {
+    'pricing_horizon': 5 * 12,
+    'tenants': {
         'moving_penalty': 10,
         'min_area': 50
     }

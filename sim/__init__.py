@@ -9,7 +9,9 @@ logger = logging.getLogger('DOMA-SIM')
 
 
 class Simulation:
-    def __init__(self, size, neighborhoods, n_tenants, n_landlords, n_parcels, tenant_prefs):
+    def __init__(self, size, neighborhoods, n_tenants, n_landlords, n_parcels, **conf):
+        self.conf = conf
+
         # Each tick is a month
         self.time = 0
 
@@ -21,7 +23,6 @@ class Simulation:
 
         # Initialize tenants
         self.tenants = []
-        self.tenant_prefs = tenant_prefs
         for _ in range(n_tenants):
             # TODO better income distribution
             income = random.randint(500, 5000)
@@ -33,10 +34,10 @@ class Simulation:
         for t in self.tenants:
             month = random.randint(0, 11)
             vacancies = self.city.units_with_vacancies()
-            vacancies = sorted(vacancies, key=lambda u: t.desirability(u, self.tenant_prefs), reverse=True)
+            vacancies = sorted(vacancies, key=lambda u: t.desirability(u, self.conf['tenants']), reverse=True)
 
             # Desirability of 0 means that tenant can't afford it
-            if t.desirability(vacancies[0], self.tenant_prefs) > 0:
+            if t.desirability(vacancies[0], self.conf['tenants']) > 0:
                 vacancies[0].move_in(t, month)
 
         # Distribute ownership of units
