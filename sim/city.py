@@ -1,8 +1,14 @@
 import math
 import random
 import itertools
+from enum import Enum
 from .grid import HexGrid
 
+class ParcelType(Enum):
+    Residential = 0
+    Commercial = 1
+    Park = 2
+    River = 3
 
 class City:
     def __init__(self, size, neighborhoods, percent_filled=0.7):
@@ -32,10 +38,37 @@ class City:
             # Update empty spots
             empty_pos = [p for p in empty_pos + self.grid.adjacent(next_pos) if self[p] is None and p != next_pos]
 
+        # Assign parks and rivers
+        # TODO river algorithm needs work;
+        # also it bisects the map which leads to
+        # some places not being assigned neighborhoods
+        edges = []
+        top_edge = [None for _ in range(self.grid.cols)]
+        bot_edge = [None for _ in range(self.grid.cols)]
+        for row in self.grid:
+            # Get edge cells
+            not_empty = [p for p in row if p is not None]
+            if not not_empty: continue
+            for i, c in enumerate(row):
+                if top_edge[i] is None:
+                    top_edge[i] = c
+                if c is not None:
+                    bot_edge[i] = c
+            edges.append(not_empty[0])
+            edges.append(not_empty[-1])
+        edges = edges + top_edge + bot_edge
+        # TODO not using til I can implement a better algorithm for it
+        # river_start = random.choice(top_edge)
+        # river_end = random.choice(edges)
+        # river_path = self.grid.path(river_start.pos, river_end.pos, lambda pos: self[pos] is not None)
+        # for pos in river_path:
+        #     self[pos].type = ParcelType.River
+
         # Assign initial neighborhoods
         assigned = []
+        pppp = [p for p in parcels if p.type not in [ParcelType.River]]
         for neighb_id in self.neighborhoods.keys():
-            parcel = random.choice(parcels)
+            parcel = random.choice(pppp)
             parcel.neighborhood = neighb_id
             assigned.append(parcel.pos)
 
@@ -43,10 +76,10 @@ class City:
         unassigned = []
         for pos in assigned:
             unassigned += [p for p in self.grid.adjacent(pos)
-                           if self[p] is not None and self[p].neighborhood is None]
+                           if self[p] is not None and self[p].neighborhood is None and self[p].type not in [ParcelType.River]]
 
         # Assign neighborhoods to rest of parcels
-        while len(assigned) < len(parcels):
+        while unassigned:
             next_pos = random.choice(unassigned)
 
             # Get assigned neighbors' neighborhoods
@@ -56,35 +89,76 @@ class City:
             self.grid[next_pos].neighborhood = random.choice(neighbs)
 
             unassigned = [p for p in unassigned + self.grid.adjacent(next_pos)
-                          if self[p] is not None and self[p].neighborhood is None]
+                          if self[p] is not None and self[p].neighborhood is None and self[p].type not in [ParcelType.River]]
             assigned.append(next_pos)
+
+        # Assign commercial areas
+        for neighb, data in self.neighborhoods.items():
+            if data['commercial'] > 0:
+                ps = [p for p in self if p.neighborhood == neighb]
+                n_commercial = math.floor(data['commercial'] * len(ps))
+                p = random.choice(ps)
+                p.type = ParcelType.Commercial
+                n_assigned = 1
+                unassigned = [pt for pt in self.grid.adjacent(p.pos)
+                              if self[pt] is not None and self[pt].neighborhood == neighb
+                              and self[pt].type != ParcelType.Commercial]
+                while n_assigned < n_commercial:
+                    p = random.choice(unassigned)
+                    self[p].type = ParcelType.Commercial
+                    n_assigned += 1
+                    unassigned = [pt for pt in unassigned + self.grid.adjacent(p)
+                                if self[pt] is not None and self[pt].neighborhood == neighb
+                                and self[pt].type != ParcelType.Commercial]
+
+
+        # Assign parks
+        for neighb, data in self.neighborhoods.items():
+            if data['park'] > 0:
+                ps = [p for p in self if p.neighborhood == neighb]
+                n_park = math.floor(data['park'] * len(ps))
+                p = random.choice([p for p in ps if p.type != ParcelType.Commercial])
+                p.type = ParcelType.Park
+                n_assigned = 1
+                unassigned = [pt for pt in self.grid.adjacent(p.pos)
+                              if self[pt] is not None and self[pt].neighborhood == neighb
+                              and self[pt].type not in [ParcelType.Commercial, ParcelType.Park]]
+                while n_assigned < n_park:
+                    p = random.choice(unassigned)
+                    self[p].type = ParcelType.Park
+                    n_assigned += 1
+                    unassigned = [pt for pt in unassigned + self.grid.adjacent(p)
+                                if self[pt] is not None and self[pt].neighborhood == neighb
+                                and self[pt].type not in [ParcelType.Commercial, ParcelType.Park]]
+
 
     def __getitem__(self, pos):
         return self.grid[pos]
 
     def __iter__(self):
-        for p in self.grid:
+        for p in self.grid.cells:
             if p is not None: yield p
 
     def vacant_units(self):
         return sum((b.vacant_units for b in self.buildings), [])
 
     def neighborhood_units(self, neighb):
-        ps = [p for p in self if p.neighborhood == neighb]
+        ps = [p for p in self if p.neighborhood == neighb and p.building is not None]
         return sum((p.building.units for p in ps), [])
 
     @property
     def buildings(self):
-        return [p.building for p in self]
+        return [p.building for p in self if p.building is not None]
 
     @property
     def units(self):
-        return sum([p.building.units for p in self], [])
+        return sum([p.building.units for p in self if p.building is not None], [])
 
 
 class Parcel:
     def __init__(self, pos, neighborhood=None, building=None):
         self.pos = pos
+        self.type = ParcelType.Residential
         self.neighborhood = neighborhood
         self.build(building)
 

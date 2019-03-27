@@ -1,3 +1,5 @@
+import math
+
 oddAdjacentPositions = [
   (-1,  0), # upper left
   (-1,  1), # upper right
@@ -16,6 +18,9 @@ evenAdjacentPositions = [
   ( 1,  0)  # bottom right
 ]
 
+def distance(a, b):
+    """2D euclidean distance"""
+    return math.sqrt((a[0] - b[0])**2 + (a[1] - b[1])**2)
 
 class HexGrid:
     def __init__(self, rows, cols):
@@ -45,5 +50,29 @@ class HexGrid:
 
     def __iter__(self):
         for r in range(self.rows):
+            yield self.grid[r]
+
+    @property
+    def cells(self):
+        for r in range(self.rows):
             for c in range(self.cols):
                 yield self.grid[r][c]
+
+    def path(self, start, end, valid_pos=lambda pos: True):
+        seen = set()
+        fringe = [[start]]
+        while fringe:
+            path = fringe.pop(0)
+            pos = path[-1]
+
+            if pos == end:
+                break
+
+            # Don't revisit nodes
+            if pos in seen: continue
+            seen.add(pos)
+
+            successors = filter(valid_pos, self.adjacent(pos))
+            fringe = [path + [succ] for succ in successors] + fringe
+            fringe = sorted(fringe, key=lambda path: len(path))
+        return path

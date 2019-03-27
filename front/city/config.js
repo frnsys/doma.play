@@ -4,7 +4,7 @@ export default {
   unitSize: 10,
   neighbColors: [
     0x26a842,
-    0x1aef48,
+    0x6c9675,
     0x176828,
     0x44eaaa
   ],

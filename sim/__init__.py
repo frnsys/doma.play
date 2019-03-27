@@ -3,7 +3,7 @@ import random
 import logging
 from .util import sync
 from scipy.stats import truncnorm
-from .city import City, Building, Unit
+from .city import City, Building, Unit, ParcelType
 from .agent import Developer, Tenant
 
 logger = logging.getLogger('DOMA-SIM')
@@ -23,7 +23,7 @@ class Simulation:
         self.city = City(size, neighborhoods, percent_filled)
 
         for p in self.city:
-            if p is None: continue
+            if p is None or p.type != ParcelType.Residential: continue
             neighb = self.city.neighborhoods[p.neighborhood]
             n_units = random.randint(*neighb['units'])
             units = [
@@ -58,8 +58,8 @@ class Simulation:
                 vacancies[0].move_in(t, month)
 
         # Distribute ownership of units
-        for p in self.city:
-            for u in p.building.units:
+        for b in self.city.buildings:
+            for u in b.units:
                 u.setOwner(self.random_owner(u))
 
     def random_owner(self, unit):

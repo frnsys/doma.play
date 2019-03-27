@@ -12,25 +12,27 @@ def jsonify(city, time):
     units = {}
     parcels = defaultdict(dict)
     for p in city:
-        b = p.building
         parcels[p.pos[0]][p.pos[1]] = {
-            'neighb': p.neighborhood
+            'neighb': p.neighborhood,
+            'type': p.type.name
         }
-        buildings[b.id] = {
-            'units': [u.id for u in b.units]
-        }
-        for u in b.units:
-            units[u.id] = {
-                'id': u.id,
-                'rent': u.rent,
-                'area': u.area,
-                'tenants': [t.id for t in u.tenants],
-                'owner': {
-                    'id': u.owner.id,
-                    'type': type(u.owner).__name__
-                },
-                'monthsVacant': u.monthsVacant
+        if p.building is not None:
+            b = p.building
+            buildings[b.id] = {
+                'units': [u.id for u in b.units]
             }
+            for u in b.units:
+                units[u.id] = {
+                    'id': u.id,
+                    'rent': u.rent,
+                    'area': u.area,
+                    'tenants': [t.id for t in u.tenants],
+                    'owner': {
+                        'id': u.owner.id,
+                        'type': type(u.owner).__name__
+                    },
+                    'monthsVacant': u.monthsVacant
+                }
     return {
         'time': time,
         'map': {
