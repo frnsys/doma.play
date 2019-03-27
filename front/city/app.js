@@ -45,6 +45,9 @@ function createChart(state) {
       })
     },
     options: {
+      animation: {
+        duration: 0
+      },
       legend: {
         labels: {
           boxWidth: 2,
