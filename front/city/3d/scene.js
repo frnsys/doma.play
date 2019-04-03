@@ -21,6 +21,9 @@ class Scene {
     var hemiLight = new THREE.HemisphereLight( 0xffffff, 0x000000, 0.9 );
     this.scene.add(hemiLight);
 
+    var amli = new THREE.AmbientLight( 0x404040 ); // soft white light
+    this.scene.add( amli );
+
     let light = new THREE.DirectionalLight( 0xffffff, 0.2 );
     light.position.y = 200;
     light.position.x = 200;
@@ -33,8 +36,8 @@ class Scene {
 
       let d = 220;
       light.castShadow = true;
-      light.shadow.mapSize.width = 42;
-      light.shadow.mapSize.height = 42;
+      light.shadow.mapSize.width = 72;
+      light.shadow.mapSize.height = 72;
       light.shadow.camera.left = -d;
       light.shadow.camera.right = d;
       light.shadow.camera.top = d;

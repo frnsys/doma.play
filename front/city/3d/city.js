@@ -43,7 +43,7 @@ class City {
             });
           } else if (parcel.type == 'Commercial') {
             // TODO temporary commercial buildings
-            let geo = new THREE.BoxGeometry(config.unitSize, config.unitSize, 16);
+            let geo = new THREE.BoxGeometry(8, 8, 16);
             let mesh = new THREE.Mesh(geo, commericalMat);
             if (config.enableShadows) {
               mesh.castShadow = true;

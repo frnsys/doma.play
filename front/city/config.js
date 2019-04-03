@@ -1,7 +1,5 @@
 export default {
   cellSize: 28,
-  unitHeight: 5,
-  unitSize: 10,
   neighbColors: [
     0x26a842,
     0x6c9675,
@@ -9,10 +7,10 @@ export default {
     0x44eaaa
   ],
   colors: {
-    'Tenant': 0x5370f4,
-    'Landlord': 0xf48e53
+    'Tenant': 0xffffff,
+    'Landlord': 0xffffff
   },
   focusColor: 0xff0000,
-  enableShadows: false,
-  debugLight: true
+  enableShadows: true,
+  debugLight: false
 }
