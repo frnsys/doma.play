@@ -3,7 +3,8 @@ import * as THREE from 'three';
 import {shadeColor} from './color';
 
 const colorCache = {};
-const mat = new THREE.MeshBasicMaterial({ vertexColors: THREE.VertexColors });
+// const mat = new THREE.MeshBasicMaterial({ vertexColors: THREE.VertexColors });
+const mat = new THREE.MeshLambertMaterial({ color: 0xffffff });
 
 function setColor(geo, color, highlight) {
   highlight = highlight || 0xffb5d0;
@@ -35,6 +36,11 @@ class Unit {
   constructor(unit) {
     let geo = new THREE.BoxGeometry(config.unitSize, config.unitSize, config.unitHeight);
     this.mesh = new THREE.Mesh(geo, mat);
+
+    if (config.enableShadows) {
+      this.mesh.castShadow = true;
+      this.mesh.receiveShadow = true;
+    }
 
     this.mesh.obj = this;
     this.data = {};

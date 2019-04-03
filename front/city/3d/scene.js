@@ -1,3 +1,4 @@
+import config from '../config';
 import * as THREE from 'three';
 import OrbitControls from './orbit';
 
@@ -17,8 +18,43 @@ class Scene {
     this.renderer.setSize(opts.width, opts.height);
     this.renderer.setClearColor(0xeeeeee, 0);
 
-    var hemiLight = new THREE.HemisphereLight( 0xffffff, 0x000000, 0.6 );
+    var hemiLight = new THREE.HemisphereLight( 0xffffff, 0x000000, 0.9 );
     this.scene.add(hemiLight);
+
+    let light = new THREE.DirectionalLight( 0xffffff, 0.2 );
+    light.position.y = 200;
+    light.position.x = 200;
+    this.scene.add(light);
+
+    if (config.enableShadows) {
+      this.renderer.shadowMap.enabled = true;
+      this.renderer.shadowMap.soft = true;
+      this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+      let d = 220;
+      light.castShadow = true;
+      light.shadow.mapSize.width = 42;
+      light.shadow.mapSize.height = 42;
+      light.shadow.camera.left = -d;
+      light.shadow.camera.right = d;
+      light.shadow.camera.top = d;
+      light.shadow.camera.bottom = -d;
+    }
+
+    if (config.debugLight) {
+      // For debugging light position
+      let mat = new THREE.MeshBasicMaterial({ color: 0xf2e310 });
+      let geo = new THREE.BoxGeometry(8,8,8);
+      let mesh = new THREE.Mesh(geo, mat);
+      mesh.position.x = light.position.x;
+      mesh.position.y = light.position.y;
+      mesh.position.z = light.position.z;
+      this.scene.add(mesh);
+
+      if (config.enableShadows) {
+        this.scene.add(new THREE.CameraHelper( light.shadow.camera ));
+      }
+    }
 
     let aspect = opts.width/opts.height;
     this.camera = new THREE.OrthographicCamera(-D*aspect, D*aspect, D, -D, NEAR, FAR);

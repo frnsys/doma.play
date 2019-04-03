@@ -1,8 +1,9 @@
+import config from '../config';
 import * as THREE from 'three';
 import {shadeColor} from './color';
 
 const colorCache = {};
-const material = new THREE.MeshBasicMaterial({ vertexColors: THREE.VertexColors });
+const material = new THREE.MeshLambertMaterial({ vertexColors: THREE.VertexColors });
 
 
 class Cell {
@@ -13,6 +14,7 @@ class Cell {
     this.color = color;
 
     this.geometry = makeHexagon(size);
+    this.geometry.computeVertexNormals();
     this.mesh = new THREE.Mesh(this.geometry, material);
     this.mesh.position.x = x;
     this.mesh.position.y = y;
@@ -20,6 +22,10 @@ class Cell {
 
     // to recover this object from raycasting intersection
     this.mesh.obj = this;
+
+    if (config.enableShadows) {
+      this.mesh.receiveShadow = true;
+    }
   }
 
   // color order:

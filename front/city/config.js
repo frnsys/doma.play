@@ -12,5 +12,7 @@ export default {
     'Tenant': 0x5370f4,
     'Landlord': 0xf48e53
   },
-  focusColor: 0xff0000
+  focusColor: 0xff0000,
+  enableShadows: false,
+  debugLight: true
 }

@@ -45,6 +45,10 @@ class City {
             // TODO temporary commercial buildings
             let geo = new THREE.BoxGeometry(config.unitSize, config.unitSize, 16);
             let mesh = new THREE.Mesh(geo, commericalMat);
+            if (config.enableShadows) {
+              mesh.castShadow = true;
+              mesh.receiveShadow = true;
+            }
             mesh.position.z = 16/2;
             cell.mesh.add(mesh);
           } else {
