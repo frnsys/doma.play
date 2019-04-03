@@ -1,3 +1,4 @@
+import sys
 import random
 import itertools
 import numpy as np
@@ -166,6 +167,9 @@ class Landlord:
                 # i.e. depend on gap b/w
                 # current rent and rent estimate/projection
                 u.rent *= 1.05
+
+                # TODO cap rents so they don't go to infinity
+                u.rent = min(u.rent, sys.maxint)
 
 
 class Tenant:

@@ -8,7 +8,7 @@ SIM = {
     'size': (20, 20),
     'neighborhoods': [{
         'desirability': 5,
-        'units': (4,10),
+        'units': (18,42),
         'commercial': 0.1,
         'park': 0.1
     }, {
@@ -18,12 +18,12 @@ SIM = {
         'park': 0.2
     }, {
         'desirability': 1,
-        'units': (1,2),
+        'units': (12,24),
         'commercial': 0.1,
         'park': 0
     }, {
         'desirability': 2,
-        'units': (2,5),
+        'units': (8,16),
         'commercial': 0,
         'park': 0
     }],

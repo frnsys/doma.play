@@ -134,6 +134,12 @@ class City:
         for p in self.parcels_of_type(ParcelType.Residential):
             neighb = self.neighborhoods[p.neighborhood]
             n_units = random.randint(*neighb['units'])
+
+            # TODO need to keep these divisible by 4 for towers
+            if n_units > 3:
+                while n_units % 4 != 0:
+                    n_units += 1
+
             # TODO parameterize elsewhere
             units = [
                 Unit(
