@@ -9,6 +9,10 @@ const scene = new Scene({});
 const main = document.getElementById('main');
 main.appendChild(scene.renderer.domElement);
 
+// NOTE: this doesn't work unless user explicitly
+// allows autoplay
+// document.getElementById('audio').play();
+
 function update() {
   api.get('/state/key', (data) => {
     // Compare state keys to

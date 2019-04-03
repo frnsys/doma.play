@@ -1,9 +1,13 @@
 {% extends 'layout.html' %}
 {% block content %}
-    <div id="hud">
-        <div id="stats"></div>
-    </div>
+<div id="hud">
+    <div id="stats"></div>
+</div>
 <main id="main"></main>
+<audio id="audio" autoplay loop>
+  <source src="/static/cityscape.ogg" type="audio/ogg">
+  <source src="/static/cityscape.mp3" type="audio/mpeg">
+</audio>
 <script src="{{ url_for('static', filename='js/city.js') }}"></script>
 {% endblock %}
 
