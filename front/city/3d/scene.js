@@ -84,6 +84,7 @@ class Scene {
     this.controls.enableRotate = true;
     this.controls.maxZoom = 0.4;
     this.controls.minZoom = 0.001;
+    this.controls.maxPolarAngle = Math.PI/2;
   }
 
   add(mesh) {
