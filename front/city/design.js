@@ -9,6 +9,7 @@ const parcelColors = {
   'Park': 0x21b75f,
   'River': 0x2146b7
 }
+const noneNeighbColor = 0xffd4c1;
 
 const scene = new Scene({});
 const main = document.getElementById('main');
@@ -31,8 +32,8 @@ const parcelTypes = ['Empty', 'Residential', 'Park', 'River'];
 for (let col=0; col<cols; col++) {
   for (let row=0; row<rows; row++) {
     let data = {
-      neighborhood: neighborhoods[0].name,
-      neighborhoodId: 0,
+      neighborhood: 'None',
+      neighborhoodId: -1,
       type: parcelTypes[0]
     };
     let cell = grid.setCellAt(col, row, parcelColors['Empty'], data);
@@ -60,7 +61,7 @@ for (let col=0; col<cols; col++) {
           document.activeElement.blur()
           cgui.updateDisplay();
         },
-        tooltip: () => cell.data.type
+        tooltip: () => `${cell.data.type} (${cell.data.neighborhood})`
       },
       focus: (ev) => {
         cell.focus();
@@ -105,11 +106,19 @@ function makeNeighborhoodGUI(n) {
         c.data.neighborhood = val;
       }
     });
-    if (dummyCell.neighborhoodId = n.id) {
+    if (dummyCell.neighborhoodId == n.id) {
       dummyCell.neighborhood = val;
     }
   });
-  ngui.addColor(n, 'color');
+  ngui.addColor(n, 'color').onFinishChange((val) => {
+    console.log('changedColor');
+    grid.cells.map(c => {
+      if (c.data.neighborhoodId == n.id) {
+        c.color = parseInt(n.color.substring(1), 16);
+        c.setColor(c.color);
+      }
+    });
+  });
   ngui.add(n, 'desirability').min(0).step(1);
   ngui.add({
     delete: () => {
@@ -129,7 +138,23 @@ function updateNeighbOpts() {
     cgui.remove(nOpts);
   }
   let opts = ['None'].concat(neighborhoods.map(n => n.name));
-  nOpts = cgui.add(dummyCell, 'neighborhood').options(opts)
+  nOpts = cgui.add(dummyCell, 'neighborhood').options(opts).onChange((name) => {
+    selectedCells.forEach((c) => {
+      c.data.neighborhood = name;
+      if (name == 'None') {
+        c.data.neighborhoodId = -1;
+        if (c.data.type == 'Residential' || c.data.type == 'Commercial') {
+          c.color = noneNeighbColor;
+        }
+      } else {
+        let neighborhood = neighborhoods.filter(n => n.name == name)[0];
+        c.data.neighborhoodId = neighborhood.id;
+        if (c.data.type == 'Residential' || c.data.type == 'Commercial') {
+          c.color = parseInt(neighborhood.color.substring(1), 16);
+        }
+      }
+    });
+  });
 }
 
 let gui = new dat.GUI();
@@ -141,7 +166,16 @@ let dummyCell = {
 };
 cgui.add(dummyCell, 'type').options(parcelTypes).listen().onChange((t) => {
   selectedCells.forEach(c => {
-    c.color = parcelColors[t];
+    if (t == 'Residential' || t == 'Commercial') {
+      if (c.data.neighborhood == 'None') {
+        c.color = noneNeighbColor;
+      } else {
+        let neighborhood = neighborhoods.filter(n => n.name == c.data.neighborhood)[0];
+        c.color = parseInt(neighborhood.color.substring(1), 16);
+      }
+    } else {
+      c.color = parcelColors[t];
+    }
     c.data.type = t;
   });
 });
