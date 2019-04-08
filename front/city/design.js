@@ -2,6 +2,7 @@ import Scene from './3d/scene';
 import Grid from './3d/grid';
 import InteractionLayer from './3d/interact';
 import dat from 'dat.gui';
+import {shadeColor} from './3d/color';
 
 const parcelColors = {
   'Empty': 0xffc2c2,
@@ -64,7 +65,11 @@ for (let col=0; col<cols; col++) {
         tooltip: () => `${cell.data.type} (${cell.data.neighborhood})`
       },
       focus: (ev) => {
-        cell.focus();
+        if (cell.data.type == 'Empty') {
+          cell.focus();
+        } else {
+          cell.setColor(shadeColor(cell.color, 0.4));
+        }
         if (ev.shiftKey && ev.ctrlKey) {
           selectedCells.push(cell);
         }
