@@ -18,7 +18,7 @@ main.appendChild(scene.renderer.domElement);
 const cellSize = 32;
 const cols = 50, rows = 50;
 const grid = new Grid(cols, rows, cellSize);
-let selectedCell = null;
+let selectedCells = [];
 let neighborhoods = [{
   id: 0,
   name: 'Neighborhood 0',
@@ -38,10 +38,20 @@ for (let col=0; col<cols; col++) {
     let cell = grid.setCellAt(col, row, parcelColors['Empty'], data);
     cell.mesh.obj = {
       data: {
-        onClick: () => {
-          if (selectedCell) selectedCell.unfocus();
-          selectedCell = cell;
-          Object.keys(cell.data).forEach((k) => {
+        onClick: (ev) => {
+          if (!ev.shiftKey) {
+            // Reset selection
+            if (selectedCells) selectedCells.forEach(c => c.unfocus());
+            selectedCells = [cell];
+          } else {
+            if (selectedCells.includes(cell)) {
+              selectedCells = selectedCells.filter(c => c !== cell);
+            } else {
+              selectedCells.push(cell);
+            }
+          }
+
+          Object.keys(selectedCells[0].data).forEach((k) => {
             dummyCell[k] = cell.data[k];
           });
 
@@ -52,9 +62,14 @@ for (let col=0; col<cols; col++) {
         },
         tooltip: () => cell.data.type
       },
-      focus: cell.focus.bind(cell),
+      focus: (ev) => {
+        cell.focus();
+        if (ev.shiftKey && ev.ctrlKey) {
+          selectedCells.push(cell);
+        }
+      },
       unfocus: () => {
-        if (selectedCell !== cell) {
+        if (!selectedCells.includes(cell)) {
           cell.unfocus();
         }
       }
@@ -90,8 +105,8 @@ function makeNeighborhoodGUI(n) {
         c.data.neighborhood = val;
       }
     });
-    if (selectedCell.neighborhoodId = n.id) {
-      selectedCell.neighborhood = val;
+    if (dummyCell.neighborhoodId = n.id) {
+      dummyCell.neighborhood = val;
     }
   });
   ngui.addColor(n, 'color');
@@ -125,8 +140,10 @@ let dummyCell = {
   type: parcelTypes[0]
 };
 cgui.add(dummyCell, 'type').options(parcelTypes).listen().onChange((t) => {
-  selectedCell.color = parcelColors[t];
-  selectedCell.data.type = t;
+  selectedCells.forEach(c => {
+    c.color = parcelColors[t];
+    c.data.type = t;
+  });
 });
 cgui.open();
 
