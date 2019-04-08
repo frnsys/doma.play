@@ -3,7 +3,8 @@ import * as THREE from 'three';
 import {shadeColor} from './color';
 
 const colorCache = {};
-const material = new THREE.MeshLambertMaterial({ vertexColors: THREE.VertexColors });
+const matConf = { vertexColors: THREE.VertexColors };
+const material = config.enableShadows ? new THREE.MeshLambertMaterial(matConf) : new THREE.MeshBasicMaterial(matConf);
 
 
 class Cell {
@@ -14,7 +15,9 @@ class Cell {
     this.color = color;
 
     this.geometry = makeHexagon(size);
-    this.geometry.computeVertexNormals();
+    if (config.enableShadows) {
+      this.geometry.computeVertexNormals();
+    }
     this.mesh = new THREE.Mesh(this.geometry, material);
     this.mesh.position.x = x;
     this.mesh.position.y = y;
@@ -57,7 +60,7 @@ class Cell {
   }
 
   focus() {
-    this.setColor(0xff0000);
+    this.setColor(0xf99090);
   }
 
   unfocus() {

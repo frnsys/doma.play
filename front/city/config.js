@@ -11,6 +11,6 @@ export default {
     'Landlord': 0xffffff
   },
   focusColor: 0xff0000,
-  enableShadows: true,
+  enableShadows: false,
   debugLight: false
 }
