@@ -169,7 +169,7 @@ class Landlord:
                 u.rent *= 1.05
 
                 # TODO cap rents so they don't go to infinity
-                u.rent = min(u.rent, sys.maxint)
+                u.rent = min(u.rent, sys.maxsize)
 
 
 class Tenant:

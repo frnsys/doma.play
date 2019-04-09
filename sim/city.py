@@ -12,17 +12,47 @@ class ParcelType(Enum):
 
 
 class City:
-    def __init__(self, size, neighborhoods, n_parcels):
+    @classmethod
+    def generate(cls, size, n_parcels, neighborhoods):
+        city = cls(size, neighborhoods)
+        city.generate_map(n_parcels)
+        return city
+
+    @classmethod
+    def from_map(cls, map, neighborhoods):
+        # This is specifically for maps created
+        # with the designer.
+        # Assume map has already been "minimized"
+        # and that the map rows are not ragged
+        # Note that the designer outputs cols/rows flipped
+        rows = len(map)
+        cols = len(map[0])
+        city = cls((cols, rows), neighborhoods)
+
+        for r, row in enumerate(map):
+            for c, cell in enumerate(row):
+                if cell is None: continue
+                neighb_id, parcel_type = cell.split('|')
+
+                parcel = Parcel((c, r))
+                parcel.type = ParcelType[parcel_type]
+                if neighb_id != '-1':
+                    parcel.neighborhood = neighb_id
+                city.grid[c, r] = parcel
+
+        city.update_parcel_desirabilities()
+        city.build_residences()
+        return city
+
+    def __init__(self, size, neighborhoods):
         rows, cols = size
         self.grid = HexGrid(rows, cols)
-
-        if n_parcels > rows * cols:
-            raise Exception('Too many parcels for grid dimensions')
-
-        self.neighborhoods = {i: neighb for i, neighb in enumerate(neighborhoods)}
-        self.generate_map(n_parcels)
+        self.neighborhoods = neighborhoods
 
     def generate_map(self, n_parcels):
+        if n_parcels > self.grid.rows * self.grid.cols:
+            raise Exception('Too many parcels for grid dimensions')
+
         # Generate map parcels
         # Start from roughly center
         r_c, c_c = self.grid.rows//2, self.grid.cols//2
@@ -119,21 +149,33 @@ class City:
                         unassigned = list(filter(needs_zone, unassigned + self.adjacent(pos)))
                         n_assigned += 1
 
-        # Compute desireability of parcels
+        self.update_parcel_desirabilities()
+        self.build_residences()
+
+    def update_parcel_desirabilities(self):
+        """Compute desireability of parcels"""
         parks = self.parcels_of_type(ParcelType.Park)
         comms = self.parcels_of_type(ParcelType.Commercial)
         for p in self:
             if p.type == ParcelType.Residential:
                 # Closest park
-                park_dist = min(self.grid.distance(p.pos, o.pos) for o in parks)
+                if parks:
+                    park_dist = min(self.grid.distance(p.pos, o.pos) for o in parks)
+                else:
+                    park_dist = 1
+
                 # Closest commercial area
-                comm_dist = min(self.grid.distance(p.pos, o.pos) for o in comms)
+                if comms:
+                    comm_dist = min(self.grid.distance(p.pos, o.pos) for o in comms)
+                else:
+                    comm_dist = 1
                 p.desirability = (1/(comm_dist+park_dist) * 10) + self.neighborhoods[p.neighborhood]['desirability']
 
-        # Build residences
+    def build_residences(self):
+        """Build residences"""
         for p in self.parcels_of_type(ParcelType.Residential):
             neighb = self.neighborhoods[p.neighborhood]
-            n_units = random.randint(*neighb['units'])
+            n_units = random.randint(neighb['minUnits'], neighb['maxUnits'])
 
             # TODO need to keep these divisible by 4 for towers
             if n_units > 3:
@@ -149,7 +191,6 @@ class City:
                 ) for _ in range(n_units)
             ]
             p.build(Building('{}_{}'.format(*p.pos), units))
-
 
     def adjacent(self, pos):
         """Get adjacent parcels to position"""

@@ -18,18 +18,21 @@ const parcelTypes = ['Empty', 'Residential', 'Park', 'River'];
 const cellSize = 32;
 const cols = 50, rows = 50;
 const grid = new Grid(cols, rows, cellSize);
-let selectedCells = [];
-let neighborhoods = [{
+const defaultNeighborhood = {
   id: 0,
   name: 'Neighborhood 0',
   color: '#ff0000',
-  desirability: 1
-}];
+  desirability: 1,
+  minUnits: 8,
+  maxUnits: 12
+}
 const defaultCellData = {
   neighborhood: 'None',
   neighborhoodId: -1,
   type: parcelTypes[0]
 }
+let neighborhoods = [{...defaultNeighborhood}];
+let selectedCells = [];
 
 // Initialize grid cells
 for (let col=0; col<cols; col++) {
@@ -112,7 +115,7 @@ formEl.onclick = function(ev) {
     });
 
     // Set neighborhoods & their UIs
-    neighborhoods = source.neighborhoods;
+    neighborhoods = Object.values(source.neighborhoods);
     Object.keys(nguis).forEach((k) => {
       gui.removeFolder(nguis[k]);
       delete nguis[k];
@@ -139,7 +142,7 @@ formEl.onclick = function(ev) {
           if (neighborhoodId == -1) {
             neighborhoodName = 'None';
           } else {
-            neighb = source.neighborhoods.filter((n) => n.id == neighborhoodId)[0];
+            neighb = neighborhoods.filter((n) => n.id == neighborhoodId)[0];
             neighborhoodName = neighb.name;
           }
           cell.data = {
@@ -161,12 +164,9 @@ const gui = new dat.GUI();
 const control = {
   addNeighborhood: () => {
     let id = Math.max.apply(Math, neighborhoods.map((n) => n.id)) + 1;
-    let n = {
-      id: id,
-      name: `Neighborhood ${id}`,
-      color: '#ff0000',
-      desirability: 1
-    };
+    let n = {...defaultNeighborhood};
+    n.id = id;
+    n.name = `Neighborhood ${id}`;
     neighborhoods.push(n);
     makeNeighborhoodGUI(n);
   },
@@ -224,7 +224,10 @@ const control = {
         if (c.data.type == 'Empty') return null;
         return `${c.data.neighborhoodId}|${c.data.type}`;
       })),
-      neighborhoods: neighborhoods
+      neighborhoods: neighborhoods.reduce((acc, n) => {
+        acc[n.id] = n;
+        return acc;
+      }, {})
     };
     let exported = JSON.stringify(data, null, 2);
 
@@ -265,6 +268,8 @@ function makeNeighborhoodGUI(n) {
       dummyCell.neighborhood = val;
     }
   });
+  ngui.add(n, 'minUnits').min(0).step(1);
+  ngui.add(n, 'maxUnits').step(1);
   ngui.addColor(n, 'color').onFinishChange((val) => {
     grid.cells.map(c => {
       if (c.data.neighborhoodId == n.id) {
@@ -298,9 +303,11 @@ function updateNeighbOpts() {
     selectedCells.forEach((c) => {
       c.data.neighborhood = name;
       updateCellColor(c);
+
       if (name == 'None') {
         c.data.neighborhoodId = -1;
       } else {
+        let neighborhood = neighborhoods.filter(n => n.name == name)[0];
         c.data.neighborhoodId = neighborhood.id;
       }
     });

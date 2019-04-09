@@ -1,0 +1,110 @@
+{
+  "map": [
+    [
+      null,
+      "0|Residential",
+      null,
+      "0|Residential",
+      "0|Residential",
+      "-1|Park",
+      "-1|Park",
+      "-1|Park",
+      null
+    ],
+    [
+      "0|Residential",
+      "0|Residential",
+      "0|Residential",
+      "0|Residential",
+      "0|Residential",
+      "-1|Park",
+      "-1|Park",
+      "-1|Park",
+      null
+    ],
+    [
+      "0|Residential",
+      "0|Residential",
+      "0|Residential",
+      "0|Residential",
+      "-1|Park",
+      "-1|Park",
+      "-1|Park",
+      "-1|Park",
+      null
+    ],
+    [
+      "0|Residential",
+      "1|Residential",
+      "0|Residential",
+      "0|Residential",
+      "-1|Park",
+      "-1|Park",
+      "-1|Park",
+      "-1|Park",
+      null
+    ],
+    [
+      null,
+      null,
+      "1|Residential",
+      "1|Residential",
+      "-1|Park",
+      "1|Residential",
+      "-1|Park",
+      "1|Residential",
+      null
+    ],
+    [
+      null,
+      null,
+      "1|Residential",
+      null,
+      "1|Residential",
+      "1|Residential",
+      "1|Residential",
+      "1|Residential",
+      "1|Residential"
+    ],
+    [
+      null,
+      null,
+      null,
+      null,
+      "1|Residential",
+      "1|Residential",
+      "1|Residential",
+      "1|Residential",
+      "1|Residential"
+    ],
+    [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      "1|Residential",
+      "1|Residential",
+      "1|Residential"
+    ]
+  ],
+  "neighborhoods": {
+    "0": {
+      "id": 0,
+      "name": "Neighborhood 0",
+      "color": "#ff0000",
+      "desirability": 1,
+      "minUnits": 8,
+      "maxUnits": 12
+    },
+    "1": {
+      "id": 1,
+      "name": "Neighborhood 1",
+      "color": "#0062ff",
+      "desirability": 1,
+      "minUnits": 8,
+      "maxUnits": 12
+    }
+  }
+}
