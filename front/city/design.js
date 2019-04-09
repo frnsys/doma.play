@@ -4,6 +4,13 @@ import InteractionLayer from './3d/interact';
 import dat from 'dat.gui';
 import {shadeColor} from './3d/color';
 
+
+document.getElementById('form').onclick = function(ev) {
+  if (ev.target == this) {
+    document.getElementById('form').style.display = 'none';
+  }
+};
+
 const parcelColors = {
   'Empty': 0xffc2c2,
   'Residential': 0xffffff,
@@ -95,6 +102,71 @@ const control = {
     };
     neighborhoods.push(n);
     makeNeighborhoodGUI(n);
+  },
+  source: () => {
+    let map = [];
+    let rowStart = -1, rowEnd = -1;
+
+    // Figure out dimensions
+    grid.grid.forEach((row, i) => {
+      let cells = row.filter((c) => c.data.type != 'Empty');
+      // Start row index
+      if (cells.length > 0 && rowStart < 0) {
+        rowStart = i;
+      }
+
+      // End row index
+      if (rowStart >= 0) {
+        if (rowEnd < 0) {
+          if (cells.length == 0) {
+            rowEnd = i;
+          } else {
+            map.push(row);
+          }
+        }
+      }
+    });
+
+    rowStart = rowStart == -1 ? 0 : rowStart;
+    rowEnd = rowEnd == -1 ? grid.grid.length : rowEnd;
+    let nRows = rowEnd - rowStart;
+
+    let colStart = -1, colEnd = -1;
+    map.forEach((row) => {
+      row.forEach((c, i) => {
+        if (c.data.type == 'Empty') return;
+
+        if (colStart < 0 || i < colStart) {
+          colStart = i;
+        }
+      });
+
+      row.slice().reverse().forEach((c, i) => {
+        if (c.data.type == 'Empty') return;
+
+        if (colEnd < 0 || i < colEnd) {
+          colEnd = i;
+        }
+      })
+    });
+
+    colStart = colStart == -1 ? 0 : colStart;
+    colEnd = colEnd == -1 ? grid.grid[0].length : grid.grid[0].length - colEnd;
+    let nCols = colEnd - colStart;
+
+    let data = {
+      rows: nRows,
+      cols: nCols,
+      map: map.map((row) => row.slice(colStart, colEnd).map(c => {
+        if (c.data.type == 'Empty') return null;
+        return `${c.data.neighborhoodId}|${c.data.type}`;
+      })),
+      neighborhoods: neighborhoods
+    };
+    let exported = JSON.stringify(data, null, 2);
+
+    document.getElementById('form-input').value = exported;
+    document.getElementById('form').style.display = 'block';
   }
 };
 
@@ -164,6 +236,7 @@ function updateNeighbOpts() {
 
 let gui = new dat.GUI();
 
+gui.add(control, 'source');
 let cgui = gui.addFolder('Selected Cell');
 let dummyCell = {
   neighborhood: 'None',
