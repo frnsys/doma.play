@@ -24,7 +24,7 @@ class City {
             <div>Neighborhood ${parcel.neighb}</div>
             <div>Desirability: ${parcel.desirability.toFixed(2)}</div>
           `;
-          let color = config.neighbColors[parcel.neighb];
+          let color = parseInt(neighb.color.substr(1), 16);
           if (parcel.type == 'Commercial') {
             color = shadeColor(color, 0.8);
           }
@@ -62,7 +62,7 @@ class City {
             <div>Type ${parcel.type}</div>
           `;
 
-          let color = 0x0000ff;
+          let color = parcel.type == 'Park' ? 0x00ff00 : 0x0000ff;
           let cell = this.grid.setCellAt(col, row, color, parcel);
         }
 
