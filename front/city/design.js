@@ -4,21 +4,49 @@ import InteractionLayer from './3d/interact';
 import dat from 'dat.gui';
 import {shadeColor} from './3d/color';
 
+const scene = new Scene({});
+const main = document.getElementById('main');
+main.appendChild(scene.renderer.domElement);
 
-document.getElementById('form').onclick = function(ev) {
+const parcelColors = {
+  'Empty': 0xffc2c2,
+  'Residential': 0xffffff,
+  'Park': 0x21b75f,
+  'River': 0x2146b7
+}
+const noneNeighbColor = 0xffd4c1;
+const parcelTypes = ['Empty', 'Residential', 'Park', 'River'];
+
+// Initialize grid
+const cellSize = 32;
+const cols = 50, rows = 50;
+const grid = new Grid(cols, rows, cellSize);
+let selectedCells = [];
+let neighborhoods = [{
+  id: 0,
+  name: 'Neighborhood 0',
+  color: '#ff0000',
+  desirability: 1
+}];
+
+const formEl = document.getElementById('form');
+const formInputEl = document.getElementById('form-input');
+const defaultCellData = {
+  neighborhood: 'None',
+  neighborhoodId: -1,
+  type: parcelTypes[0]
+}
+
+formEl.onclick = function(ev) {
   if (ev.target == this) {
-    document.getElementById('form').style.display = 'none';
-    let source = JSON.parse(document.getElementById('form-input').value);
+    formEl.style.display = 'none';
+    let source = JSON.parse(formInputEl.value);
 
     // Reset grid
     grid.cells.forEach((c) => {
       c.color = parcelColors['Empty'];
       c.setColor(c.color);
-      c.data = {
-        neighborhood: 'None',
-        neighborhoodId: -1,
-        type: parcelTypes[0]
-      };
+      c.data = {...defaultCellData};
     });
 
     neighborhoods = source.neighborhoods;
@@ -57,15 +85,7 @@ document.getElementById('form').onclick = function(ev) {
             type: type
           }
 
-          if (type == 'Residential' || type == 'Commercial') {
-            if (neighborhoodName == 'None') {
-              cell.color = noneNeighbColor;
-            } else {
-              cell.color = parseInt(neighb.color.substring(1), 16);
-            }
-          } else {
-            cell.color = parcelColors[type];
-          }
+          updateCellColor(cell);
           cell.setColor(cell.color);
         });
       });
@@ -73,40 +93,10 @@ document.getElementById('form').onclick = function(ev) {
   }
 };
 
-const parcelColors = {
-  'Empty': 0xffc2c2,
-  'Residential': 0xffffff,
-  'Park': 0x21b75f,
-  'River': 0x2146b7
-}
-const noneNeighbColor = 0xffd4c1;
-
-const scene = new Scene({});
-const main = document.getElementById('main');
-main.appendChild(scene.renderer.domElement);
-
-// Initialize grid
-const cellSize = 32;
-const cols = 50, rows = 50;
-const grid = new Grid(cols, rows, cellSize);
-let selectedCells = [];
-let neighborhoods = [{
-  id: 0,
-  name: 'Neighborhood 0',
-  color: '#ff0000',
-  desirability: 1
-}];
-
-const parcelTypes = ['Empty', 'Residential', 'Park', 'River'];
 
 for (let col=0; col<cols; col++) {
   for (let row=0; row<rows; row++) {
-    let data = {
-      neighborhood: 'None',
-      neighborhoodId: -1,
-      type: parcelTypes[0]
-    };
-    let cell = grid.setCellAt(col, row, parcelColors['Empty'], data);
+    let cell = grid.setCellAt(col, row, parcelColors['Empty'], {...defaultCellData});
     cell.mesh.obj = {
       data: {
         onClick: (ev) => {
@@ -225,8 +215,8 @@ const control = {
     };
     let exported = JSON.stringify(data, null, 2);
 
-    document.getElementById('form-input').value = exported;
-    document.getElementById('form').style.display = 'block';
+    formInputEl.value = exported;
+    formEl.style.display = 'block';
   }
 };
 
@@ -270,50 +260,43 @@ function makeNeighborhoodGUI(n) {
 
 let nOpts;
 function updateNeighbOpts() {
-  if (nOpts) {
-    cgui.remove(nOpts);
-  }
+  if (nOpts) cgui.remove(nOpts);
   let opts = ['None'].concat(neighborhoods.map(n => n.name));
   nOpts = cgui.add(dummyCell, 'neighborhood').options(opts).onChange((name) => {
     selectedCells.forEach((c) => {
       c.data.neighborhood = name;
+      updateCellColor(c);
       if (name == 'None') {
         c.data.neighborhoodId = -1;
-        if (c.data.type == 'Residential' || c.data.type == 'Commercial') {
-          c.color = noneNeighbColor;
-        }
       } else {
-        let neighborhood = neighborhoods.filter(n => n.name == name)[0];
         c.data.neighborhoodId = neighborhood.id;
-        if (c.data.type == 'Residential' || c.data.type == 'Commercial') {
-          c.color = parseInt(neighborhood.color.substring(1), 16);
-        }
       }
     });
   });
 }
 
-let gui = new dat.GUI();
+function updateCellColor(cell) {
+  let t = cell.data.type;
+  if (t == 'Residential' || t == 'Commercial') {
+    if (cell.data.neighborhood == 'None') {
+      cell.color = noneNeighbColor;
+    } else {
+      let neighborhood = neighborhoods.filter(n => n.name == cell.data.neighborhood)[0];
+      cell.color = parseInt(neighborhood.color.substring(1), 16);
+    }
+  } else {
+    cell.color = parcelColors[t];
+  }
+}
 
+const gui = new dat.GUI();
 gui.add(control, 'source');
-let cgui = gui.addFolder('Selected Cell');
-let dummyCell = {
-  neighborhood: 'None',
-  type: parcelTypes[0]
-};
+const cgui = gui.addFolder('Selected Cell');
+const dummyCell = {...defaultCellData};
 cgui.add(dummyCell, 'type').options(parcelTypes).listen().onChange((t) => {
   selectedCells.forEach(c => {
-    if (t == 'Residential' || t == 'Commercial') {
-      if (c.data.neighborhood == 'None') {
-        c.color = noneNeighbColor;
-      } else {
-        let neighborhood = neighborhoods.filter(n => n.name == c.data.neighborhood)[0];
-        c.color = parseInt(neighborhood.color.substring(1), 16);
-      }
-    } else {
-      c.color = parcelColors[t];
-    }
     c.data.type = t;
+    updateCellColor(c);
   });
 });
 cgui.open();
