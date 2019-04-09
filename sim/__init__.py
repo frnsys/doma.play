@@ -9,14 +9,14 @@ logger = logging.getLogger('DOMA-SIM')
 
 
 class Simulation:
-    def __init__(self, size, neighborhoods, n_tenants, n_landlords, n_parcels, **conf):
+    def __init__(self, map, neighborhoods, n_tenants, n_landlords, **conf):
         self.conf = conf
 
         # Each tick is a month
         self.time = 0
 
         # Initialize city
-        self.city = City(size, neighborhoods, n_parcels)
+        self.city = City.from_map(map, neighborhoods)
 
         # Initialize landlords
         self.landlords = [Landlord(self.city) for _ in range(n_landlords)]

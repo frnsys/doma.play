@@ -19,6 +19,12 @@ def play():
     return render_template('play.html')
 
 
+@app.route('/design')
+def design():
+    """City designer view"""
+    return render_template('design.html')
+
+
 @app.route('/state')
 def state():
     """Query current state"""

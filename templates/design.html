@@ -1,0 +1,29 @@
+{% extends 'layout.html' %}
+{% block content %}
+<style>
+    #form {
+        position: fixed;
+        background: rgba(0,0,0,0.5);
+        left: 0;
+        right: 0;
+        bottom: 0;
+        top: 0;
+        z-index: 12;
+        display: none;
+    }
+    #form-input {
+        margin: 2em auto;
+        min-height: 400px;
+        min-width: 600px;
+        display: block;
+        padding: 1em;
+    }
+</style>
+<div id="form">
+    <textarea id="form-input"></textarea>
+</div>
+<main id="main"></main>
+<script src="{{ url_for('static', filename='js/design.js') }}"></script>
+{% endblock %}
+
+

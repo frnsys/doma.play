@@ -47,7 +47,7 @@ class InteractionLayer {
           pos = intersects[0].point,
           node = mesh.obj;
       if (node.data.onClick) {
-        node.data.onClick();
+        node.data.onClick(ev);
       }
     }
   }
@@ -59,7 +59,7 @@ class InteractionLayer {
 
     if (this.focused) {
       if (this.focused.obj.unfocus) {
-        this.focused.obj.unfocus();
+        this.focused.obj.unfocus(ev);
       }
       this.focused = null;
     }
@@ -73,7 +73,7 @@ class InteractionLayer {
       if (obj.data.tooltip) {
         this.focused = mesh;
         if (this.focused.obj.focus) {
-          this.focused.obj.focus();
+          this.focused.obj.focus(ev);
         }
 
         tooltip.style.display = 'block';

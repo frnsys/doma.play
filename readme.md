@@ -5,6 +5,20 @@
 - `npm start` to start the frontend and API server, hen go to `localhost:5000` for the city view.
 - `python main.py` to run the simulation
 
+## Designer
+
+Visit `/design` to access the map designer.
+
+Basic usage:
+
+- Click to select a cell
+- Shift+click to add to the selection
+- Ctrl+shift & move mouse to paint selection
+- Click `source` to get map data
+    - You can paste in map data here to "load" an existing map
+
+![](static/designer.gif)
+
 ## Architecture
 
 - Simulation process (Python)
