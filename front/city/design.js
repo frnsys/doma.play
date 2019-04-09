@@ -23,6 +23,14 @@ document.getElementById('form').onclick = function(ev) {
 
     neighborhoods = source.neighborhoods;
 
+    Object.keys(guis).forEach((k) => {
+      gui.removeFolder(guis[k]);
+      delete guis[k];
+    });
+    neighborhoods.forEach((n) => {
+      makeNeighborhoodGUI(n);
+    });
+
     // Try to center map
     if (source.map) {
       let nRows = source.map.length;
@@ -36,10 +44,11 @@ document.getElementById('form').onclick = function(ev) {
           let [neighborhoodId, type] = d.split('|');
           let cell = grid.cellAt(r+rShift, c+cShift);
           let neighborhoodName;
+          let neighb;
           if (neighborhoodId == -1) {
             neighborhoodName = 'None';
           } else {
-            let neighb = source.neighborhoods.filter((n) => n.id == neighborhoodId)[0];
+            neighb = source.neighborhoods.filter((n) => n.id == neighborhoodId)[0];
             neighborhoodName = neighb.name;
           }
           cell.data = {
