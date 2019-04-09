@@ -8,6 +8,59 @@ import {shadeColor} from './3d/color';
 document.getElementById('form').onclick = function(ev) {
   if (ev.target == this) {
     document.getElementById('form').style.display = 'none';
+    let source = JSON.parse(document.getElementById('form-input').value);
+
+    // Reset grid
+    grid.cells.forEach((c) => {
+      c.color = parcelColors['Empty'];
+      c.setColor(c.color);
+      c.data = {
+        neighborhood: 'None',
+        neighborhoodId: -1,
+        type: parcelTypes[0]
+      };
+    });
+
+    neighborhoods = source.neighborhoods;
+
+    // Try to center map
+    if (source.map) {
+      let nRows = source.map.length;
+      let nCols = source.map[0].length;
+      let rShift = Math.round(rows/2) - Math.round(nRows/2);
+      let cShift = Math.round(cols/2) - Math.round(nCols/2);
+
+      source.map.forEach((row, r) => {
+        row.forEach((d, c) => {
+          if (d === null) return;
+          let [neighborhoodId, type] = d.split('|');
+          let cell = grid.cellAt(r+rShift, c+cShift);
+          let neighborhoodName;
+          if (neighborhoodId == -1) {
+            neighborhoodName = 'None';
+          } else {
+            let neighb = source.neighborhoods.filter((n) => n.id == neighborhoodId)[0];
+            neighborhoodName = neighb.name;
+          }
+          cell.data = {
+            neighborhood: neighborhoodName,
+            neighborhoodId: neighborhoodId,
+            type: type
+          }
+
+          if (type == 'Residential' || type == 'Commercial') {
+            if (neighborhoodName == 'None') {
+              cell.color = noneNeighbColor;
+            } else {
+              cell.color = parseInt(neighb.color.substring(1), 16);
+            }
+          } else {
+            cell.color = parcelColors[type];
+          }
+          cell.setColor(cell.color);
+        });
+      });
+    }
   }
 };
 
@@ -155,8 +208,6 @@ const control = {
     let nCols = colEnd - colStart;
 
     let data = {
-      rows: nRows,
-      cols: nCols,
       map: map.map((row) => row.slice(colStart, colEnd).map(c => {
         if (c.data.type == 'Empty') return null;
         return `${c.data.neighborhoodId}|${c.data.type}`;
@@ -188,7 +239,6 @@ function makeNeighborhoodGUI(n) {
     }
   });
   ngui.addColor(n, 'color').onFinishChange((val) => {
-    console.log('changedColor');
     grid.cells.map(c => {
       if (c.data.neighborhoodId == n.id) {
         c.color = parseInt(n.color.substring(1), 16);
