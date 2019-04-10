@@ -182,14 +182,14 @@ class City:
                 while n_units % 4 != 0:
                     n_units += 1
 
-            # TODO parameterize elsewhere
-            units = [
-                Unit(
-                    rent=random.randint(500, 6000) * math.sqrt(neighb['desirability']),
-                    occupancy=random.randint(1, 5),
-                    area=random.randint(150, 800)
-                ) for _ in range(n_units)
-            ]
+            units = []
+            for _ in range(n_units):
+                area = random.randint(neighb['minArea'], neighb['maxArea'])
+                units.append(Unit(
+                    area=area,
+                    rent=round(neighb['pricePerSqm']/area),
+                    occupancy=max(1, round(area/neighb['sqmPerOccupant'])),
+                ))
             p.build(Building('{}_{}'.format(*p.pos), units))
 
     def adjacent(self, pos):

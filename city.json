@@ -2,43 +2,13 @@
   "map": [
     [
       null,
-      "0|Residential",
       null,
-      "0|Residential",
-      "0|Residential",
       "-1|Park",
-      "-1|Park",
-      "-1|Park",
+      null,
       null
     ],
     [
-      "0|Residential",
-      "0|Residential",
-      "0|Residential",
-      "0|Residential",
-      "0|Residential",
-      "-1|Park",
-      "-1|Park",
-      "-1|Park",
-      null
-    ],
-    [
-      "0|Residential",
-      "0|Residential",
-      "0|Residential",
-      "0|Residential",
-      "-1|Park",
-      "-1|Park",
-      "-1|Park",
-      "-1|Park",
-      null
-    ],
-    [
-      "0|Residential",
-      "1|Residential",
-      "0|Residential",
-      "0|Residential",
-      "-1|Park",
+      null,
       "-1|Park",
       "-1|Park",
       "-1|Park",
@@ -46,47 +16,52 @@
     ],
     [
       null,
+      "-1|Park",
+      "-1|Park",
+      "0|Residential",
+      "0|Residential"
+    ],
+    [
+      "-1|Park",
+      "-1|Park",
+      "-1|Park",
+      "0|Residential",
+      "0|Residential"
+    ],
+    [
+      "-1|Park",
+      "-1|Park",
+      "-1|Park",
+      "0|Residential",
+      "0|Residential"
+    ],
+    [
+      "-1|Park",
+      "-1|Park",
+      "0|Residential",
+      "0|Residential",
+      "0|Residential"
+    ],
+    [
+      "-1|Park",
+      "0|Residential",
+      "0|Residential",
+      "0|Residential",
+      "0|Residential"
+    ],
+    [
+      "-1|Park",
+      "0|Residential",
+      "0|Residential",
+      "0|Residential",
+      "0|Residential"
+    ],
+    [
       null,
-      "1|Residential",
-      "1|Residential",
-      "-1|Park",
-      "1|Residential",
-      "-1|Park",
-      "1|Residential",
+      null,
+      "0|Residential",
+      null,
       null
-    ],
-    [
-      null,
-      null,
-      "1|Residential",
-      null,
-      "1|Residential",
-      "1|Residential",
-      "1|Residential",
-      "1|Residential",
-      "1|Residential"
-    ],
-    [
-      null,
-      null,
-      null,
-      null,
-      "1|Residential",
-      "1|Residential",
-      "1|Residential",
-      "1|Residential",
-      "1|Residential"
-    ],
-    [
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      "1|Residential",
-      "1|Residential",
-      "1|Residential"
     ]
   ],
   "neighborhoods": {
@@ -96,15 +71,11 @@
       "color": "#ff0000",
       "desirability": 1,
       "minUnits": 8,
-      "maxUnits": 12
-    },
-    "1": {
-      "id": 1,
-      "name": "Neighborhood 1",
-      "color": "#0062ff",
-      "desirability": 1,
-      "minUnits": 8,
-      "maxUnits": 12
+      "maxUnits": 12,
+      "pricePerSqm": 10000,
+      "minArea": 200,
+      "maxArea": 500,
+      "sqmPerOccupant": 100
     }
   }
 }

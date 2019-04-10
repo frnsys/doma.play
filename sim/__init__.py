@@ -34,11 +34,13 @@ class Simulation:
         for t in self.tenants:
             month = random.randint(0, 11)
             vacancies = self.city.units_with_vacancies()
-            vacancies = sorted(vacancies, key=lambda u: t.desirability(u, self.conf['tenants']), reverse=True)
 
-            # Desirability of 0 means that tenant can't afford it
-            if t.desirability(vacancies[0], self.conf['tenants']) > 0:
-                vacancies[0].move_in(t, month)
+            if vacancies:
+                vacancies = sorted(vacancies, key=lambda u: t.desirability(u, self.conf['tenants']), reverse=True)
+
+                # Desirability of 0 means that tenant can't afford it
+                if t.desirability(vacancies[0], self.conf['tenants']) > 0:
+                    vacancies[0].move_in(t, month)
 
         # Distribute ownership of units
         for b in self.city.buildings:

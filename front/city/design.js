@@ -24,7 +24,11 @@ const defaultNeighborhood = {
   color: '#ff0000',
   desirability: 1,
   minUnits: 8,
-  maxUnits: 12
+  maxUnits: 12,
+  pricePerSqm: 10000,
+  minArea: 200,
+  maxArea: 500,
+  sqmPerOccupant: 100,
 }
 const defaultCellData = {
   neighborhood: 'None',
@@ -270,6 +274,12 @@ function makeNeighborhoodGUI(n) {
   });
   ngui.add(n, 'minUnits').min(0).step(1);
   ngui.add(n, 'maxUnits').step(1);
+  ngui.add(n, 'pricePerSqm').min(0).step(1);
+  ngui.add(n, 'minArea').min(0).step(1);
+  ngui.add(n, 'maxArea').min(0).step(1);
+  ngui.add(n, 'sqmPerOccupant').min(1).step(1);
+  ngui.add(n, 'desirability').min(0).step(1);
+
   ngui.addColor(n, 'color').onFinishChange((val) => {
     grid.cells.map(c => {
       if (c.data.neighborhoodId == n.id) {
@@ -278,7 +288,6 @@ function makeNeighborhoodGUI(n) {
       }
     });
   });
-  ngui.add(n, 'desirability').min(0).step(1);
   ngui.add({
     delete: () => {
       gui.removeFolder(nguis[n.id]);
