@@ -4,7 +4,7 @@ import * as THREE from 'three';
 
 const s = 4;
 const b = 0.5;
-const h = 8;
+const h = 4;
 
 const FLOOR_GAP = 0.2;
 const CHUNK_SHAPE = new THREE.Shape();
