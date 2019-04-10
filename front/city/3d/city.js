@@ -32,7 +32,7 @@ class City {
 
           if (parcel.type == 'Residential') {
             let b = buildings[`${row}_${col}`];
-            let building = new Building(b.units.map(u => units[u]));
+            let building = new Building(b.units.map(u => units[u]), b.nCommercial);
             cell.building = building;
             cell.mesh.add(building.group);
 

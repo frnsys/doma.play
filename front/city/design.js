@@ -29,6 +29,7 @@ const defaultNeighborhood = {
   minArea: 200,
   maxArea: 500,
   sqmPerOccupant: 100,
+  pCommercial: 0.1,
 }
 const defaultCellData = {
   neighborhood: 'None',
@@ -278,6 +279,7 @@ function makeNeighborhoodGUI(n) {
   ngui.add(n, 'minArea').min(0).step(1);
   ngui.add(n, 'maxArea').min(0).step(1);
   ngui.add(n, 'sqmPerOccupant').min(1).step(1);
+  ngui.add(n, 'pCommercial').min(0).max(1).step(0.05);
   ngui.add(n, 'desirability').min(0).step(1);
 
   ngui.addColor(n, 'color').onFinishChange((val) => {

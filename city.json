@@ -75,7 +75,8 @@
       "pricePerSqm": 10000,
       "minArea": 200,
       "maxArea": 500,
-      "sqmPerOccupant": 100
+      "sqmPerOccupant": 100,
+      "pCommercial": 0.6
     }
   }
 }

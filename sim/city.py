@@ -6,7 +6,6 @@ from .grid import HexGrid
 
 class ParcelType(Enum):
     Residential = 0
-    Commercial = 1
     Park = 2
     River = 3
 
@@ -40,8 +39,8 @@ class City:
                     parcel.neighborhood = neighb_id
                 city.grid[c, r] = parcel
 
-        city.update_parcel_desirabilities()
         city.build_residences()
+        city.update_parcel_desirabilities()
         return city
 
     def __init__(self, size, neighborhoods):
@@ -128,7 +127,7 @@ class City:
             assigned.append(pos)
 
         # Assign zones in each neighborhood
-        zones = [ParcelType.Commercial, ParcelType.Park]
+        zones = [ParcelType.Park]
         for zone in zones:
             for neighb_id, data in self.neighborhoods.items():
                 prop = data[zone.name.lower()]
@@ -149,13 +148,12 @@ class City:
                         unassigned = list(filter(needs_zone, unassigned + self.adjacent(pos)))
                         n_assigned += 1
 
-        self.update_parcel_desirabilities()
         self.build_residences()
+        self.update_parcel_desirabilities()
 
     def update_parcel_desirabilities(self):
         """Compute desireability of parcels"""
         parks = self.parcels_of_type(ParcelType.Park)
-        comms = self.parcels_of_type(ParcelType.Commercial)
         for p in self:
             if p.type == ParcelType.Residential:
                 # Closest park
@@ -164,12 +162,13 @@ class City:
                 else:
                     park_dist = 1
 
-                # Closest commercial area
-                if comms:
-                    comm_dist = min(self.grid.distance(p.pos, o.pos) for o in comms)
-                else:
-                    comm_dist = 1
-                p.desirability = (1/(comm_dist+park_dist) * 10) + self.neighborhoods[p.neighborhood]['desirability']
+                # Nearby commercial density
+                n_commercial = sum(n.building.n_commercial
+                                   for n in [self[pos] for pos in self.grid.radius(p.pos, 2)]
+                                   if n and n.building)
+
+                # TODO calibrate this
+                p.desirability = (1/park_dist * 10) + self.neighborhoods[p.neighborhood]['desirability'] + n_commercial/10
 
     def build_residences(self):
         """Build residences"""
@@ -182,6 +181,13 @@ class City:
                 while n_units % 4 != 0:
                     n_units += 1
 
+                n_commercial = 0
+                while random.random() < neighb['pCommercial']:
+                    n_commercial += 1
+            else:
+                # Houses have no commercial floors
+                n_commercial = 0
+
             units = []
             for _ in range(n_units):
                 area = random.randint(neighb['minArea'], neighb['maxArea'])
@@ -190,7 +196,7 @@ class City:
                     rent=round(neighb['pricePerSqm']/area),
                     occupancy=max(1, round(area/neighb['sqmPerOccupant'])),
                 ))
-            p.build(Building('{}_{}'.format(*p.pos), units))
+            p.build(Building('{}_{}'.format(*p.pos), units, n_commercial))
 
     def adjacent(self, pos):
         """Get adjacent parcels to position"""
@@ -238,9 +244,13 @@ class Parcel:
 
 
 class Building:
-    def __init__(self, id, units):
+    def __init__(self, id, units, n_commercial):
         self.id = id
         self.units = units
+
+        # Floors of commercial
+        self.n_commercial = n_commercial
+
         for i, u in enumerate(self.units):
             u.id = '{}__{}'.format(self.id, i)
             u.building = self

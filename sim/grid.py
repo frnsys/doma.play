@@ -1,4 +1,5 @@
 import math
+from itertools import chain
 
 oddAdjacentPositions = [
   (-1,  0), # upper left
@@ -35,6 +36,16 @@ class HexGrid:
         shifts = evenAdjacentPositions if row % 2 == 0 else oddAdjacentPositions
         adjs = [(row+r, col+c) for r, c in shifts]
         return [(r, c) for r, c in adjs if r >=0 and r < self.rows and c >= 0 and c < self.cols]
+
+    def radius(self, pos, r):
+        """Positions within a radius of the specified position"""
+        rad = set()
+        next = [pos]
+        for _ in range(r):
+            adj = set(chain.from_iterable(self.adjacent(p) for p in next))
+            rad.update(adj)
+            next = adj
+        return list(rad)
 
     def __getitem__(self, pos):
         """Return data at position"""

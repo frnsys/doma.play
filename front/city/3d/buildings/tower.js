@@ -23,8 +23,8 @@ const CHUNK_GEO = new THREE.ExtrudeGeometry(CHUNK_SHAPE, {
   bevelEnabled: false,
 });
 
-function makeChunk() {
-  var mesh = new THREE.Mesh(CHUNK_GEO, common.materials.vacant) ;
+function makeChunk(mat) {
+  var mesh = new THREE.Mesh(CHUNK_GEO, mat) ;
   mesh.rotation.x = -Math.PI/2;
 
   if (config.enableShadows) {
@@ -34,45 +34,60 @@ function makeChunk() {
   return mesh;
 }
 
-function makeFloor() {
+function makeFloor(mat) {
   let group = new THREE.Group();
 
   // 0
-  let mesh = makeChunk();
+  let mesh = makeChunk(mat);
   mesh.position.x = -s;
   mesh.position.z = -s;
   group.add(mesh);
 
   // 1
-  mesh = makeChunk();
+  mesh = makeChunk(mat);
   mesh.position.z = -s;
   mesh.position.x = s;
   mesh.rotation.z = -Math.PI/2
   group.add(mesh);
 
   // 2
-  mesh = makeChunk();
+  mesh = makeChunk(mat);
   group.add(mesh);
 
   // 3
-  mesh = makeChunk();
+  mesh = makeChunk(mat);
   mesh.rotation.z = -Math.PI/2
   group.add(mesh);
 
   return group;
 }
 
-function makeTower(floors) {
+function makeTower(unitFloors, nCommercial) {
   let group = new THREE.Group();
   let units = [];
-  for (let i=0; i < floors; i++) {
-    let floor = makeFloor();
-    units = units.concat(floor.children);
+  let commercial = [];
+  for (let i=0; i < nCommercial; i++) {
+    let floor = makeFloor(common.materials.commercial);
+    commercial = commercial.concat(floor.children);
+    floor.children.forEach((f) => {
+      f.obj = {
+        data: {
+          tooltip: 'Commercial'
+        }
+      };
+    });
     floor.position.y = (h+FLOOR_GAP)*i;
     group.add(floor);
   }
+
+  for (let i=0; i < unitFloors; i++) {
+    let floor = makeFloor(common.materials.vacant);
+    units = units.concat(floor.children);
+    floor.position.y = (h+FLOOR_GAP)*(i+nCommercial);
+    group.add(floor);
+  }
   group.rotation.x = Math.PI/2;
-  return {group, units};
+  return {group, units, commercial};
 }
 
 export default makeTower;

@@ -38,14 +38,15 @@ class Unit {
 }
 
 class Building {
-  constructor(units) {
+  constructor(units, nCommercial) {
     let nUnits = units.length;
 
     // Note: this assumes towers have units in multiples of 4
-    let building = nUnits <= 3 ? makeHouse(nUnits) : makeTower(nUnits/4);
+    let building = nUnits <= 3 ? makeHouse(nUnits) : makeTower(nUnits/4, nCommercial);
     this.group = building.group;
 
     this.units = {};
+    this.commercial = building.commercial;
     building.units.forEach((mesh, i) => {
       let unit = units[i];
       let u = new Unit(unit, mesh);

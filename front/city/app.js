@@ -61,6 +61,7 @@ api.get('/state', (state) => {
     selectables.push(c.mesh);
     if (c.building) {
       selectables = selectables.concat(Object.values(c.building.units).map((u) => u.mesh));
+      selectables = selectables.concat(Object.values(c.building.commercial));
     }
   });
   let ixn = new InteractionLayer(scene, selectables);

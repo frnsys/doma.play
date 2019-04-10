@@ -24,7 +24,8 @@ def jsonify(city, time):
         if p.building is not None:
             b = p.building
             buildings[b.id] = {
-                'units': [u.id for u in b.units]
+                'units': [u.id for u in b.units],
+                'nCommercial': b.n_commercial
             }
             for u in b.units:
                 units[u.id] = {

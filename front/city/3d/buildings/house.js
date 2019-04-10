@@ -30,7 +30,9 @@ function makeHouse(nUnits) {
   }
   group.rotation.x = Math.PI/2;
   group.rotation.y = Math.PI/6 * Math.random();
-  return {group, units};
+
+  let commercial = [];
+  return {group, units, commercial};
 }
 
 function makeSlab(depth) {

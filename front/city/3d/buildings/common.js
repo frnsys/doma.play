@@ -3,6 +3,7 @@ import * as THREE from 'three';
 
 const materials = {
   vacant: new THREE.MeshLambertMaterial({color: 0xffffff}),
+  commercial: new THREE.MeshLambertMaterial({color: 0x555555}),
   focus: new THREE.MeshLambertMaterial({color: config.focusColor})
 }
 
