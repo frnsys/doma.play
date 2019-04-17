@@ -1,3 +1,5 @@
+import sys
+import random
 import config
 import logging
 from sim import Simulation, logger
@@ -6,6 +8,10 @@ from sim.util import Command, get_commands
 logging.basicConfig(level=logging.INFO)
 
 if __name__ == '__main__':
+    seed = random.randrange(sys.maxsize)
+    random.seed(seed)
+    logger.info('Seed:{}'.format(seed))
+
     sim = Simulation(**config.SIM)
     sim.sync()
 

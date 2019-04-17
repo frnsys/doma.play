@@ -74,7 +74,7 @@ class Landlord:
         offered_units = set()
         for offer in self.out_offers:
             if offer.accepted: continue
-            new_offer = offer.amount * 0.95 # TODO what to set this at?
+            new_offer = offer.amount * 0.98 # TODO what to set this at?
             est_future_rent = self.trend_ests[offer.unit.building.parcel.neighborhood]
             if est_future_rent > new_offer:
                 offer.amount = new_offer
@@ -166,7 +166,7 @@ class Landlord:
                 # TODO this can be smarter
                 # i.e. depend on gap b/w
                 # current rent and rent estimate/projection
-                u.rent *= 1.05
+                u.rent *= 1.02
 
                 # TODO cap rents so they don't go to infinity
                 u.rent = min(u.rent, sys.maxsize)
