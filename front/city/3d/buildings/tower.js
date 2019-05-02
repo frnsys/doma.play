@@ -18,10 +18,10 @@ CHUNK_SHAPE.lineTo(b, -s+b);
 CHUNK_SHAPE.lineTo(0, -s+b);
 CHUNK_SHAPE.lineTo(0, -s+b);
 
-const CHUNK_GEO = new THREE.ExtrudeGeometry(CHUNK_SHAPE, {
+const CHUNK_GEO = new THREE.BufferGeometry().fromGeometry(new THREE.ExtrudeGeometry(CHUNK_SHAPE, {
   depth: h,
   bevelEnabled: false,
-});
+}));
 
 function makeChunk(mat) {
   var mesh = new THREE.Mesh(CHUNK_GEO, mat) ;

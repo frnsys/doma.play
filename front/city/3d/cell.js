@@ -6,6 +6,7 @@ const colorCache = {};
 const matConf = { vertexColors: THREE.VertexColors };
 const material = config.enableShadows ? new THREE.MeshLambertMaterial(matConf) : new THREE.MeshBasicMaterial(matConf);
 
+// TODO cache geos for hexagon of each type and each focus state
 
 class Cell {
   constructor(x, y, size, color, data) {
