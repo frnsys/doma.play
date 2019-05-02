@@ -23,6 +23,9 @@
     <textarea id="form-input"></textarea>
 </div>
 <main id="main"></main>
+<script>
+    const design = JSON.parse({{ data|tojson }});
+</script>
 <script src="{{ url_for('static', filename='js/design.js') }}"></script>
 {% endblock %}
 

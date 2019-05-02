@@ -1,3 +1,4 @@
+import api from '../api';
 import Scene from './3d/scene';
 import Grid from './3d/grid';
 import InteractionLayer from './3d/interact';
@@ -36,7 +37,13 @@ const defaultCellData = {
   neighborhoodId: -1,
   type: parcelTypes[0]
 }
-let neighborhoods = [{...defaultNeighborhood}];
+
+// Prepare new design
+if (Object.keys(design).length === 0) {
+  design.map = [];
+  design.neighborhoods = [{...defaultNeighborhood}];
+}
+
 let selectedCells = [];
 
 // Initialize grid cells
@@ -96,12 +103,105 @@ function updateCellColor(cell) {
     if (cell.data.neighborhood == 'None') {
       cell.color = noneNeighbColor;
     } else {
-      let neighborhood = neighborhoods.filter(n => n.name == cell.data.neighborhood)[0];
+      let neighborhood = design.neighborhoods.filter(n => n.name == cell.data.neighborhood)[0];
       cell.color = parseInt(neighborhood.color.substring(1), 16);
     }
   } else {
     cell.color = parcelColors[t];
   }
+}
+
+function loadMap(map) {
+  let nRows = map.length;
+  let nCols = map[0].length;
+  let rShift = Math.round(rows/2) - Math.round(nRows/2);
+  let cShift = Math.round(cols/2) - Math.round(nCols/2);
+
+  // Set grid cell data
+  map.forEach((row, r) => {
+    row.forEach((d, c) => {
+      if (d === null) return;
+      let [neighborhoodId, type] = d.split('|');
+      let cell = grid.cellAt(r+rShift, c+cShift);
+      let neighborhoodName;
+      let neighb;
+      if (neighborhoodId == -1) {
+        neighborhoodName = 'None';
+      } else {
+        neighb = design.neighborhoods.filter((n) => n.id == neighborhoodId)[0];
+        neighborhoodName = neighb.name;
+      }
+      cell.data = {
+        neighborhood: neighborhoodName,
+        neighborhoodId: neighborhoodId,
+        type: type
+      }
+
+      updateCellColor(cell);
+      cell.setColor(cell.color);
+    });
+  });
+}
+
+// Serialize design to JSON
+function serialize() {
+  let map = [];
+
+  // Figure out rows
+  let rowStart = -1, rowEnd = -1;
+  grid.grid.forEach((row, i) => {
+    let cells = row.filter((c) => c.data.type != 'Empty');
+    // Start row index
+    if (cells.length > 0 && rowStart < 0) {
+      rowStart = i;
+    }
+
+    // End row index
+    if (rowStart >= 0) {
+      if (rowEnd < 0) {
+        if (cells.length == 0) {
+          rowEnd = i;
+        } else {
+          map.push(row);
+        }
+      }
+    }
+  });
+  rowStart = rowStart == -1 ? 0 : rowStart;
+  rowEnd = rowEnd == -1 ? grid.grid.length : rowEnd;
+
+  // Figure out columns
+  let colStart = -1, colEnd = -1;
+  map.forEach((row) => {
+    row.forEach((c, i) => {
+      if (c.data.type == 'Empty') return;
+      if (colStart < 0 || i < colStart) {
+        colStart = i;
+      }
+    });
+
+    row.slice().reverse().forEach((c, i) => {
+      if (c.data.type == 'Empty') return;
+      if (colEnd < 0 || i < colEnd) {
+        colEnd = i;
+      }
+    })
+  });
+  colStart = colStart == -1 ? 0 : colStart;
+  colEnd = colEnd == -1 ? grid.grid[0].length : grid.grid[0].length - colEnd;
+
+  // Prepare export data
+  let data = {
+    map: map.map((row) => row.slice(colStart, colEnd).map(c => {
+      if (c.data.type == 'Empty') return null;
+      return `${c.data.neighborhoodId}|${c.data.type}`;
+    })),
+    neighborhoods: design.neighborhoods.reduce((acc, n) => {
+      acc[n.id] = n;
+      return acc;
+    }, {})
+  };
+  return JSON.stringify(data, null, 2);
 }
 
 // Importing map data
@@ -111,56 +211,7 @@ formEl.onclick = function(ev) {
   if (ev.target == this) {
     formEl.style.display = 'none';
     let source = JSON.parse(formInputEl.value);
-
-    // Reset grid
-    grid.cells.forEach((c) => {
-      c.color = parcelColors['Empty'];
-      c.setColor(c.color);
-      c.data = {...defaultCellData};
-    });
-
-    // Set neighborhoods & their UIs
-    neighborhoods = Object.values(source.neighborhoods);
-    Object.keys(nguis).forEach((k) => {
-      gui.removeFolder(nguis[k]);
-      delete nguis[k];
-    });
-    neighborhoods.forEach((n) => {
-      makeNeighborhoodGUI(n);
-    });
-
-    // Try to center map
-    if (source.map) {
-      let nRows = source.map.length;
-      let nCols = source.map[0].length;
-      let rShift = Math.round(rows/2) - Math.round(nRows/2);
-      let cShift = Math.round(cols/2) - Math.round(nCols/2);
-
-      // Set grid cell data
-      source.map.forEach((row, r) => {
-        row.forEach((d, c) => {
-          if (d === null) return;
-          let [neighborhoodId, type] = d.split('|');
-          let cell = grid.cellAt(r+rShift, c+cShift);
-          let neighborhoodName;
-          let neighb;
-          if (neighborhoodId == -1) {
-            neighborhoodName = 'None';
-          } else {
-            neighb = neighborhoods.filter((n) => n.id == neighborhoodId)[0];
-            neighborhoodName = neighb.name;
-          }
-          cell.data = {
-            neighborhood: neighborhoodName,
-            neighborhoodId: neighborhoodId,
-            type: type
-          }
-
-          updateCellColor(cell);
-          cell.setColor(cell.color);
-        });
-      });
-    }
+    loadDesign(source);
   }
 };
 
@@ -168,79 +219,29 @@ formEl.onclick = function(ev) {
 const gui = new dat.GUI();
 const control = {
   addNeighborhood: () => {
-    let id = Math.max.apply(Math, neighborhoods.map((n) => n.id)) + 1;
+    let id = Math.max.apply(Math, design.neighborhoods.map((n) => n.id)) + 1;
     let n = {...defaultNeighborhood};
     n.id = id;
     n.name = `Neighborhood ${id}`;
-    neighborhoods.push(n);
+    design.neighborhoods.push(n);
     makeNeighborhoodGUI(n);
+  },
+
+  save: () => {
+    let data = serialize();
+    api.post(window.location.pathname, data, () => {
+      console.log('saved');
+    });
   },
 
   // View map source
   source: () => {
-    let map = [];
-
-    // Figure out rows
-    let rowStart = -1, rowEnd = -1;
-    grid.grid.forEach((row, i) => {
-      let cells = row.filter((c) => c.data.type != 'Empty');
-      // Start row index
-      if (cells.length > 0 && rowStart < 0) {
-        rowStart = i;
-      }
-
-      // End row index
-      if (rowStart >= 0) {
-        if (rowEnd < 0) {
-          if (cells.length == 0) {
-            rowEnd = i;
-          } else {
-            map.push(row);
-          }
-        }
-      }
-    });
-    rowStart = rowStart == -1 ? 0 : rowStart;
-    rowEnd = rowEnd == -1 ? grid.grid.length : rowEnd;
-
-    // Figure out columns
-    let colStart = -1, colEnd = -1;
-    map.forEach((row) => {
-      row.forEach((c, i) => {
-        if (c.data.type == 'Empty') return;
-        if (colStart < 0 || i < colStart) {
-          colStart = i;
-        }
-      });
-
-      row.slice().reverse().forEach((c, i) => {
-        if (c.data.type == 'Empty') return;
-        if (colEnd < 0 || i < colEnd) {
-          colEnd = i;
-        }
-      })
-    });
-    colStart = colStart == -1 ? 0 : colStart;
-    colEnd = colEnd == -1 ? grid.grid[0].length : grid.grid[0].length - colEnd;
-
-    // Prepare export data
-    let data = {
-      map: map.map((row) => row.slice(colStart, colEnd).map(c => {
-        if (c.data.type == 'Empty') return null;
-        return `${c.data.neighborhoodId}|${c.data.type}`;
-      })),
-      neighborhoods: neighborhoods.reduce((acc, n) => {
-        acc[n.id] = n;
-        return acc;
-      }, {})
-    };
-    let exported = JSON.stringify(data, null, 2);
-
     // Show export data
-    formInputEl.value = exported;
+    formInputEl.value = serialize();
     formEl.style.display = 'block';
   }
 };
+gui.add(control, 'save');
 gui.add(control, 'source');
 
 // Selected cell GUI
@@ -294,7 +295,7 @@ function makeNeighborhoodGUI(n) {
     delete: () => {
       gui.removeFolder(nguis[n.id]);
       delete nguis[n.id];
-      neighborhoods.splice(neighborhoods.findIndex((n_) => n_.id == n.id), 1);
+      design.neighborhoods.splice(design.neighborhoods.findIndex((n_) => n_.id == n.id), 1);
       updateNeighbOpts();
     }
   }, 'delete');
@@ -303,13 +304,37 @@ function makeNeighborhoodGUI(n) {
 }
 
 gui.add(control, 'addNeighborhood').name('+Neighborhood');
-neighborhoods.forEach(makeNeighborhoodGUI);
+
+function loadDesign(source) {
+  // Reset grid
+  grid.cells.forEach((c) => {
+    c.color = parcelColors['Empty'];
+    c.setColor(c.color);
+    c.data = {...defaultCellData};
+  });
+
+  // Set neighborhoods & their UIs
+  design.neighborhoods = Object.values(source.neighborhoods);
+  Object.keys(nguis).forEach((k) => {
+    gui.removeFolder(nguis[k]);
+    delete nguis[k];
+  });
+  design.neighborhoods.forEach((n) => {
+    makeNeighborhoodGUI(n);
+  });
+
+  // Try to center map
+  if (source.map.length > 0) loadMap(source.map);
+}
+loadDesign(design);
+
+
 
 // For updating neighborhood selection dropdown
 let nOpts;
 function updateNeighbOpts() {
   if (nOpts) cgui.remove(nOpts);
-  let opts = ['None'].concat(neighborhoods.map(n => n.name));
+  let opts = ['None'].concat(design.neighborhoods.map(n => n.name));
   nOpts = cgui.add(dummyCell, 'neighborhood').options(opts).onChange((name) => {
     selectedCells.forEach((c) => {
       c.data.neighborhood = name;
@@ -318,7 +343,7 @@ function updateNeighbOpts() {
       if (name == 'None') {
         c.data.neighborhoodId = -1;
       } else {
-        let neighborhood = neighborhoods.filter(n => n.name == name)[0];
+        let neighborhood = design.neighborhoods.filter(n => n.name == name)[0];
         c.data.neighborhoodId = neighborhood.id;
       }
     });
