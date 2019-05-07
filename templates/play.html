@@ -1,5 +1,26 @@
 {% extends 'layout.html' %}
+
 {% block content %}
+<main id="main">
+    <h2>Commuting<span id="js-animated-ellipse">...</span></h2>
+    <!-- <div id="event" class="event"> -->
+    <!--     <h2>Delay</h2> -->
+    <!--     <p>There's trouble on the tracks ahead.<br/>I'm going to be late for work.</p> -->
+    <!--     <ul class="event-actions"> -->
+    <!--         <li><img src="/static/img/coins-2.png"><h3>Take a cab.</h3></li> -->
+    <!--         <li><img src="/static/img/health-1.png"><h3>Find another way.</h3></li> -->
+    <!--         <li><h3>Wait it out.</h3></li> -->
+    <!--     </ul> -->
+    <!-- </div> -->
+    <div id="event" class="event">
+        <h2>Arrived</h2>
+        <p>Another day at work.</p>
+        <ul class="event-actions">
+            <li><h3>Get to work.</h3></li>
+        </ul>
+    </div>
+
+</main>
 <script src="{{ url_for('static', filename='js/play.js') }}"></script>
 {% endblock %}
 

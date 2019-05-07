@@ -1,5 +1,6 @@
 import random
 import logging
+import numpy as np
 from .util import sync
 from .city import City
 from .agent import Landlord, Tenant
@@ -24,9 +25,8 @@ class Simulation:
         # Initialize tenants
         self.tenants = []
         for _ in range(n_tenants):
-            # TODO better income distribution
-            income = random.randint(500, 5000)
-            tenant = Tenant(income)
+            income = max(0, np.random.normal(conf['income']['mean'], conf['income']['std']))
+            tenant = Tenant(income/12)
             self.tenants.append(tenant)
 
         # Distribute units to tenants

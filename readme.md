@@ -73,3 +73,31 @@ For each month $m$:
 - Add in maintenance costs, which affect the attractiveness of a unit. Landlords decide how much to invest into maintenance, by estimating return for each dollar spend on maintenance (some maybe learn a linear model of appeal of unit $u$, $l_u$, relationship to $r_u$).
 - Add in migration (people moving to/from the city)
 - Demolition/construction of new buildings
+
+---
+
+Player experience
+
+- What are the main things the player spends time doing?
+    - Searching for apartments
+    - Commuting to/from work
+    - Working
+- Player resources
+    - Performance at work is affected by how much energy they have when they arrive at work
+    - Their energy is recharged when they return home, based on the desirability of their apartment and neighborhood?
+    - After work, players can decide to go see friends, which can give them an additional energy boost. But if their friends' energies are also low (e.g. because their work/life situations are also exhausting), then it results in an energy penalty
+        - Maybe there can be a menu of activities here, e.g. going out to a bar is more likely to have an energy boost but costs money
+    - Energy recharges over weekends
+- Random events
+    - When players commute to work, there is some probability that something goes wrong during their commute. This will delay them and penalize their performance at work, which, if it gets bad enough, can them fired (with some probability).
+        - Players can expend money to get to work on time (e.g. take a taxi)
+        - Players can find an alternative public route (saves money, burns energy)
+        - Probability of subway failure can also be related to neighborhood desirability? a function of how much money is leaving that neighborhood?
+        - Probability of something going wrong can also be a function of how long your commute is. E.g. if you're very far from a subway, something can go wrong during your walk to the station. Or if you have to take many transfers, something could go wrong at each of them, etc.
+    - Random events can also occur at home, e.g. rat infestation, bed bugs, burst pipe, etc...probability of these are affected by maintenance level of apartment
+    - There can also be more general random life events, like a family member falls ill (which, while active, could be a persistent penalty to energy)
+- Scripted events
+    - We can program specific/special events to occur
+        - For example, after some time the player learns about Doma
+
+
