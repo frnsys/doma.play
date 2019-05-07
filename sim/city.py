@@ -192,9 +192,10 @@ class City:
             units = []
             for _ in range(n_units):
                 area = random.randint(neighb['minArea'], neighb['maxArea'])
+                rent = round(self.config['pricePerSqm']*area*neighb['desirability'])
                 units.append(Unit(
                     area=area,
-                    rent=round((self.config['pricePerSqm']*neighb['desirability'])/area),
+                    rent=rent,
                     occupancy=max(1, round(area/neighb['sqmPerOccupant'])),
                 ))
             p.build(Building('{}_{}'.format(*p.pos), units, n_commercial))

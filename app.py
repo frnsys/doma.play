@@ -34,7 +34,6 @@ def design(id):
     # Save data
     if request.method == 'POST':
         data = request.get_json()
-        data = json.dumps(data)
         redis.set('design:{}'.format(id), data)
         return jsonify(success=True)
     else:
