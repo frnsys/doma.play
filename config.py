@@ -7,11 +7,12 @@ REDIS = {
 }
 
 # Load map exported from designer
-city = json.load(open('city.json'))
+design = json.load(open('city.json'))
 
 SIM = {
-    'map': city['map'],
-    'neighborhoods': city['neighborhoods'],
+    'map': design['map'],
+    'neighborhoods': design['neighborhoods'],
+    'city': design['city'],
     'n_tenants': 4000,
     'n_landlords': 10,
     'pricing_horizon': 5 * 12,

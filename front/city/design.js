@@ -26,7 +26,6 @@ const defaultNeighborhood = {
   desirability: 1,
   minUnits: 8,
   maxUnits: 12,
-  pricePerSqm: 10000,
   minArea: 200,
   maxArea: 500,
   sqmPerOccupant: 100,
@@ -37,11 +36,15 @@ const defaultCellData = {
   neighborhoodId: -1,
   type: parcelTypes[0]
 }
+const defaultCity= {
+  pricePerSqm: 100
+};
 
 // Prepare new design
 if (Object.keys(design).length === 0) {
   design.map = [];
   design.neighborhoods = [{...defaultNeighborhood}];
+  design.city= defaultCity;
 }
 
 let selectedCells = [];
@@ -199,7 +202,8 @@ function serialize() {
     neighborhoods: design.neighborhoods.reduce((acc, n) => {
       acc[n.id] = n;
       return acc;
-    }, {})
+    }, {}),
+    city: design.city
   };
   return JSON.stringify(data, null, 2);
 }
@@ -244,6 +248,11 @@ const control = {
 gui.add(control, 'save');
 gui.add(control, 'source');
 
+
+const citygui = gui.addFolder('City');
+citygui.add(design.city, 'pricePerSqm').min(0).step(1);
+citygui.open();
+
 // Selected cell GUI
 const cgui = gui.addFolder('Selected Cell');
 const dummyCell = {...defaultCellData};
@@ -276,7 +285,6 @@ function makeNeighborhoodGUI(n) {
   });
   ngui.add(n, 'minUnits').min(0).step(1);
   ngui.add(n, 'maxUnits').step(1);
-  ngui.add(n, 'pricePerSqm').min(0).step(1);
   ngui.add(n, 'minArea').min(0).step(1);
   ngui.add(n, 'maxArea').min(0).step(1);
   ngui.add(n, 'sqmPerOccupant').min(1).step(1);
@@ -322,6 +330,8 @@ function loadDesign(source) {
   design.neighborhoods.forEach((n) => {
     makeNeighborhoodGUI(n);
   });
+
+  design.city= source.city || defaultCity;
 
   // Try to center map
   if (source.map.length > 0) loadMap(source.map);

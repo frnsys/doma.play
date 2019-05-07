@@ -24,7 +24,11 @@
 </div>
 <main id="main"></main>
 <script>
-    const design = JSON.parse({{ data|tojson }});
+    {% if data %}
+        const design = JSON.parse({{ data|tojson }});
+    {% else %}
+        const design = {};
+{% endif %}
 </script>
 <script src="{{ url_for('static', filename='js/design.js') }}"></script>
 {% endblock %}

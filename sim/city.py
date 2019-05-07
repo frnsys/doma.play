@@ -12,13 +12,13 @@ class ParcelType(Enum):
 
 class City:
     @classmethod
-    def generate(cls, size, n_parcels, neighborhoods):
-        city = cls(size, neighborhoods)
+    def generate(cls, size, n_parcels, neighborhoods, config):
+        city = cls(size, neighborhoods, config)
         city.generate_map(n_parcels)
         return city
 
     @classmethod
-    def from_map(cls, map, neighborhoods):
+    def from_map(cls, map, neighborhoods, config):
         # This is specifically for maps created
         # with the designer.
         # Assume map has already been "minimized"
@@ -26,7 +26,7 @@ class City:
         # Note that the designer outputs cols/rows flipped
         rows = len(map)
         cols = len(map[0])
-        city = cls((cols, rows), neighborhoods)
+        city = cls((cols, rows), neighborhoods, config)
 
         for r, row in enumerate(map):
             for c, cell in enumerate(row):
@@ -43,10 +43,11 @@ class City:
         city.update_parcel_desirabilities()
         return city
 
-    def __init__(self, size, neighborhoods):
+    def __init__(self, size, neighborhoods, config):
         rows, cols = size
         self.grid = HexGrid(rows, cols)
         self.neighborhoods = neighborhoods
+        self.config = config
 
     def generate_map(self, n_parcels):
         if n_parcels > self.grid.rows * self.grid.cols:
@@ -193,7 +194,7 @@ class City:
                 area = random.randint(neighb['minArea'], neighb['maxArea'])
                 units.append(Unit(
                     area=area,
-                    rent=round(neighb['pricePerSqm']/area),
+                    rent=round((self.config['pricePerSqm']*neighb['desirability'])/area),
                     occupancy=max(1, round(area/neighb['sqmPerOccupant'])),
                 ))
             p.build(Building('{}_{}'.format(*p.pos), units, n_commercial))

@@ -36,10 +36,13 @@ def design(id):
         data = request.get_json()
         data = json.dumps(data)
         redis.set('design:{}'.format(id), data)
+        return jsonify(success=True)
     else:
         data = redis.get('design:{}'.format(id))
-        if data is None: abort(404)
-        data = data.decode('utf8')
+        if data is None:
+            data = '{}'
+        else:
+            data = data.decode('utf8')
 
     return render_template('design.html', data=json.loads(data))
 
