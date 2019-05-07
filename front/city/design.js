@@ -234,7 +234,7 @@ const control = {
   save: () => {
     let data = serialize();
     api.post(window.location.pathname, data, () => {
-      console.log('saved');
+      toast('Saved.');
     });
   },
 
@@ -376,6 +376,24 @@ scene.controls.enableRotate = false;
 // Setup interactable objects
 let selectables = grid.cells.map(c => c.mesh);
 let ixn = new InteractionLayer(scene, selectables);
+
+// Simple toast
+function toast(msg) {
+  const toastEl = document.createElement('div');
+  toastEl.style.position = 'fixed';
+  toastEl.style.top = '10px';
+  toastEl.style.left = '10px';
+  toastEl.innerText = msg;
+  toastEl.style.opacity = 2;
+  document.body.appendChild(toastEl);
+  const fadeOut = setInterval(() => {
+    toastEl.style.opacity = parseFloat(toastEl.style.opacity) - 0.025;
+    if (toastEl.style.opacity <= 0) {
+      document.body.removeChild(toastEl);
+      clearInterval(fadeOut);
+    }
+  }, 10);
+}
 
 function render() {
   scene.render();
