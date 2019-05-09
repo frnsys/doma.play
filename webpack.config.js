@@ -2,9 +2,9 @@ var path = require('path');
 
 module.exports = {
   entry: {
-    'city': ['@babel/polyfill', './front/city/app'],
-    'play': ['@babel/polyfill', './front/play/app'],
-    'design': ['@babel/polyfill', './front/city/design']
+    'city': ['@babel/polyfill', './js/city/app'],
+    'play': ['@babel/polyfill', './js/play/app'],
+    'design': ['@babel/polyfill', './js/city/design']
   },
   output: {
     path: path.resolve(__dirname, 'static/js'),
