@@ -68,6 +68,10 @@ class Simulation:
 
     def step(self):
         logger.info('Step {}'.format(self.time))
+        for b in self.city.buildings:
+            for u in b.units:
+                u.collect_rent()
+
         random.shuffle(self.landlords)
         for d in self.landlords:
             d.step(self)

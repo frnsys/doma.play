@@ -5,6 +5,28 @@ import numpy as np
 import statsmodels.api as sm
 from collections import defaultdict
 
+def hyperbolic_discount(val, delay, k=1):
+    return val * 1/(1 + k*delay)
+
+# def loglin_predict(landlord, sampled_units):
+    # X = np.array([u.maintenance for u in sampled_units]).reshape(-1, 1)
+    # y = np.array([u.rent_per_area for u in sampled_units])
+    # m = linear_model.LinearRegression()
+    # m.fit(X, np.exp(y))
+    # f = lambda x: np.log(m.coef_[0] * x + m.intercept_)
+
+    # Derivative of model
+    # The optimal strategy is to increase maintenance cost until
+    # the return for the marginal cost increase is
+    # less than $1 of rent (* area?), i.e. until the derivative is <= 1.
+    # So we take the derivative and subtract 1 such that the root of the
+    # derivative is actually where it equals 1
+    # Problem here is I don't know if a log-linear model is appropriate,
+    # and there's no guarantee that the derivative has a root.
+    # deriv = lambda x: m.coef_[0]/(m.coef_[0] * x + m.intercept_) - 1
+    # bracket = [0, max(u.maintenance for u in sampled_units)]
+    # sp.optimize.root_scalar(deriv, bracket=bracket)
+
 
 class Offer:
     def __init__(self, landlord, unit, amount):
@@ -41,16 +63,36 @@ class Landlord:
         # Consider own units
         for u in self.units:
             if not u.tenants: continue
-            neighborhoods[u.building.parcel.neighborhood].append(u.rent_per_area)
+            neighborhoods[u.building.parcel.neighborhood].append(u)
 
         # Also consider a random sample of
         # other units in the neighborhood
+        samples = {}
         for neighb, rent_history in self.rent_ests.items():
-            rents = neighborhoods.get(neighb, [])
+            rents = [u.rent_per_area for u in neighborhoods.get(neighb, [])]
             units = city.neighborhood_units(neighb)
             samp_size = min(len(units), sample_size)
-            rents += [u.rent_per_area for u in random.sample(units, samp_size)]
+            sample = random.sample(units, samp_size)
+            samples[neighb] = sample
+            rents += [u.rent_per_area for u in sample]
             rent_history.append(np.mean(rents))
+
+        # Adjust maintenance for units per neighborhood
+        # Look not at rent, but rental income over the past year
+        # to account for vacancies/lost income
+        # and look at mean maintenance investment over the past year
+        # and then look at this mean maintenance cost as a percent of rental income
+        # over the year. then choose the minimum. this feels like a decent
+        # approximation, the only downside is that landlords dont have a model
+        # of marginal return per increase in maintenance cost, which is probably
+        # what they'd want to maximize return
+        for neighb, units in neighborhoods.items():
+            # TODO if we add building age, need to consider that
+            sample = units + samples[neighb]
+            maintenance_to_rent_ratio = min([u.mean_ytd_maintenance/u.mean_ytd_income for u in sample if u.mean_ytd_income > 0])
+            for u in units:
+                u.maintenance = maintenance_to_rent_ratio * u.rent
+
 
     def estimate_trends(self, months=12, horizon=36):
         """Estimate rent trends for each neighborhood,
@@ -75,7 +117,7 @@ class Landlord:
         for offer in self.out_offers:
             if offer.accepted: continue
             new_offer = offer.amount * 0.98 # TODO what to set this at?
-            est_future_rent = self.trend_ests[offer.unit.building.parcel.neighborhood]
+            est_future_rent = (self.trend_ests[offer.unit.building.parcel.neighborhood] - offer.unit.maintenance)
             if est_future_rent > new_offer:
                 offer.amount = new_offer
                 new_offers.add(offer)
@@ -86,8 +128,8 @@ class Landlord:
         units = self.city.neighborhood_units(best_invest)
         for u in random.sample(units, min(len(units), sample_size)):
             if u.owner == self or u in offered_units: continue
-            income = u.rent_per_area * sim.conf['pricing_horizon']
-            income_est = est_future_rent * sim.conf['pricing_horizon']
+            income = (u.rent_per_area - u.maintenance) * sim.conf['pricing_horizon']
+            income_est = (est_future_rent - u.maintenance) * sim.conf['pricing_horizon']
             if income_est > income:
                 offer = Offer(self, u, income)
                 u.offers.add(offer)
@@ -102,7 +144,7 @@ class Landlord:
             if not u.offers: continue
 
             neighb = u.building.parcel.neighborhood
-            est_future_rent = self.trend_ests[neighb] * sim.conf['pricing_horizon']
+            est_future_rent = (self.trend_ests[neighb] - u.maintenance) * sim.conf['pricing_horizon']
 
             # Find best offer, if any
             # and mark offers as rejected or accepted
@@ -115,7 +157,7 @@ class Landlord:
                         best_offer = o
                         best_offer.accepted = True
                     else:
-                        if o.amount > best_offer.amonut:
+                        if o.amount > best_offer.amount:
                             best_offer.accepted = False
 
                             best_offer = o
@@ -248,7 +290,11 @@ class Tenant:
         transfers = []
         for u in self.units:
             if not u.offers: continue
-            est_future_rent = u.rent * sim.conf['pricing_horizon']
+            # This should reflect the following:
+            # - since rents decrease as the apartment is vacant,
+            #   the longer the vacancy, the more likely they are to sell
+            # - maintenance costs become too much
+            est_future_rent = (u.rent - u.maintenance) * sim.conf['pricing_horizon']
 
             # Find best offer, if any
             # and mark offers as rejected or accepted

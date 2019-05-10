@@ -2,6 +2,7 @@ import math
 import random
 from enum import Enum
 from .grid import HexGrid
+from collections import deque
 
 
 class ParcelType(Enum):
@@ -269,6 +270,7 @@ class Building:
 class Unit:
     def __init__(self, rent, occupancy, area, owner=None):
         self.rent = rent
+        self.maintenance = 0.1 * rent # TODO what to set as the starting value?
         self.occupancy = occupancy
         self.area = area
         self.tenants = set()
@@ -278,6 +280,10 @@ class Unit:
 
         # Purchase offers
         self.offers = set()
+
+        # Keep track of YTD income and maintenance
+        self.income_history = deque([], maxlen=12)
+        self.maintenance_history = deque([], maxlen=12)
 
     def setOwner(self, owner):
         # Remove from old owner
@@ -317,3 +323,25 @@ class Unit:
     def move_out(self, tenant):
         self.tenants.remove(tenant)
         tenant.unit = None
+
+    def collect_rent(self):
+        if self.vacant:
+            self.income_history.append(0)
+        else:
+            self.income_history.append(self.rent)
+        self.maintenance_history.append(self.maintenance)
+
+        self.mean_ytd_income = self.weighted_mean_ytd_income()
+        self.mean_ytd_maintenance = self.weighted_mean_ytd_maintenance()
+
+    def weighted_mean_ytd_income(self):
+        # Decay linearly over past year/available data
+        n_hist = len(self.income_history)
+        weights = [(i+1)*(1/n_hist) for i in range(n_hist)]
+        return sum(w*inc for w, inc in zip(weights, self.income_history))/sum(weights)
+
+    def weighted_mean_ytd_maintenance(self):
+        # Decay linearly over past year/available data
+        n_hist = len(self.maintenance_history)
+        weights = [(i+1)*(1/n_hist) for i in range(n_hist)]
+        return sum(w*inc for w, inc in zip(weights, self.maintenance_history))/sum(weights)
