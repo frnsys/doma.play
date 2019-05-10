@@ -1,3 +1,4 @@
+import os
 import sys
 import json
 import redis
@@ -7,6 +8,7 @@ import logging
 from sim import Simulation, logger
 from sim.util import Command, get_commands
 
+DEBUG = os.environ.get('DEBUG', False)
 redis = redis.Redis(**config.REDIS)
 logging.basicConfig(level=logging.INFO)
 
@@ -25,13 +27,22 @@ if __name__ == '__main__':
     sim = Simulation(**config.SIM)
     sim.sync()
 
-    while True:
-        cmds = get_commands()
-        for typ, data in cmds:
-            logger.info('CMD:{}'.format(typ.name))
-            if typ is Command.RESTART:
-                sim = Simulation(**data)
-                sim.sync()
+    if DEBUG:
+        history = [sim.stats()]
 
-        sim.step()
-        sim.sync()
+    try:
+        while True:
+            cmds = get_commands()
+            for typ, data in cmds:
+                logger.info('CMD:{}'.format(typ.name))
+                if typ is Command.RESTART:
+                    sim = Simulation(**data)
+                    sim.sync()
+
+            sim.step()
+            sim.sync()
+            if DEBUG: history.append(sim.stats())
+    except KeyboardInterrupt:
+        if DEBUG:
+            with open('history.json', 'w') as f:
+                json.dump(history, f)

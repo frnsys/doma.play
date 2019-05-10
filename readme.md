@@ -73,3 +73,33 @@ For each month $m$:
 - Add in maintenance costs, which affect the attractiveness of a unit. Landlords decide how much to invest into maintenance, by estimating return for each dollar spend on maintenance (some maybe learn a linear model of appeal of unit $u$, $l_u$, relationship to $r_u$).
 - Add in migration (people moving to/from the city)
 - Demolition/construction of new buildings
+
+# Tuning the model
+
+You can run the simulation with:
+
+    DEBUG=1 python main.py
+
+Which will create a file called `history.json` upon quitting (`CTRL+C`) the simulation. You can then run `plot.py` to see plots for each of the collected stats.
+
+---
+
+# misc
+
+- how do landlords device how much to invest in maintenance?
+    - depending on risk of lease-breaking? if so, how is this risk computed? maybe based on availability of other units in the neighborhood at comparable price and below and comparable quality. look at mean vacancy of these units over the past year.
+    - should really be expected return per dollar of maintenance expenditure. this takes into account mean vacancy (by way of expected rental income), and landlords learn a log-linear model for the marginal return (in % of rent) of an additional dollar of maintenance expenditure, based on data points from other units in the neighborhood
+    - maintenance cost can be a scale of 0-1% of property value; maintenance level is a function of unit age and maintenance expenditure
+- how to determine value horizon for owners? there may be conditions where the horizon becomes shorter, but how do those conditions occur? (and can we use NPV here as the formula?)
+    - this could just change randomly for tenant-owners, based on a global `precarity` parameter
+
+Net Present Value (NPV)/Discounted Cash Flow: a way of computing the present value of something, taking into account present & future income and cash outflows (e.g. investment)
+1. compute present value of all cash inflows and outflows
+
+Weighted Average Cost of Capital (WACC), e.g. interest on a loan
+Present is $t=0$ and is usually negative b/c of investment, for every $t > 1$ estimate the expected cash inflow and divide that by $(1+WACC)^t$
+You go out some number of years, e.g. 5, and then add these up.
+
+Internal Rate of Return (IRR): the discount rate at which NPV becomes 0, i.e. set NPV to 0 and solve for WACC. The solution for WACC is the IRR.
+
+landlords should make offers based on recent sale prices in that neighborhood for comparable homes, per sq m. then they calculate the NPV of their investment over 5 years, with a desired rate of return as the discount rate

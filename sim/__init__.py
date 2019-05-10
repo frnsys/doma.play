@@ -91,5 +91,8 @@ class Simulation:
             'percent_homeless': sum(1 for t in self.tenants if t.unit is None)/len(self.tenants),
             'percent_vacant': sum(1 for u in units if u.vacant)/len(units),
             'mean_rent_per_area': sum(u.rent_per_area for u in units)/len(units),
-            'mean_months_vacant': sum(u.monthsVacant for u in units)/len(units)
+            'mean_months_vacant': sum(u.monthsVacant for u in units)/len(units),
+            'mean_maintenance_costs': sum(u.maintenance/u.rent for u in units)/len(units),
+            'unique_landlords': len(set(u.owner for u in units)),
+            'mean_offers': sum(len(u.offers) for u in units)
         }
