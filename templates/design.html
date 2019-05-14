@@ -11,6 +11,11 @@
         z-index: 12;
         display: none;
     }
+    #meta {
+        position: fixed;
+        left: 1em;
+        bottom: 1em;
+    }
     #form-input {
         margin: 2em auto;
         min-height: 400px;
@@ -22,6 +27,7 @@
 <div id="form">
     <textarea id="form-input"></textarea>
 </div>
+<div id="meta"></div>
 <main id="main"></main>
 <script>
     const design = {{ data|tojson }};

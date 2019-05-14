@@ -36,15 +36,17 @@ const defaultCellData = {
   neighborhoodId: -1,
   type: parcelTypes[0]
 }
-const defaultCity= {
-  pricePerSqm: 100
+const defaultCity = {
+  pricePerSqm: 100,
+  population: 1000,
+  landlords: 10
 };
 
 // Prepare new design
 if (Object.keys(design).length === 0) {
   design.map = [];
   design.neighborhoods = [{...defaultNeighborhood}];
-  design.city= defaultCity;
+  design.city = defaultCity;
 }
 
 let selectedCells = [];
@@ -251,6 +253,8 @@ gui.add(control, 'source');
 
 const citygui = gui.addFolder('City');
 citygui.add(design.city, 'pricePerSqm').min(0).step(1);
+citygui.add(design.city, 'population').min(0).step(100);
+citygui.add(design.city, 'landlords').min(0).step(1);
 citygui.open();
 
 // Selected cell GUI
@@ -261,6 +265,7 @@ cgui.add(dummyCell, 'type').options(parcelTypes).listen().onChange((t) => {
     c.data.type = t;
     updateCellColor(c);
   });
+  updateCityLimits();
 });
 cgui.open();
 
@@ -283,11 +288,11 @@ function makeNeighborhoodGUI(n) {
       dummyCell.neighborhood = val;
     }
   });
-  ngui.add(n, 'minUnits').min(0).step(1);
-  ngui.add(n, 'maxUnits').step(1);
-  ngui.add(n, 'minArea').min(0).step(1);
-  ngui.add(n, 'maxArea').min(0).step(1);
-  ngui.add(n, 'sqmPerOccupant').min(1).step(1);
+  ngui.add(n, 'minUnits').min(0).step(1).onChange(updateCityLimits);
+  ngui.add(n, 'maxUnits').step(1).onChange(updateCityLimits);
+  ngui.add(n, 'minArea').min(0).step(1).onChange(updateCityLimits);
+  ngui.add(n, 'maxArea').min(0).step(1).onChange(updateCityLimits);
+  ngui.add(n, 'sqmPerOccupant').min(1).step(1).onChange(updateCityLimits);
   ngui.add(n, 'pCommercial').min(0).max(1).step(0.05);
   ngui.add(n, 'desirability').min(0).step(1);
 
@@ -331,13 +336,33 @@ function loadDesign(source) {
     makeNeighborhoodGUI(n);
   });
 
-  design.city= source.city || defaultCity;
+  design.city = source.city || defaultCity;
 
   // Try to center map
   if (source.map.length > 0) loadMap(source.map);
+
+  updateCityLimits();
 }
 loadDesign(design);
 
+// Compute unit and occupancy ranges
+function updateCityLimits() {
+  let el = document.getElementById('meta');
+  let unitsMin = 0;
+  let unitsMax = 0;
+  let occupancyMin = 0;
+  let occupancyMax = 0;
+  grid.cells.map(c => {
+    if (c.data.neighborhoodId in design.neighborhoods && c.data.type == 'Residential') {
+      let neighb = design.neighborhoods[c.data.neighborhoodId];
+      unitsMin += neighb.minUnits;
+      unitsMax += neighb.maxUnits;
+      occupancyMin += Math.floor(neighb.minUnits * (neighb.minArea/neighb.sqmPerOccupant));
+      occupancyMax += Math.floor(neighb.maxUnits * (neighb.maxArea/neighb.sqmPerOccupant));
+    }
+  });
+  el.innerHTML = `Units: ${unitsMin}-${unitsMax}<br />Occupancy: ${occupancyMin}-${occupancyMax}`;
+}
 
 
 // For updating neighborhood selection dropdown
@@ -357,6 +382,7 @@ function updateNeighbOpts() {
         c.data.neighborhoodId = neighborhood.id;
       }
     });
+    updateCityLimits();
   });
 }
 
