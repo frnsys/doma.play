@@ -270,7 +270,7 @@ class Building:
 class Unit:
     def __init__(self, rent, occupancy, area, owner=None):
         self.rent = rent
-        self.maintenance = 0.1 * rent # TODO what to set as the starting value?
+        self.maintenance = 0.1 * rent/area # TODO what to set as the starting value?
         self.occupancy = occupancy
         self.area = area
         self.tenants = set()
@@ -305,6 +305,10 @@ class Unit:
     @property
     def rent_per_area(self):
         return self.rent/self.area
+
+    @property
+    def rent_per_tenant(self):
+        return self.rent/len(self.tenants)
 
     def move_in(self, tenant, month):
         if tenant.unit is not None:

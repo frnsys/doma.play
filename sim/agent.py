@@ -45,6 +45,7 @@ class Landlord:
 
         self.units = set()
         self.out_offers = set()
+        self.sales = 0
 
         # Keep track of estimates
         # for making decisions
@@ -91,7 +92,7 @@ class Landlord:
             sample = units + samples[neighb]
             maintenance_to_rent_ratio = min([u.mean_ytd_maintenance/u.mean_ytd_income for u in sample if u.mean_ytd_income > 0])
             for u in units:
-                u.maintenance = maintenance_to_rent_ratio * u.rent
+                u.maintenance = maintenance_to_rent_ratio * u.rent_per_area
 
 
     def estimate_trends(self, months=12, horizon=36):
@@ -99,6 +100,7 @@ class Landlord:
         looking ate past `months` of data, projecting
         out to `horizon` months"""
         # TODO should these months/horizon be landlord parameters?
+        # These are rent per area
         for neighb, rent_history in self.rent_ests.items():
             if len(rent_history) < months: continue
             y = rent_history[-months:]
@@ -118,7 +120,7 @@ class Landlord:
             if offer.accepted: continue
             new_offer = offer.amount * 0.98 # TODO what to set this at?
             est_future_rent = (self.trend_ests[offer.unit.building.parcel.neighborhood] - offer.unit.maintenance)
-            if est_future_rent > new_offer:
+            if est_future_rent > new_offer and new_offer > 0:
                 offer.amount = new_offer
                 new_offers.add(offer)
                 offered_units.add(offer.unit)
@@ -130,8 +132,9 @@ class Landlord:
             if u.owner == self or u in offered_units: continue
             income = (u.rent_per_area - u.maintenance) * sim.conf['pricing_horizon']
             income_est = (est_future_rent - u.maintenance) * sim.conf['pricing_horizon']
-            if income_est > income:
-                offer = Offer(self, u, income)
+            if income_est > 0 and income_est > income:
+                amount = income * 1.1 # TODO how should this value be determiend?
+                offer = Offer(self, u, amount)
                 u.offers.add(offer)
                 new_offers.add(offer)
         self.out_offers = new_offers
@@ -139,6 +142,7 @@ class Landlord:
 
     def check_purchase_offers(self, sim):
         """Check purchase offers on units"""
+        self.sales = 0
         transfers = []
         for u in self.units:
             if not u.offers: continue
@@ -163,6 +167,7 @@ class Landlord:
                             best_offer = o
                             best_offer.accepted = True
             if best_offer is not None:
+                self.sales += 1
                 transfers.append((u, best_offer.landlord))
 
         # Have to do this here
@@ -229,6 +234,13 @@ class Tenant:
         # Tenants may own units too
         self.units = set()
 
+        # How long this tenant has lived in the same place
+        self.months_stayed = 0
+        self.moved = False
+
+        # How many units sold this step
+        self.sales = 0
+
     def desirability(self, unit, prefs):
         """Compute desirability of a housing unit
         for this tenant"""
@@ -251,6 +263,8 @@ class Tenant:
 
     def step(self, sim):
         sample_size = 20
+        self.sales = 0
+        self.moved = False
 
         # If currently w/o home,
         # will always look for a place to move into,
@@ -273,6 +287,11 @@ class Tenant:
             reconsider = elapsed > 0 and elapsed % 12 == 0
             current_desirability = self.desirability(self.unit, sim.conf['tenants'])
 
+            # No longer can afford
+            if current_desirability == 0:
+                reconsider = True
+                self.unit.move_out(self)
+
         if reconsider:
             vacants = sim.city.units_with_vacancies()
             if vacants:
@@ -282,8 +301,13 @@ class Tenant:
 
                 # Desirability of 0 means that tenant can't afford it
                 des = self.desirability(vacancies[0], sim.conf['tenants'])
-                if des - moving_penalty > current_desirability:
+                if des > 0 and des - moving_penalty > current_desirability:
                     vacancies[0].move_in(self, sim.time)
+                    self.moved = True
+                    self.months_stayed = 0
+
+        if not self.moved:
+            self.months_stayed += 1
 
         # If they own units,
         # check purchase offers
@@ -294,7 +318,7 @@ class Tenant:
             # - since rents decrease as the apartment is vacant,
             #   the longer the vacancy, the more likely they are to sell
             # - maintenance costs become too much
-            est_future_rent = (u.rent - u.maintenance) * sim.conf['pricing_horizon']
+            est_future_rent = (u.rent_per_area - u.maintenance) * sim.conf['pricing_horizon']
 
             # Find best offer, if any
             # and mark offers as rejected or accepted
@@ -307,12 +331,13 @@ class Tenant:
                         best_offer = o
                         best_offer.accepted = True
                     else:
-                        if o.amount > best_offer.amonut:
+                        if o.amount > best_offer.amount:
                             best_offer.accepted = False
 
                             best_offer = o
                             best_offer.accepted = True
             if best_offer is not None:
+                self.sales += 1
                 transfers.append((u, best_offer.landlord))
 
         # Have to do this here
