@@ -221,6 +221,9 @@ class City:
         ps = [p for p in self if p.neighborhood == neighb and p.building is not None]
         return sum((p.building.units for p in ps), [])
 
+    def units_by_neighborhood(self):
+        return {neighb: self.neighborhood_units(neighb) for neighb in self.neighborhoods.keys()}
+
     @property
     def buildings(self):
         return [p.building for p in self if p.building is not None]
@@ -270,13 +273,15 @@ class Building:
 class Unit:
     def __init__(self, rent, occupancy, area, owner=None):
         self.rent = rent
-        self.maintenance = 0.1 * rent/area # TODO what to set as the starting value?
         self.occupancy = occupancy
         self.area = area
         self.tenants = set()
         self.owner = None
         self.setOwner(owner)
         self.monthsVacant = 0
+
+        self.maintenance = 0.1 * rent/area # TODO what to set as the starting value?
+        self.condition = 1
 
         # Purchase offers
         self.offers = set()

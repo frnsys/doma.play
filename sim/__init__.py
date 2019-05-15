@@ -9,7 +9,7 @@ logger = logging.getLogger('DOMA-SIM')
 
 
 class Simulation:
-    def __init__(self, map, neighborhoods, city, n_tenants, n_landlords, **conf):
+    def __init__(self, map, neighborhoods, city, **conf):
         self.conf = conf
 
         # Each tick is a month
@@ -19,9 +19,10 @@ class Simulation:
         self.city = City.from_map(map, neighborhoods, city)
 
         # Initialize landlords
-        self.landlords = [Landlord(self.city) for _ in range(n_landlords)]
+        self.landlords = [Landlord(self.city) for _ in range(city['landlords'])]
 
         # Initialize tenants
+        n_tenants = city['population']
         self.tenants = []
         for _ in range(n_tenants):
             # TODO better income distribution
@@ -76,9 +77,10 @@ class Simulation:
         for d in self.landlords:
             d.step(self)
 
+        vacants = set(self.city.units_with_vacancies())
         random.shuffle(self.tenants)
         for t in self.tenants:
-            t.step(self)
+            t.step(self, vacants)
 
         self.time += 1
 
@@ -95,9 +97,19 @@ class Simulation:
             'mean_rent_per_area': sum(u.rent_per_area for u in units)/len(units),
             'mean_months_vacant': sum(u.monthsVacant for u in units)/len(units),
             'mean_maintenance_costs': sum(u.maintenance/u.rent for u in units)/len(units),
+            'mean_condition': sum(u.condition for u in units)/len(units),
             'unique_landlords': len(set(u.owner for u in units)),
             'mean_offers': sum(len(u.offers) for u in units)/len(units),
             'n_sales': sum(t.sales for t in self.landlords + self.tenants),
             'n_moved': sum(1 for t in self.tenants if t.moved),
-            'mean_stay_length': 0 if not housed else sum(t.months_stayed for t in housed)/len(housed)
+            'mean_stay_length': 0 if not housed else sum(t.months_stayed for t in housed)/len(housed),
+            'neighborhoods': {
+                neighb: {
+                    'percent_vacant': sum(1 for u in units if u.vacant)/len(units),
+                    'mean_rent_per_area': sum(u.rent_per_area for u in units)/len(units),
+                    'mean_months_vacant': sum(u.monthsVacant for u in units)/len(units),
+                    'mean_maintenance_costs': sum(u.maintenance/u.rent for u in units)/len(units),
+                    'mean_condition': sum(u.condition for u in units)/len(units),
+                } for neighb, units in self.city.units_by_neighborhood().items()
+            }
         }

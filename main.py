@@ -10,6 +10,7 @@ from sim.util import Command, get_commands
 
 DEBUG = os.environ.get('DEBUG', False)
 STEPS = os.environ.get('STEPS', None)
+SEED = os.environ.get('SEED', random.randrange(sys.maxsize))
 redis = redis.Redis(**config.REDIS)
 logging.basicConfig(level=logging.INFO)
 
@@ -21,12 +22,15 @@ design = json.loads(design.decode('utf8'))
 config.SIM.update(design)
 
 if __name__ == '__main__':
-    seed = random.randrange(sys.maxsize)
-    random.seed(seed)
-    logger.info('Seed:{}'.format(seed))
+    random.seed(int(SEED))
+    logger.info('Seed:{}'.format(SEED))
 
     sim = Simulation(**config.SIM)
     sim.sync()
+    print('City of {} tenants, {} units, and {} capacity'.format(
+        len(sim.tenants),
+        len(sim.city.units),
+        sum(u.occupancy for u in sim.city.units)))
 
     if DEBUG:
         history = [sim.stats()]

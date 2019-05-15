@@ -5,28 +5,6 @@ import numpy as np
 import statsmodels.api as sm
 from collections import defaultdict
 
-def hyperbolic_discount(val, delay, k=1):
-    return val * 1/(1 + k*delay)
-
-# def loglin_predict(landlord, sampled_units):
-    # X = np.array([u.maintenance for u in sampled_units]).reshape(-1, 1)
-    # y = np.array([u.rent_per_area for u in sampled_units])
-    # m = linear_model.LinearRegression()
-    # m.fit(X, np.exp(y))
-    # f = lambda x: np.log(m.coef_[0] * x + m.intercept_)
-
-    # Derivative of model
-    # The optimal strategy is to increase maintenance cost until
-    # the return for the marginal cost increase is
-    # less than $1 of rent (* area?), i.e. until the derivative is <= 1.
-    # So we take the derivative and subtract 1 such that the root of the
-    # derivative is actually where it equals 1
-    # Problem here is I don't know if a log-linear model is appropriate,
-    # and there's no guarantee that the derivative has a root.
-    # deriv = lambda x: m.coef_[0]/(m.coef_[0] * x + m.intercept_) - 1
-    # bracket = [0, max(u.maintenance for u in sampled_units)]
-    # sp.optimize.root_scalar(deriv, bracket=bracket)
-
 
 class Offer:
     def __init__(self, landlord, unit, amount):
@@ -87,6 +65,8 @@ class Landlord:
         # approximation, the only downside is that landlords dont have a model
         # of marginal return per increase in maintenance cost, which is probably
         # what they'd want to maximize return
+        # There's also no randomness here...we might want some so that landlords
+        # are exploring the maintenance space (sounds weird)
         for neighb, units in neighborhoods.items():
             # TODO if we add building age, need to consider that
             sample = units + samples[neighb]
@@ -169,6 +149,7 @@ class Landlord:
             if best_offer is not None:
                 self.sales += 1
                 transfers.append((u, best_offer.landlord))
+            u.offers = set()
 
         # Have to do this here
         # so we don't modify self.units
@@ -180,6 +161,12 @@ class Landlord:
         # Update market estimates
         self.estimate_rents(sim.city)
         self.estimate_trends()
+
+        # Maintenance
+        for u in self.units:
+            u.condition -= random.random() * 0.1 # TODO deterioration rate based on build year?
+            u.condition += u.maintenance
+            u.condition = min(max(u.condition, 0), 1)
 
         # Update rents
         self.manage_vacant_units()
@@ -259,9 +246,10 @@ class Tenant:
         # Space per tenant
         spaciousness = unit.area/n_tenants - prefs['min_area']
 
-        return ratio * (spaciousness + unit.building.parcel.desirability)
+        # TODO balance this
+        return ratio * (spaciousness + unit.building.parcel.desirability + unit.condition)
 
-    def step(self, sim):
+    def step(self, sim, vacants):
         sample_size = 20
         self.sales = 0
         self.moved = False
@@ -293,7 +281,6 @@ class Tenant:
                 self.unit.move_out(self)
 
         if reconsider:
-            vacants = sim.city.units_with_vacancies()
             if vacants:
                 samp_size = min(len(vacants), sample_size)
                 units = random.sample(vacants, samp_size)
@@ -302,9 +289,15 @@ class Tenant:
                 # Desirability of 0 means that tenant can't afford it
                 des = self.desirability(vacancies[0], sim.conf['tenants'])
                 if des > 0 and des - moving_penalty > current_desirability:
-                    vacancies[0].move_in(self, sim.time)
+                    old_unit = self.unit
+                    new_unit = vacancies[0]
+                    new_unit.move_in(self, sim.time)
                     self.moved = True
                     self.months_stayed = 0
+                    if old_unit is not None:
+                        vacants.add(old_unit)
+                    if new_unit.vacancies == 0:
+                        vacants.remove(new_unit)
 
         if not self.moved:
             self.months_stayed += 1
@@ -339,6 +332,7 @@ class Tenant:
             if best_offer is not None:
                 self.sales += 1
                 transfers.append((u, best_offer.landlord))
+            u.offers = set()
 
         # Have to do this here
         # so we don't modify self.units

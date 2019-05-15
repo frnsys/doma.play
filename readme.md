@@ -103,3 +103,7 @@ You go out some number of years, e.g. 5, and then add these up.
 Internal Rate of Return (IRR): the discount rate at which NPV becomes 0, i.e. set NPV to 0 and solve for WACC. The solution for WACC is the IRR.
 
 landlords should make offers based on recent sale prices in that neighborhood for comparable homes, per sq m. then they calculate the NPV of their investment over 5 years, with a desired rate of return as the discount rate
+
+---
+
+Improvements: look at all TODOs, also, incomes don't change and they probably should; the population is also static, and that should probably change over time
