@@ -202,7 +202,7 @@ class Landlord:
                 # current rent and rent estimate/projection
                 u.rent *= 1.02
 
-                # TODO cap rents so they don't go to infinity
+                # Cap rents so they don't go to infinity
                 u.rent = min(u.rent, sys.maxsize)
 
 
@@ -265,9 +265,6 @@ class Tenant:
         # Otherwise, only consider moving
         # between leases or if their current
         # place is no longer affordable
-        # TODO the latter doesn't happen b/c
-        # tenant income doesn't change, and
-        # rents only change b/w leases
         else:
             # TODO should this be different for each tenant?
             moving_penalty = sim.conf['tenants']['moving_penalty']

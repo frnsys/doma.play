@@ -5,7 +5,8 @@ from datetime import datetime
 
 plt.style.use('ggplot')
 
-history = json.load(open('history.json'))
+output = json.load(open('output.json'))
+history = output['history']
 stats = defaultdict(list)
 
 # Get neighborhood-specific stats
@@ -35,11 +36,19 @@ for k, vals in stats.items():
 
 with open('plots/index.html', 'w') as f:
     html = '''
-        <h3>Generated on {dt}</h3>
-        <div>
-            {imgs}
-        </div>
+        <html>
+        <body style="font-family:monospace;">
+            <h3>Generated on {dt}</h3>
+            <div>
+                {meta}
+            </div>
+            <div>
+                {imgs}
+            </div>
+        </body>
+        </html>
     '''.format(
         dt=datetime.now().isoformat(),
+        meta=', '.join('{}: {}'.format(k, v) for k, v in output['meta'].items()),
         imgs='\n'.join(['<img style="width:400px;" src="{}.png">'.format(k) for k in stats.keys()]))
     f.write(html)

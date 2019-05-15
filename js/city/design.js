@@ -39,7 +39,12 @@ const defaultCellData = {
 const defaultCity = {
   pricePerSqm: 100,
   population: 1000,
-  landlords: 10
+  landlords: 10,
+  incomes: [{
+    low: 0,
+    high: 100000,
+    p: 1
+  }]
 };
 
 // Prepare new design
@@ -233,6 +238,16 @@ const control = {
     makeNeighborhoodGUI(n);
   },
 
+  addIncome: () => {
+    let i = {
+      low: 0,
+      high: 100000,
+      p: 1
+    };
+    design.city.incomes.push(i);
+    makeIncomeGUI(i);
+  },
+
   save: () => {
     let data = serialize();
     api.post(window.location.pathname, data, () => {
@@ -255,6 +270,8 @@ const citygui = gui.addFolder('City');
 citygui.add(design.city, 'pricePerSqm').min(0).step(1);
 citygui.add(design.city, 'population').min(0).step(100);
 citygui.add(design.city, 'landlords').min(0).step(1);
+citygui.add(control, 'addIncome').name('+Income Range');
+const cityguiIncomes = citygui.addFolder('Incomes');
 citygui.open();
 
 // Selected cell GUI
@@ -268,6 +285,20 @@ cgui.add(dummyCell, 'type').options(parcelTypes).listen().onChange((t) => {
   updateCityLimits();
 });
 cgui.open();
+
+function makeIncomeGUI(i) {
+  let idx = design.city.incomes.indexOf(i);
+  let igui = cityguiIncomes.addFolder(idx);
+  igui.add(i, 'low').min(0).step(1);
+  igui.add(i, 'high').min(0).step(1);
+  igui.add(i, 'p').min(0).max(1).step(0.01);
+  igui.add({
+    delete: () => {
+      cityguiIncomes.removeFolder(igui);
+      design.city.incomes.splice(idx, 1);
+    }
+  }, 'delete');
+}
 
 // Neighborhood GUI
 const nguis = {};
@@ -334,6 +365,10 @@ function loadDesign(source) {
   });
   design.neighborhoods.forEach((n) => {
     makeNeighborhoodGUI(n);
+  });
+
+  design.city.incomes.forEach((i) => {
+    makeIncomeGUI(i);
   });
 
   design.city = source.city || defaultCity;

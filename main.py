@@ -33,7 +33,16 @@ if __name__ == '__main__':
         sum(u.occupancy for u in sim.city.units)))
 
     if DEBUG:
-        history = [sim.stats()]
+        output = {
+            'meta': {
+                'seed': SEED,
+                'design': config.SIM['design_id'],
+                'tenants': len(sim.tenants),
+                'units': len(sim.city.units),
+                'occupancy': sum(u.occupancy for u in sim.city.units)
+            }
+        }
+        output['history'] = [sim.stats()]
 
     def step():
         global sim
@@ -46,7 +55,7 @@ if __name__ == '__main__':
 
         sim.step()
         sim.sync()
-        if DEBUG: history.append(sim.stats())
+        if DEBUG: output['history'].append(sim.stats())
 
 
     try:
@@ -57,6 +66,8 @@ if __name__ == '__main__':
             while True:
                 step()
     except KeyboardInterrupt:
-        if DEBUG:
-            with open('history.json', 'w') as f:
-                json.dump(history, f)
+        pass
+
+    if DEBUG:
+        with open('output.json', 'w') as f:
+            json.dump(output, f)

@@ -1,5 +1,6 @@
 import random
 import logging
+import numpy as np
 from .util import sync
 from .city import City
 from .agent import Landlord, Tenant
@@ -22,11 +23,13 @@ class Simulation:
         self.landlords = [Landlord(self.city) for _ in range(city['landlords'])]
 
         # Initialize tenants
-        n_tenants = city['population']
         self.tenants = []
+        n_tenants = city['population']
+        incomes = city['incomes']
+        income_weights = np.array([i['p'] for i in incomes])/sum(i['p'] for i in incomes)
         for _ in range(n_tenants):
-            # TODO better income distribution
-            income = random.randint(500, 5000)
+            income_range = np.random.choice(incomes, p=income_weights)
+            income = random.randint(income_range['low'], income_range['high'])
             tenant = Tenant(income)
             self.tenants.append(tenant)
 
