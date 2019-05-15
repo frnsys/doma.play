@@ -43,6 +43,7 @@ function render(time) {
     lastTime = time;
     update();
   }
+  city.animate();
   scene.render();
   requestAnimationFrame(render);
 }

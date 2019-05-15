@@ -8,15 +8,43 @@ const commericalMat = new THREE.MeshLambertMaterial({color: 0xfcec99});
 
 const treeHeight = 8;
 const treeRadius = 2;
-const treeGeo = new THREE.ConeBufferGeometry(treeRadius, treeHeight, 6);
+const treeGeo = new THREE.ConeBufferGeometry(treeRadius, treeHeight, 5);
 const treeMat = new THREE.MeshLambertMaterial({color: 0x116b33});
 const parkColor = 0x189a4a;
+
+const birdGeo = new THREE.BoxBufferGeometry(0.5, 1, 0.5);
+const birdMat = new THREE.MeshLambertMaterial({color: 0xdddddd});
 
 const boatGeo = new THREE.BoxBufferGeometry(6, 1.5, 1);
 const boatMats = [
   new THREE.MeshLambertMaterial({color: 0xdddddd}),
   new THREE.MeshLambertMaterial({color: 0x990000})
 ];
+
+const cloudGeo = new THREE.DodecahedronBufferGeometry(5);
+const cloudMat = new THREE.MeshLambertMaterial({color: 0xdddddd, transparent: true, opacity: 0.8, emissive: 0x888888});
+
+const clouds = [];
+const boats = [];
+const birds = [];
+
+function cloud() {
+  let group = new THREE.Group();
+
+  [...Array(5)].forEach(() => {
+    let cloud = new THREE.Mesh(cloudGeo, cloudMat);
+    cloud.position.x = (Math.random() - 0.5) * 10;
+    cloud.position.y = (Math.random() - 0.5) * 10;
+    cloud.position.z = (Math.random() - 0.5) * 10;
+    if (config.enableShadows) {
+      cloud.castShadow = true;
+      cloud.receiveShadow = true;
+    }
+    group.add(cloud);
+  });
+  group.position.z = 40;
+  return group;
+}
 
 function boat() {
   let boat = new THREE.Group();
@@ -37,6 +65,7 @@ function boat() {
   boat.rotation.z = Math.random() * Math.PI * 2;
   boat.position.x = (Math.random() - 0.5) * 8;
   boat.position.y = (Math.random() - 0.5) * 8;
+  boats.push(boat);
   return boat;
 }
 
@@ -74,6 +103,11 @@ function forest() {
     forest.add(tree);
   });
   forest.rotation.z = Math.random() * Math.PI * 2;
+
+  let bird = new THREE.Mesh(birdGeo, birdMat);
+  bird.position.z += treeHeight;
+  forest.add(bird);
+  birds.push(bird);
   return forest;
 }
 
@@ -154,6 +188,38 @@ class City {
 
     // Rotate, so we view the grid isometrically
     this.grid.group.rotation.x = -Math.PI/2;
+
+    [...Array(10)].forEach(() => {
+      // TODO need to get city bounds
+      let c = cloud();
+      c.position.x = (Math.random() - 0.5) * 200;
+      c.position.y = (Math.random() - 0.5) * 200;
+      c.position.z += (Math.random() - 0.5) * 10;
+      clouds.push(c);
+      this.grid.group.add(c);
+    });
+  }
+
+  animate() {
+    boats.forEach((b) => {
+      b.position.x += (Math.random() - 0.5) * 0.03;
+      b.position.y += (Math.random() - 0.5) * 0.03;
+    });
+
+    let r = 5;
+    birds.forEach((b) => {
+      let theta = b.theta || Math.PI;
+      b.theta = theta;
+      b.theta += 0.02;
+      let y = r*Math.sin(b.theta);
+      let x = r*Math.cos(b.theta);
+      b.position.x = x;
+      b.position.y = y;
+    });
+
+    clouds.forEach((c) => {
+      c.position.y += 0.1;
+    });
   }
 }
 
