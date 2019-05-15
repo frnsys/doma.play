@@ -53,7 +53,6 @@ def jsonify(city, time):
 
 def sync(city, stats, time):
     """Synchronize city's state to redis"""
-    # TODO look into more compact serializations?
     state = jsonify(city, time)
     state['stats'] = stats
     state_serialized = json.dumps(state)

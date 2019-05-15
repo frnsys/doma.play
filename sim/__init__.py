@@ -87,9 +87,6 @@ class Simulation:
 
         self.time += 1
 
-        # TODO/note: currently non-developer landlords
-        # don't adjust rent
-
     def stats(self):
         units = self.city.units
         housed = [t for t in self.tenants if t.unit is not None]

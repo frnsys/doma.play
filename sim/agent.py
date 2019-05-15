@@ -266,7 +266,6 @@ class Tenant:
         # between leases or if their current
         # place is no longer affordable
         else:
-            # TODO should this be different for each tenant?
             moving_penalty = sim.conf['tenants']['moving_penalty']
             elapsed = sim.time - self.unit.leaseMonth
             reconsider = elapsed > 0 and elapsed % 12 == 0
