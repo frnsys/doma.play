@@ -103,6 +103,9 @@ class Simulation:
             'n_sales': sum(t.sales for t in self.landlords + self.tenants),
             'n_moved': sum(1 for t in self.tenants if t.moved),
             'mean_stay_length': 0 if not housed else sum(t.months_stayed for t in housed)/len(housed),
+            'landlords': {
+                landlord.id: len(landlord.units) for landlord in self.landlords
+            },
             'neighborhoods': {
                 neighb: {
                     'percent_vacant': sum(1 for u in units if u.vacant)/len(units),

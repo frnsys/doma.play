@@ -17,13 +17,28 @@ for h in by_neighb:
         for k, v in sts.items():
             neighborhoods[k][neighb].append(v)
 
+# Landlord ownerships
+by_landlord = [h.pop('landlords') for h in history]
+landlord_ownership = defaultdict(list)
+for h in by_landlord:
+    for landlord, n_units in h.items():
+        landlord_ownership[landlord].append(n_units)
+stats['landlord_ownership'] = landlord_ownership
+
 for month in history:
     for k, v in month.items():
         stats[k].append(v)
 
 for k, vals in stats.items():
     plt.title(k)
-    plt.plot(range(len(vals)), vals)
+
+    if k == 'landlord_ownership':
+        for landlord, h in vals.items():
+            plt.plot(range(len(h)), h, label='Landlord {}'.format(landlord))
+        plt.legend()
+
+    else:
+        plt.plot(range(len(vals)), vals)
 
     # Show per neighborhood, if available
     if k in neighborhoods:
