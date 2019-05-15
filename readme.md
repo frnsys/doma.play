@@ -1,7 +1,5 @@
 # doma.play
 
-![](https://d2w9rnfcy7mm78.cloudfront.net/4281051/original_c910de08ccf20e10a2c0fd1f18708efa.gif?1557951398)
-
 ## Usage
 
 - `npm start` to start the frontend and API server, hen go to `localhost:5000` for the city view.
