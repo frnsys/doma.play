@@ -117,6 +117,8 @@ class City {
 
     let {map, buildings, units, neighborhoods} = state;
     this.grid = new Grid(map.cols, map.rows, config.cellSize);
+    this.width = map.cols * this.grid.cellWidth;
+    this.height = map.rows * this.grid.cellHeight;
 
     Object.keys(map.parcels).forEach((row) => {
       Object.keys(map.parcels[row]).forEach((col) => {
@@ -190,11 +192,10 @@ class City {
     this.grid.group.rotation.x = -Math.PI/2;
 
     [...Array(10)].forEach(() => {
-      // TODO need to get city bounds
       let c = cloud();
-      c.position.x = (Math.random() - 0.5) * 200;
-      c.position.y = (Math.random() - 0.5) * 200;
-      c.position.z += (Math.random() - 0.5) * 10;
+      c.position.x = (Math.random() - 0.5) * this.height;
+      c.position.y = (Math.random() - 0.5) * this.width;
+      c.position.z += (Math.random() - 0.5) * 5;
       clouds.push(c);
       this.grid.group.add(c);
     });
@@ -219,6 +220,12 @@ class City {
 
     clouds.forEach((c) => {
       c.position.y += 0.1;
+
+      // Recycle
+      if (c.position.y > this.width/2) {
+        c.position.y = -this.width/2;
+        c.position.x = (Math.random() - 0.5) * this.height;
+      }
     });
   }
 }
