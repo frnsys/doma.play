@@ -9,6 +9,12 @@ const parkColor = 0x189a4a;
 const riverColor = 0x2146b7;
 const commericalMat = new THREE.MeshLambertMaterial({color: 0xfcec99});
 
+const bubbleGeo = new THREE.SphereBufferGeometry(1, 8, 8);
+const bubbleMat = new THREE.MeshLambertMaterial({
+  color: 0x9842f4,
+  transparent: true,
+  opacity: 0.8
+});
 
 class City {
   constructor(state) {
@@ -17,6 +23,7 @@ class City {
     this.clouds = [];
     this.boats = [];
     this.birds = [];
+    this.bubbles = [];
 
     let {map, buildings, units, neighborhoods} = state;
     this.grid = new Grid(map.cols, map.rows, config.cellSize);
@@ -112,9 +119,27 @@ class City {
       this.lights.push(light);
       cell.mesh.add(light);
     });
+
+    this.bubble();
+  }
+
+  bubble() {
+    Object.values(this.units).forEach((u) => {
+      if (u.owner.type == 'Landlord') {
+        let bubble = new THREE.Mesh(bubbleGeo, bubbleMat);
+        bubble.position.set(Math.random(), Math.random(), Math.random());
+        u.mesh.add(bubble);
+        this.bubbles.push(bubble);
+      }
+    });
+    setTimeout(() => this.bubble(), 5000);
   }
 
   animate() {
+    this.bubbles.forEach((b) => {
+      b.position.z += 0.1;
+    });
+
     // Boat jittering
     this.boats.forEach((b) => {
       b.position.x += (Math.random() - 0.5) * 0.03;
