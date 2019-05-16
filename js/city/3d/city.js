@@ -22,15 +22,30 @@ const boatMats = [
 ];
 
 const cloudGeo = new THREE.DodecahedronBufferGeometry(5);
-const cloudMat = new THREE.MeshLambertMaterial({color: 0xdddddd, transparent: true, opacity: 0.8, emissive: 0x888888});
 
-const clouds = [];
 const boats = [];
 const birds = [];
+
+function streetlight() {
+  let d = 10;
+  let light = new THREE.PointLight( 0xf4c358, 1, 150, 2);
+  light.castShadow = true;
+  light.shadow.mapSize.width = 72;
+  light.shadow.mapSize.height = 72;
+  light.shadow.camera.left = -d;
+  light.shadow.camera.right = d;
+  light.shadow.camera.top = d;
+  light.shadow.camera.bottom = -d;
+  light.position.set(0, 0, 100);
+  light.visible = false;
+  return light;
+}
+
 
 function cloud() {
   let group = new THREE.Group();
 
+  let cloudMat = new THREE.MeshLambertMaterial({color: 0xdddddd, transparent: true, opacity: 0.8, emissive: 0x888888});
   [...Array(5)].forEach(() => {
     let cloud = new THREE.Mesh(cloudGeo, cloudMat);
     cloud.position.x = (Math.random() - 0.5) * 10;
@@ -42,6 +57,7 @@ function cloud() {
     }
     group.add(cloud);
   });
+  group.material = cloudMat;
   group.position.z = 40;
   return group;
 }
@@ -111,9 +127,13 @@ function forest() {
   return forest;
 }
 
+let availableLights = [...Array(5)].map(() => streetlight());
+
 class City {
   constructor(state) {
     this.units = {};
+    this.lights = [];
+    this.clouds = [];
 
     let {map, buildings, units, neighborhoods} = state;
     this.grid = new Grid(map.cols, map.rows, config.cellSize);
@@ -122,6 +142,7 @@ class City {
 
     Object.keys(map.parcels).forEach((row) => {
       Object.keys(map.parcels[row]).forEach((col) => {
+        let cell;
         let parcel = map.parcels[row][col];
 
         if (parcel.neighb !== null) {
@@ -135,7 +156,7 @@ class City {
           if (parcel.type == 'Commercial') {
             color = shadeColor(color, 0.8);
           }
-          let cell = this.grid.setCellAt(col, row, color, parcel);
+          cell = this.grid.setCellAt(col, row, color, parcel);
 
           if (parcel.type == 'Residential') {
             let b = buildings[`${row}_${col}`];
@@ -163,6 +184,7 @@ class City {
             if (Math.random() < 0.4) {
               cell.mesh.add(forest());
             }
+
             cell.setColor(parkColor);
             cell.color = parkColor;
           }
@@ -173,7 +195,7 @@ class City {
           `;
 
           let color = parcel.type == 'Park' ? parkColor : 0x2146b7;
-          let cell = this.grid.setCellAt(col, row, color, parcel);
+          cell = this.grid.setCellAt(col, row, color, parcel);
           if (parcel.type == 'Park') {
             if (Math.random() < 0.4) {
               cell.mesh.add(forest());
@@ -182,6 +204,13 @@ class City {
             if (Math.random() < 0.4) {
               cell.mesh.add(boat());
             }
+          }
+        }
+        if (cell && Math.random() < 0.1) {
+          if (availableLights.length > 0) {
+            let light = availableLights.pop();
+            this.lights.push(light);
+            cell.mesh.add(light);
           }
         }
 
@@ -195,8 +224,8 @@ class City {
       let c = cloud();
       c.position.x = (Math.random() - 0.5) * this.height;
       c.position.y = (Math.random() - 0.5) * this.width;
-      c.position.z += (Math.random() - 0.5) * 5;
-      clouds.push(c);
+      c.position.z += (Math.random() - 0.5) * 3;
+      this.clouds.push(c);
       this.grid.group.add(c);
     });
   }
@@ -218,13 +247,18 @@ class City {
       b.position.y = y;
     });
 
-    clouds.forEach((c) => {
+    this.clouds.forEach((c) => {
       c.position.y += 0.1;
 
       // Recycle
       if (c.position.y > this.width/2) {
-        c.position.y = -this.width/2;
-        c.position.x = (Math.random() - 0.5) * this.height;
+        c.material.opacity -= 0.1;
+        if (c.material.opacity <= 0) {
+          c.position.y = -this.width/2;
+          c.position.x = (Math.random() - 0.5) * this.height;
+        }
+      } else if (c.material.opacity < 0.8) {
+        c.material.opacity += 0.05;
       }
     });
   }

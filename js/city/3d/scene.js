@@ -18,16 +18,22 @@ class Scene {
     this.renderer.setSize(opts.width, opts.height);
     this.renderer.setClearColor(0xeeeeee, 0);
 
-    var hemiLight = new THREE.HemisphereLight( 0xffffff, 0x000000, 0.9 );
+    let hemiLight = new THREE.HemisphereLight( 0xeeeeee, 0x000000, 0.5 );
     this.scene.add(hemiLight);
+    this.hemiLight = hemiLight;
+    hemiLight.baseIntensity = hemiLight.intensity;
 
-    var amli = new THREE.AmbientLight( 0x404040 ); // soft white light
-    this.scene.add( amli );
+    // soft white light, to fill shadows
+    let ambiLight = new THREE.AmbientLight( 0x999999, 1 );
+    this.scene.add(ambiLight);
+    this.ambiLight = ambiLight;
+    ambiLight.baseIntensity = ambiLight.intensity;
 
-    let light = new THREE.DirectionalLight( 0xffffff, 0.2 );
+    let light = new THREE.DirectionalLight( 0xffffff, 0.1 );
     light.position.y = 200;
-    light.position.x = 200;
+    light.baseIntensity = light.intensity;
     this.scene.add(light);
+    this.sun = light;
 
     if (config.enableShadows) {
       this.renderer.shadowMap.enabled = true;
@@ -36,8 +42,10 @@ class Scene {
 
       let d = 220;
       light.castShadow = true;
-      light.shadow.mapSize.width = 72;
-      light.shadow.mapSize.height = 72;
+      // light.shadow.mapSize.width = 72;
+      // light.shadow.mapSize.height = 72;
+      light.shadow.mapSize.width = 256;
+      light.shadow.mapSize.height = 256;
       light.shadow.camera.left = -d;
       light.shadow.camera.right = d;
       light.shadow.camera.top = d;
