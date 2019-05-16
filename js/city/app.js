@@ -37,7 +37,7 @@ function update() {
 let stateKey = null;
 let lastTime = null;
 let angle = Math.PI/2;
-const r = 200;
+const sunRadius = 200;
 function render(time) {
   // update every 2000ms
   if (!lastTime) {
@@ -47,12 +47,9 @@ function render(time) {
     update();
   }
   city.animate();
-  // angle += 0.0001;
-  angle += 0.03;
+  angle += 0.0001;
 
-  // 0-1 day, 1-2 night
-  // decrease intensity from 0.5-1
-  // increase intensity from 0-0.5
+  // Day-Night cycle
   let progress = (angle % (2*Math.PI))/Math.PI;
   let startSunset = 0.75;
   let endSunrise = 0.25;
@@ -84,8 +81,8 @@ function render(time) {
   } else {
     scene.sun.visible = true;
   }
-  scene.sun.position.y = r*Math.sin(angle);
-  scene.sun.position.x = r*Math.cos(angle);
+  scene.sun.position.y = sunRadius*Math.sin(angle);
+  scene.sun.position.x = sunRadius*Math.cos(angle);
   scene.render();
 
   requestAnimationFrame(render);
