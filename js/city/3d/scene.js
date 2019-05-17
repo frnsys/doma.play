@@ -8,8 +8,9 @@ const D = 1;
 
 class Scene {
   constructor(opts) {
-    opts.width = window.innerWidth;
-    opts.height = window.innerHeight;
+    opts.width = opts.width || window.innerWidth;
+    opts.height = opts.height || window.innerHeight;
+    opts.brightness = opts.brightness || 0.5;
     this.opts = opts;
 
     this.scene = new THREE.Scene();
@@ -18,7 +19,7 @@ class Scene {
     this.renderer.setSize(opts.width, opts.height);
     this.renderer.setClearColor(0xeeeeee, 0);
 
-    let hemiLight = new THREE.HemisphereLight( 0xeeeeee, 0x000000, 0.5 );
+    let hemiLight = new THREE.HemisphereLight(0xeeeeee, 0x000000, opts.brightness);
     this.scene.add(hemiLight);
     this.hemiLight = hemiLight;
     hemiLight.baseIntensity = hemiLight.intensity;
@@ -77,8 +78,6 @@ class Scene {
     this.camera.updateProjectionMatrix();
 
     window.addEventListener('resize', () => {
-      opts.width = window.innerWidth;
-      opts.height = window.innerHeight;
       let aspect = opts.width/opts.height;
       this.camera.left = -D * aspect;
       this.camera.right = D * aspect;

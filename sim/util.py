@@ -32,6 +32,7 @@ def jsonify(city, time):
                     'id': u.id,
                     'rent': u.rent,
                     'tenants': [t.id for t in u.tenants],
+                    'occupancy': u.occupancy,
                     'owner': {
                         'id': u.owner.id,
                         'type': type(u.owner).__name__

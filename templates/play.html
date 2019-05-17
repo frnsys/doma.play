@@ -1,6 +1,27 @@
 {% extends 'layout.html' %}
 {% block content %}
+<style>
+    #log {
+        width: 320px;
+        margin: 0 auto;
+        padding: 1em;
+    }
+    .event {
+        margin-bottom: 1.5em;
+    }
+    .actions {
+        padding: 0.5em 0;
+    }
+    .actions > span {
+        cursor: pointer;
+        text-decoration: underline;
+        margin-right: 1em;
+    }
+
+    .listing {
+        margin: 0.5em 0;
+    }
+</style>
+<div id="log"></div>
 <script src="{{ url_for('static', filename='js/play.js') }}"></script>
 {% endblock %}
-
-

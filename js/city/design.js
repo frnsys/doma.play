@@ -422,7 +422,9 @@ function updateNeighbOpts() {
 }
 
 // Setup scene
-const scene = new Scene({});
+const scene = new Scene({
+  brightness: 0.9
+});
 const main = document.getElementById('main');
 main.appendChild(scene.renderer.domElement);
 scene.add(grid.group);
