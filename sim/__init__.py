@@ -13,6 +13,8 @@ class Simulation:
     def __init__(self, map, neighborhoods, city, **conf):
         self.conf = conf
 
+        self.players = {}
+
         # Each tick is a month
         self.time = 0
 
@@ -24,6 +26,7 @@ class Simulation:
 
         # Initialize tenants
         self.tenants = []
+        self.tenants_idx = {}
         n_tenants = city['population']
         incomes = city['incomes']
         income_weights = np.array([i['p'] for i in incomes])/sum(i['p'] for i in incomes)
@@ -32,6 +35,7 @@ class Simulation:
             income = random.randint(income_range['low'], income_range['high'])
             tenant = Tenant(income)
             self.tenants.append(tenant)
+            self.tenants_idx[tenant.id] = tenant
 
         # Distribute units to tenants
         # Set work locations
@@ -91,6 +95,8 @@ class Simulation:
         vacants = set(self.city.units_with_vacancies())
         random.shuffle(self.tenants)
         for t in self.tenants:
+            if t.player is not None:
+                continue
             t.step(self, vacants)
 
         self.time += 1

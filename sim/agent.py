@@ -234,6 +234,7 @@ class Tenant:
         self.sales = 0
 
         self.work_building = None
+        self.player = None
 
     def desirability(self, unit, prefs):
         """Compute desirability of a housing unit

@@ -20,6 +20,9 @@ const parcelColors = {
 const textMat = new THREE.MeshLambertMaterial({
   color: 0x383838
 });
+const altTextMat = new THREE.MeshLambertMaterial({
+  color: 0xffffff
+});
 
 const cellSize = 32;
 function createMap(state, tenant, detailsEl, cb) {
@@ -76,7 +79,7 @@ function createMap(state, tenant, detailsEl, cb) {
             curveSegments: 6,
             bevelEnabled: false,
           });
-          text = new THREE.Mesh(geometry, textMat);
+          text = new THREE.Mesh(geometry, altTextMat);
 
           // Center text
           let bbox = new THREE.Box3().setFromObject(text);

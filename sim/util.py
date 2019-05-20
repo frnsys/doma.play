@@ -9,6 +9,8 @@ redis = redis.Redis(**config.REDIS)
 
 class Command(Enum):
     RESTART = 0
+    SELECT_TENANT = 1
+    RELEASE_TENANT = 2
 
 
 def jsonify(city, time):

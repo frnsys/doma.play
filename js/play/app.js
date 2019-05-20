@@ -2,11 +2,22 @@ import api from '../api';
 import uuid from 'uuid/v4';
 import displayListings from './listings';
 
-let logEl = document.getElementById('log');
+const id = uuid();
+const logEl = document.getElementById('log');
 
 // Joining/leaving
-const id = uuid();
-api.post('/play/join', {id});
+api.post('/play/join', {id}, (data) => {
+  publish({
+    message: 'Welcome to doma.play. Choose a tenant to play as.',
+    actions: data.tenants.map((t) => {
+      return {
+        id: 'chooseTenant',
+        name: `Tenant ${t.id}, Income $${Math.round(t.income/12).toLocaleString()}/month`,
+        args: [t]
+      }
+    })
+  });
+});
 window.addEventListener('unload', () => {
   api.post('/play/leave', {id});
 }, false);
@@ -25,11 +36,31 @@ api.get('/state/key', (data) => {
   stateKey = data.key;
 });
 
-let tenant = {
-  work: [0, 9]
-}
+let tenant;
 
 const actions = {
+  'chooseTenant': (chosenTenant) => {
+    let hudEl = document.getElementById('hud');
+    hudEl.style.display = 'block';
+    hudEl.innerHTML = `Tenant ${chosenTenant.id}, Income $${Math.round(chosenTenant.income/12).toLocaleString()}/month`;
+    tenant = chosenTenant;
+
+    api.post(`/play/select/${id}`, {id: chosenTenant.id}, (data) => {
+      publish({
+        message: 'I\'ve  been evicted. I need to find a new apartment.',
+        actions: [{
+          id: 'searchApartments',
+          name: 'Look for an apartment',
+        }, {
+          id: 'eat',
+          name: 'Eat',
+        }, {
+          id: 'endTurn',
+          name: 'End Turn',
+        }]
+      });
+    });
+  },
   'searchApartments': () => {
     displayListings(logEl, tenant);
   },
@@ -94,7 +125,8 @@ function publish(ev) {
           eventEl.style.opacity = 0.5;
           el.removeEventListener('click', el.resolve);
         });
-        actions[a.id]();
+        let args = a.args || [];
+        actions[a.id](...args);
       }
       actEl.addEventListener('click', actEl.resolve);
       actsEl.appendChild(actEl);
@@ -104,17 +136,3 @@ function publish(ev) {
 
   logEl.appendChild(eventEl);
 }
-
-publish({
-  message: 'I\'ve  been evicted. I need to find a new apartment.',
-  actions: [{
-    id: 'searchApartments',
-    name: 'Look for an apartment',
-  }, {
-    id: 'eat',
-    name: 'Eat',
-  }, {
-    id: 'endTurn',
-    name: 'End Turn',
-  }]
-});

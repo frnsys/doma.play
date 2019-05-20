@@ -1,8 +1,10 @@
 import json
 import uuid
 import redis
+import random
 import config
 from datetime import datetime
+from sim.util import Command, send_command
 from flask import Flask, jsonify, request, redirect, url_for, render_template
 
 app = Flask(__name__)
@@ -13,18 +15,24 @@ def active_players():
     return [r.decode('utf8') for r
             in redis.lrange('active_players', 0, -1)]
 
+def remove_player(id):
+    redis.lrem('active_players', 0, id)
+    send_command(Command.RELEASE_TENANT, {
+        'player_id': id
+    })
+
 def prune_players():
     now = round(datetime.utcnow().timestamp())
     for id in active_players():
         last_ping = redis.get('player:{}'.format(id))
 
         if last_ping is None:
-            redis.lrem('active_players', 0, id)
+            remove_player(id)
             continue
 
         last_ping = int(last_ping)
         if now - last_ping > config.PLAYER_TIMEOUT:
-            redis.lrem('active_players', 0, id)
+            remove_player(id)
             continue
 
 
@@ -46,6 +54,23 @@ def player_join():
     id = request.get_json()['id']
     redis.lpush('active_players', id)
     redis.set('player:{}'.format(id), round(datetime.utcnow().timestamp()))
+
+    # Get tenants
+    tenants = [json.loads(r.decode('utf8')) for r
+               in redis.lrange('tenants', 0, -1)]
+
+    tenants = random.sample(tenants, 5)
+    return jsonify(success=True, tenants=tenants)
+
+
+@app.route('/play/select/<id>', methods=['POST'])
+def player_select(id):
+    """Player select tenant"""
+    tenant_id = request.get_json()['id']
+    send_command(Command.SELECT_TENANT, {
+        'tenant_id': tenant_id,
+        'player_id': id
+    })
     return jsonify(success=True)
 
 
@@ -53,7 +78,7 @@ def player_join():
 def player_leave():
     """Player left"""
     id = request.get_json()['id']
-    redis.lrem('active_players', 0, id)
+    remove_player(id)
     return jsonify(success=True)
 
 

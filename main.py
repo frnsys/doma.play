@@ -62,6 +62,15 @@ if __name__ == '__main__':
         }
         output['history'] = [sim.stats()]
 
+    # Pool of tenants for players
+    tenants = random.sample(sim.tenants, 100)
+    redis.delete('tenants')
+    redis.lpush('tenants', *[json.dumps({
+        'id': t.id,
+        'income': t.income,
+        'work': t.work_building.parcel.pos
+    }) for t in tenants])
+
     def step():
         global sim
         cmds = get_commands()
@@ -70,6 +79,16 @@ if __name__ == '__main__':
             if typ is Command.RESTART:
                 sim = Simulation(**data)
                 sim.sync()
+            elif typ is Command.SELECT_TENANT:
+                pid, tid = data['player_id'], data['tenant_id']
+                sim.players[pid] = tid
+                sim.tenants_idx[tid].player = pid
+            elif typ is Command.RELEASE_TENANT:
+                pid = data['player_id']
+                tid = sim.players.get(pid)
+                if tid is not None:
+                    sim.tenants_idx[tid].player = None
+                    del sim.players[pid]
 
         if DEBUG or all_players_ready():
             sim.step()

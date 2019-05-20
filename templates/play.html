@@ -4,7 +4,18 @@
     #log {
         width: 320px;
         margin: 0 auto;
-        padding: 1em;
+        padding: 3em 1em 1em;
+    }
+    #hud {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        margin: 0 auto;
+        padding: 0.5em;
+        background: aliceblue;
+        z-index: 1;
     }
     .event {
         margin-bottom: 1.5em;
@@ -17,11 +28,11 @@
         text-decoration: underline;
         margin-right: 1em;
     }
-
     .listing {
         margin: 0.5em 0;
     }
 </style>
+<div id="hud"></div>
 <div id="log"></div>
 <script src="{{ url_for('static', filename='js/play.js') }}"></script>
 {% endblock %}
