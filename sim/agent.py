@@ -1,9 +1,14 @@
 import sys
+import math
 import random
 import itertools
 import numpy as np
 import statsmodels.api as sm
 from collections import defaultdict
+
+
+def distance(a, b):
+    return math.sqrt((a[0] - b[0])**2 + (a[1] - b[1])**2)
 
 
 class Offer:
@@ -228,6 +233,8 @@ class Tenant:
         # How many units sold this step
         self.sales = 0
 
+        self.work_building = None
+
     def desirability(self, unit, prefs):
         """Compute desirability of a housing unit
         for this tenant"""
@@ -246,8 +253,18 @@ class Tenant:
         # Space per tenant
         spaciousness = unit.area/n_tenants - prefs['min_area']
 
+        # Distance to work
+        if self.work_building is not None:
+            dist = distance(unit.building.parcel.pos, self.work_building.parcel.pos)
+            if dist == 0:
+                commute = 1
+            else:
+                commute = 1/dist
+        else:
+            commute = 0
+
         # TODO balance this
-        return ratio * (spaciousness + unit.building.parcel.desirability + unit.condition)
+        return ratio * (spaciousness + unit.building.parcel.desirability + unit.condition + commute)
 
     def step(self, sim, vacants):
         sample_size = 20

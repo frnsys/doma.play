@@ -116,6 +116,10 @@ class City:
         return {neighb: self.neighborhood_units(neighb) for neighb in self.neighborhoods.keys()}
 
     @property
+    def commercial_buildings(self):
+        return [(b, b.n_commercial) for b in self.buildings if b.n_commercial > 0]
+
+    @property
     def buildings(self):
         return [p.building for p in self if p.building is not None]
 

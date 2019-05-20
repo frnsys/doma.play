@@ -34,9 +34,17 @@ class Simulation:
             self.tenants.append(tenant)
 
         # Distribute units to tenants
+        # Set work locations
         random.shuffle(self.tenants)
+        commercial = self.city.commercial_buildings
+        commercial, commercial_weights = zip(*commercial)
+        commercial_weights /= np.sum(commercial_weights)
         for t in self.tenants:
             month = random.randint(0, 11)
+
+            work_building = np.random.choice(commercial, p=commercial_weights)
+            t.work_building = work_building
+
             vacancies = self.city.units_with_vacancies()
 
             if vacancies:
