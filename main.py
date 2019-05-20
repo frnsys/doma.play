@@ -8,6 +8,7 @@ import logging
 from time import time
 from sim import Simulation, logger
 from sim.util import Command, get_commands
+from collections import defaultdict
 
 DEBUG = os.environ.get('DEBUG', False)
 STEPS = os.environ.get('STEPS', None)
@@ -27,7 +28,7 @@ def all_players_ready():
     all_players_ready = False
     start = time()
     logger.info('Waiting for players...')
-    while not all_players_ready and time() - start < config.PLAYER_READY_TIMEOUT:
+    while not all_players_ready:# and time() - start < config.PLAYER_READY_TIMEOUT:
         ready_players = [r.decode('utf8') for r
                          in redis.lrange('ready_players', 0, -1)]
         active_players = [r.decode('utf8') for r
@@ -68,31 +69,58 @@ if __name__ == '__main__':
     redis.lpush('tenants', *[json.dumps({
         'id': t.id,
         'income': t.income,
-        'work': t.work_building.parcel.pos
+        'work': t.work_building.parcel.pos,
+        'unit': t.unit.id if t.unit else None
     }) for t in tenants])
 
     def step():
         global sim
-        cmds = get_commands()
-        for typ, data in cmds:
-            logger.info('CMD:{}'.format(typ.name))
-            if typ is Command.RESTART:
-                sim = Simulation(**data)
-                sim.sync()
-            elif typ is Command.SELECT_TENANT:
-                pid, tid = data['player_id'], data['tenant_id']
-                sim.players[pid] = tid
-                sim.tenants_idx[tid].player = pid
-            elif typ is Command.RELEASE_TENANT:
-                pid = data['player_id']
-                tid = sim.players.get(pid)
-                if tid is not None:
-                    sim.tenants_idx[tid].player = None
-                    del sim.players[pid]
-
         if DEBUG or all_players_ready():
+            cmds = get_commands()
+            player_actions = defaultdict(lambda: defaultdict(list))
+            for typ, data in cmds:
+                logger.info('CMD:{}'.format(typ.name))
+                if typ is Command.RESTART:
+                    sim = Simulation(**data)
+                    sim.sync()
+                elif typ is Command.SELECT_TENANT:
+                    pid, tid = data['player_id'], data['tenant_id']
+                    sim.players[pid] = tid
+                    sim.tenants_idx[tid].player = pid
+                elif typ is Command.RELEASE_TENANT:
+                    pid = data['player_id']
+                    tid = sim.players.get(pid)
+                    if tid is not None:
+                        sim.tenants_idx[tid].player = None
+                        del sim.players[pid]
+                else:
+                    pid = data['player_id']
+                    player_actions[pid][typ].append(data)
+
+            # Process player actions
+            for pid, cmds in player_actions.items():
+                tid = sim.players[pid]
+                tenant = sim.tenants_idx[tid]
+                for cmd, datas in cmds.items():
+                    if cmd is Command.MOVE_TENANT:
+                        # Last move is actual move
+                        unit_id = datas[-1]['unit_id']
+                        sim.units_idx[unit_id].move_in(tenant, sim.time+1)
+
             sim.step()
             sim.sync()
+
+            # Synchronize player tenants
+            for pid, tid in sim.players.items():
+                t = sim.tenants_idx[tid]
+                redis.set('player:{}:tenant'.format(pid), json.dumps({
+                    'id': t.id,
+                    'income': t.income,
+                    'work': t.work_building.parcel.pos,
+                    'unit': t.unit.id if t.unit else None
+                }))
+
+
         if DEBUG: output['history'].append(sim.stats())
         reset_ready_players()
 

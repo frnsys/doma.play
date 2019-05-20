@@ -25,7 +25,7 @@ const altTextMat = new THREE.MeshLambertMaterial({
 });
 
 const cellSize = 32;
-function createMap(state, tenant, detailsEl, cb) {
+function createMap(state, tenant, detailsEl, cb, onSelect) {
   let {cols, rows, parcels} = state.map;
   const grid = new Grid(cols, rows, cellSize);
 
@@ -92,18 +92,29 @@ function createMap(state, tenant, detailsEl, cb) {
         cell.mesh.obj = {
           data: {
             onClick: (ev) => {
+              detailsEl.innerHTML = '';
               if (vacancies) {
-                detailsEl.innerHTML = `
-                  ${vacancies.map((id) => {
+                vacancies.map((id) => {
                     let u = state.units[id];
-                    return `<li class='listing'>
+                    let el = document.createElement('li');
+                    el.className = 'listing';
+                    el.innerHTML = `
                       ${u.occupancy} bedroom (${u.occupancy - u.tenants.length} available)<br />
                       Rent: $${numberWithCommas(Math.round(u.rent/(u.tenants.length + 1)))}/month<br />
                       Total Rent: $${numberWithCommas(Math.round(u.rent))}/month<br />
-                      On the market for ${u.monthsVacant} months<br />
-                    </li>`;
-                  }).join('')}
-                `;
+                      On the market for ${u.monthsVacant} months<br />`;
+
+                    let select = document.createElement('div');
+                    select.innerText = 'Select';
+                    select.className = 'select-listing';
+                    select.addEventListener('click', () => {
+                      onSelect(u);
+                    });
+                    el.appendChild(select);
+                    return el;
+                }).forEach((el) => {
+                  detailsEl.appendChild(el);
+                });
               }
             },
             tooltip: 'testing'
@@ -121,7 +132,7 @@ function createMap(state, tenant, detailsEl, cb) {
   });
 }
 
-function displayListings(el, tenant) {
+function displayListings(el, tenant, onSelect) {
   // Setup scene
   const scene = new Scene({
     width: el.clientWidth,
@@ -152,7 +163,7 @@ function displayListings(el, tenant) {
       let selectables = grid.cells.filter(c => c !== null).map(c => c.mesh);
       let ixn = new InteractionLayer(scene, selectables);
       scene.add(grid.group);
-    });
+    }, onSelect);
 
     render();
   });

@@ -4,6 +4,7 @@ import displayListings from './listings';
 
 const id = uuid();
 const logEl = document.getElementById('log');
+const hudEl = document.getElementById('hud');
 
 // Joining/leaving
 api.post('/play/join', {id}, (data) => {
@@ -40,9 +41,8 @@ let tenant;
 
 const actions = {
   'chooseTenant': (chosenTenant) => {
-    let hudEl = document.getElementById('hud');
     hudEl.style.display = 'block';
-    hudEl.innerHTML = `Tenant ${chosenTenant.id}, Income $${Math.round(chosenTenant.income/12).toLocaleString()}/month`;
+    hudEl.innerHTML = `Tenant ${chosenTenant.id}, Income $${Math.round(chosenTenant.income/12).toLocaleString()}/month, Unit ${chosenTenant.unit}`;
     tenant = chosenTenant;
 
     api.post(`/play/select/${id}`, {id: chosenTenant.id}, (data) => {
@@ -51,26 +51,28 @@ const actions = {
         actions: [{
           id: 'searchApartments',
           name: 'Look for an apartment',
-        }, {
-          id: 'eat',
-          name: 'Eat',
-        }, {
-          id: 'endTurn',
-          name: 'End Turn',
         }]
       });
     });
   },
   'searchApartments': () => {
-    displayListings(logEl, tenant);
-  },
-  'eat': () => {
-    publish({
-      message: 'Yum',
-      actions: [{
-        id: 'searchApartments',
-        name: 'Look for an apartment',
-      }]
+    let el = document.createElement('div');
+    logEl.appendChild(el);
+    displayListings(el, tenant, (unit) => {
+      api.post(`/play/move/${id}`, {id: unit.id}, (data) => {
+        logEl.removeChild(el);
+        document.querySelector('.tooltip').style.display = 'none';
+        publish({
+          message: 'Ok, I\'ll move in there.',
+          actions: [{
+            id: 'searchApartments',
+            name: 'Look for a different apartment',
+          }, {
+            id: 'endTurn',
+            name: 'End Turn',
+          }]
+        });
+      });
     });
   },
   'endTurn': () => {
@@ -86,19 +88,20 @@ const actions = {
           stateKey = data.key;
           clearInterval(update);
 
-          document.querySelector('.event:last-child').style.opacity = 0.5;
-          publish({
-            message: '(new turn) I\'ve  been evicted. I need to find a new apartment.',
-            actions: [{
-              id: 'searchApartments',
-              name: 'Look for an apartment',
-            }, {
-              id: 'eat',
-              name: 'Eat',
-            }, {
-              id: 'endTurn',
-              name: 'End Turn',
-            }]
+          api.get(`/play/tenant/${id}`, (data) => {
+            let tenant = data.tenant;
+            hudEl.innerHTML = `Tenant ${tenant.id}, Income $${Math.round(tenant.income/12).toLocaleString()}/month, Unit ${tenant.unit}`;
+            document.querySelector('.event:last-child').style.opacity = 0.5;
+            publish({
+              message: 'What should I do?',
+              actions: [{
+                id: 'searchApartments',
+                name: 'Look for a new apartment',
+              }, {
+                id: 'endTurn',
+                name: 'End Turn',
+              }]
+            });
           });
         }
       });

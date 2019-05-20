@@ -24,7 +24,7 @@ def remove_player(id):
 def prune_players():
     now = round(datetime.utcnow().timestamp())
     for id in active_players():
-        last_ping = redis.get('player:{}'.format(id))
+        last_ping = redis.get('player:{}:ping'.format(id))
 
         if last_ping is None:
             remove_player(id)
@@ -53,7 +53,7 @@ def player_join():
     """Player joined"""
     id = request.get_json()['id']
     redis.lpush('active_players', id)
-    redis.set('player:{}'.format(id), round(datetime.utcnow().timestamp()))
+    redis.set('player:{}:ping'.format(id), round(datetime.utcnow().timestamp()))
 
     # Get tenants
     tenants = [json.loads(r.decode('utf8')) for r
@@ -85,7 +85,7 @@ def player_leave():
 @app.route('/play/ping/<id>', methods=['POST'])
 def player_ping(id):
     """Player check-ins, for timeouts"""
-    redis.set('player:{}'.format(id), round(datetime.utcnow().timestamp()))
+    redis.set('player:{}:ping'.format(id), round(datetime.utcnow().timestamp()))
     return jsonify(success=True)
 
 
@@ -94,6 +94,29 @@ def player_ready(id):
     """Player ready for next turn"""
     redis.lpush('ready_players', id)
     return jsonify(success=True)
+
+
+@app.route('/play/move/<id>', methods=['POST'])
+def player_move(id):
+    """Player move apartment"""
+    unit_id = request.get_json()['id']
+
+    # TODO what if two players choose the same unit?
+    # May need to stagger turns
+    send_command(Command.MOVE_TENANT, {
+        'player_id': id,
+        'unit_id': unit_id
+    })
+    return jsonify(success=True)
+
+
+@app.route('/play/tenant/<id>')
+def player_tenant(id):
+    """Player tenant data"""
+    res = redis.get('player:{}:tenant'.format(id))
+    if res is None:
+        return jsonify(success=False)
+    return jsonify(success=True, tenant=json.loads(res.decode('utf8')))
 
 
 @app.route('/design', defaults={'id': None})

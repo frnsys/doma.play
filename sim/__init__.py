@@ -59,9 +59,11 @@ class Simulation:
                     vacancies[0].move_in(t, month)
 
         # Distribute ownership of units
+        self.units_idx = {}
         for b in self.city.buildings:
             for u in b.units:
                 u.setOwner(self.random_owner(u))
+                self.units_idx[u.id] = u
 
     def random_owner(self, unit):
         roll = random.random()
