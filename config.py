@@ -1,4 +1,5 @@
-import json
+PLAYER_TIMEOUT = 60
+PLAYER_READY_TIMEOUT = 30
 
 REDIS = {
     'host': 'localhost',

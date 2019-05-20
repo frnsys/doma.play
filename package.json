@@ -5,13 +5,14 @@
     "start": "concurrently -n \"WEBPACK,FLASK\" -c \"bgBlue.bold,bgGreen.bold\" \"npm run webpack\" \"npm run flask\"",
     "build": "NODE_ENV=production webpack --progress --colors -p",
     "webpack": "webpack --watch --progress",
-    "flask": "FLASK_APP=app.py FLASK_DEBUG=1 flask run"
+    "flask": "FLASK_DEBUG=1 python app.py"
   },
   "dependencies": {
     "@babel/polyfill": "^7.0.0",
     "chart.js": "^2.8.0",
     "dat.gui": "^0.7.6",
-    "three": "^0.97.0"
+    "three": "^0.97.0",
+    "uuid": "^3.3.2"
   },
   "devDependencies": {
     "@babel/core": "^7.0.0-beta.39",

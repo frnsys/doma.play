@@ -5,6 +5,7 @@ import redis
 import random
 import config
 import logging
+from time import time
 from sim import Simulation, logger
 from sim.util import Command, get_commands
 
@@ -20,6 +21,23 @@ if design is None:
     raise Exception('Design with ID "{}" not found.'.format(config.SIM['design_id']))
 design = json.loads(design.decode('utf8'))
 config.SIM.update(design)
+
+
+def all_players_ready():
+    all_players_ready = False
+    start = time()
+    logger.info('Waiting for players...')
+    while not all_players_ready and time() - start < config.PLAYER_READY_TIMEOUT:
+        ready_players = [r.decode('utf8') for r
+                         in redis.lrange('ready_players', 0, -1)]
+        active_players = [r.decode('utf8') for r
+                          in redis.lrange('active_players', 0, -1)]
+        all_players_ready = all(id in ready_players for id in active_players)
+    return True
+
+def reset_ready_players():
+    redis.delete('ready_players')
+
 
 if __name__ == '__main__':
     random.seed(int(SEED))
@@ -53,9 +71,11 @@ if __name__ == '__main__':
                 sim = Simulation(**data)
                 sim.sync()
 
-        sim.step()
-        sim.sync()
+        if DEBUG or all_players_ready():
+            sim.step()
+            sim.sync()
         if DEBUG: output['history'].append(sim.stats())
+        reset_ready_players()
 
 
     try:

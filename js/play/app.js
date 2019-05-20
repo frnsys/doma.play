@@ -1,6 +1,29 @@
+import api from '../api';
+import uuid from 'uuid/v4';
 import displayListings from './listings';
 
 let logEl = document.getElementById('log');
+
+// Joining/leaving
+const id = uuid();
+api.post('/play/join', {id});
+window.addEventListener('unload', () => {
+  api.post('/play/leave', {id});
+}, false);
+
+// Keep alive
+function ping() {
+  api.post(`/play/ping/${id}`);
+}
+setInterval(() => {
+  ping();
+}, 5000)
+
+
+let stateKey = null;
+api.get('/state/key', (data) => {
+  stateKey = data.key;
+});
 
 const actions = {
   'searchApartments': () => {
@@ -13,6 +36,37 @@ const actions = {
         id: 'searchApartments',
         name: 'Look for an apartment',
       }]
+    });
+  },
+  'endTurn': () => {
+    api.post(`/play/ready/${id}`);
+    publish({
+      message: 'Waiting for other players...',
+      actions: []
+    });
+
+    let update = setInterval(() => {
+      api.get('/state/key', (data) => {
+        if (data.key !== stateKey) {
+          stateKey = data.key;
+          clearInterval(update);
+
+          document.querySelector('.event:last-child').style.opacity = 0.5;
+          publish({
+            message: '(new turn) I\'ve  been evicted. I need to find a new apartment.',
+            actions: [{
+              id: 'searchApartments',
+              name: 'Look for an apartment',
+            }, {
+              id: 'eat',
+              name: 'Eat',
+            }, {
+              id: 'endTurn',
+              name: 'End Turn',
+            }]
+          });
+        }
+      });
     });
   }
 };
@@ -55,5 +109,8 @@ publish({
   }, {
     id: 'eat',
     name: 'Eat',
+  }, {
+    id: 'endTurn',
+    name: 'End Turn',
   }]
 });
