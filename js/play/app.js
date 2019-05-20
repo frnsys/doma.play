@@ -25,9 +25,13 @@ api.get('/state/key', (data) => {
   stateKey = data.key;
 });
 
+let tenant = {
+  work: [0, 9]
+}
+
 const actions = {
   'searchApartments': () => {
-    displayListings(logEl);
+    displayListings(logEl, tenant);
   },
   'eat': () => {
     publish({

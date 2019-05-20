@@ -26,7 +26,7 @@ class InteractionLayer {
   updateMouse(ev) {
     // adjust browser mouse position for three.js scene
     this.mouse.x = ((ev.clientX-this.scene.renderer.domElement.offsetLeft)/this.scene.renderer.domElement.clientWidth) * 2 - 1;
-    this.mouse.y = -((ev.clientY-this.scene.renderer.domElement.offsetTop)/this.scene.renderer.domElement.clientHeight) * 2 + 1;
+    this.mouse.y = -((ev.clientY-this.scene.renderer.domElement.offsetTop+window.pageYOffset)/this.scene.renderer.domElement.clientHeight) * 2 + 1;
   }
 
   onTouchStart(ev) {
