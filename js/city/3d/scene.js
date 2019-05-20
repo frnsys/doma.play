@@ -36,6 +36,12 @@ class Scene {
     this.scene.add(light);
     this.sun = light;
 
+    let moon = new THREE.DirectionalLight( 0x97b7ef, 0.2 );
+    moon.position.y = 200;
+    moon.baseIntensity = moon.intensity;
+    this.scene.add(moon);
+    this.moon = moon;
+
     if (config.enableShadows) {
       this.renderer.shadowMap.enabled = true;
       this.renderer.shadowMap.soft = true;

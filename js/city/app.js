@@ -47,7 +47,7 @@ function render(time) {
     update();
   }
   city.animate();
-  angle += 0.0001;
+  angle += 0.001;
 
   // Day-Night cycle
   let progress = (angle % (2*Math.PI))/Math.PI;
