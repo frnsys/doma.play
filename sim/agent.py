@@ -153,6 +153,8 @@ class Landlord:
                             best_offer.accepted = True
             if best_offer is not None:
                 self.sales += 1
+                u.recently_sold = True
+                u.value = best_offer.amount
                 transfers.append((u, best_offer.landlord))
             u.offers = set()
 
@@ -345,6 +347,7 @@ class Tenant:
                             best_offer.accepted = True
             if best_offer is not None:
                 self.sales += 1
+                u.value = best_offer.amount
                 transfers.append((u, best_offer.landlord))
             u.offers = set()
 

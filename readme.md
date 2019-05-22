@@ -112,7 +112,6 @@ Improvements: look at all TODOs, also, incomes don't change and they probably sh
 
 TO DO:
 
-- Generate social network
 - Contagion model for word-of-mouth
 - Compute property value?
     - Annual appraisals: Select each property, compare to similar properties and their last sale prices

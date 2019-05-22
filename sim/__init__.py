@@ -110,6 +110,29 @@ class Simulation:
                 continue
             t.step(self, vacants)
 
+        if self.time % 12 == 0:
+            # Appraise
+            for neighb, units in self.city.units_by_neighborhood().items():
+                sold = [u for u in units if u.recently_sold]
+                if not sold:
+                    evaluated = [u for u in units if u.value is not None]
+                    if not evaluated:
+                        mean_value_per_area = None
+                    else:
+                        mean_value_per_area = sum((u.value/u.area) * self.conf['base_appreciation']
+                                                for u in evaluated)/len(evaluated)
+                else:
+                    mean_value_per_area = sum(u.value/u.area for u in sold)/len(sold)
+
+                # If nothing has sold, we have no sense of the value
+                # likely just need more burn-in time
+                if mean_value_per_area is None: continue
+
+                for u in units:
+                    if not u.recently_sold:
+                        u.value = mean_value_per_area * u.area
+                    u.recently_sold = False
+
         self.time += 1
 
     def stats(self):
@@ -122,6 +145,7 @@ class Simulation:
             'mean_rent_per_area': sum(u.rent_per_area for u in units)/len(units),
             'mean_months_vacant': sum(u.monthsVacant for u in units)/len(units),
             'mean_maintenance_costs': sum(u.maintenance/u.rent for u in units)/len(units),
+            'mean_value_per_area': sum(u.value/u.area for u in units if u.value)/len(units),
             'mean_condition': sum(u.condition for u in units)/len(units),
             'unique_landlords': len(set(u.owner for u in units)),
             'mean_offers': sum(len(u.offers) for u in units)/len(units),

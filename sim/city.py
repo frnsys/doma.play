@@ -1,4 +1,3 @@
-import math
 import random
 from enum import Enum
 from .grid import HexGrid
@@ -180,6 +179,8 @@ class Unit:
 
         # Purchase offers
         self.offers = set()
+        self.recently_sold = False
+        self.value = None
 
         # Keep track of YTD income and maintenance
         self.income_history = deque([], maxlen=12)

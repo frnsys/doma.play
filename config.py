@@ -15,5 +15,6 @@ SIM = {
     'tenants': {
         'moving_penalty': 10,
         'min_area': 50
-    }
+    },
+    'base_appreciation': 1.02
 }
