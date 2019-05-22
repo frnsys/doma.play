@@ -1,6 +1,7 @@
 import random
 import logging
 import numpy as np
+import networkx as nx
 from .util import sync
 from .city import City
 from .agent import Landlord, Tenant
@@ -64,6 +65,14 @@ class Simulation:
             for u in b.units:
                 u.setOwner(self.random_owner(u))
                 self.units_idx[u.id] = u
+
+        # Social network
+        self.social_network = nx.Graph()
+        for t in self.tenants:
+            friends = random.sample(self.tenants, random.randint(2, 16))
+            for f in friends:
+                if t == f: continue
+                self.social_network.add_edge(t, f)
 
     def random_owner(self, unit):
         roll = random.random()
