@@ -107,3 +107,32 @@ landlords should make offers based on recent sale prices in that neighborhood fo
 ---
 
 Improvements: look at all TODOs, also, incomes don't change and they probably should; the population is also static, and that should probably change over time
+
+---
+
+TO DO:
+
+- Generate social network
+- Contagion model for word-of-mouth
+- Compute property value?
+    - Annual appraisals: Select each property, compare to similar properties and their last sale prices
+        - Rule of thumb: 2% increase
+- Actions
+    - Give money to DOMA (buy token)
+        - Finite supply
+            - price = (DOMA property value+platform costs)/(number of tokens)
+        - Tokens are minted when new properties are purchased
+        - Dividends are shares of rent
+            - Income of the platform, minus expenses of the platform, minus what DOMA reserves for future members
+        - Do tokens represent a share of a particular property, or DOMA overall?
+    - Vote on financial structure
+    - Renting from DOMA
+        - Pay rent as normal, difference is as a member some of that comes back to you
+        - How many tokens do you get?
+            - 1-2 tokens per rent payment, scaled w/ rent payment
+    - Purchase properties
+        - Commit to keep current tenant for at least 5 years
+- Bot decisions
+    - Whether or not to join platform
+        - Depends on capital/excess income the bot has
+    - Voting
