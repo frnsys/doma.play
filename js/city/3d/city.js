@@ -9,6 +9,7 @@ const parkColor = 0x189a4a;
 const riverColor = 0x2146b7;
 const commericalMat = new THREE.MeshLambertMaterial({color: 0xfcec99});
 
+const maxBubbles = 2000;
 const bubbleGeo = new THREE.SphereBufferGeometry(1, 8, 8);
 const bubbleMat = new THREE.MeshLambertMaterial({
   color: 0x9842f4,
@@ -126,9 +127,14 @@ class City {
   bubble() {
     Object.values(this.units).forEach((u) => {
       if (u.owner.type == 'Landlord') {
-        let bubble = new THREE.Mesh(bubbleGeo, bubbleMat);
+        let bubble;
+        if (this.bubbles.length < maxBubbles) {
+          bubble = new THREE.Mesh(bubbleGeo, bubbleMat);
+          u.mesh.add(bubble);
+        } else {
+          bubble = this.bubbles.shift();
+        }
         bubble.position.set(Math.random(), Math.random(), Math.random());
-        u.mesh.add(bubble);
         this.bubbles.push(bubble);
       }
     });

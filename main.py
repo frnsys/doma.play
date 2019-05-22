@@ -5,7 +5,7 @@ import redis
 import random
 import config
 import logging
-from time import time
+from time import time, sleep
 from sim import Simulation, logger
 from sim.util import Command, get_commands
 from collections import defaultdict
@@ -121,8 +121,9 @@ if __name__ == '__main__':
                 }))
 
 
-        if DEBUG: output['history'].append(sim.stats())
         reset_ready_players()
+        if DEBUG: output['history'].append(sim.stats())
+        if not DEBUG: sleep(config.MIN_STEP_DELAY)
 
 
     try:

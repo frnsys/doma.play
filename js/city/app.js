@@ -47,10 +47,13 @@ function render(time) {
     update();
   }
   city.animate();
-  angle += 0.001;
 
   // Day-Night cycle
   let progress = (angle % (2*Math.PI))/Math.PI;
+  let isNight = progress > 1;
+
+  angle += isNight ? 0.02 : 0.002;
+
   let startSunset = 0.75;
   let endSunrise = 0.25;
   if (progress >= startSunset && progress < 1) {
@@ -76,7 +79,7 @@ function render(time) {
       city.lights.forEach((l) => l.visible = false);
     }
   }
-  if (progress > 1) {
+  if (isNight) {
     scene.sun.visible = false;
   } else {
     scene.sun.visible = true;
