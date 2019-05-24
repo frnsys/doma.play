@@ -100,25 +100,25 @@ class Landlord:
         based on investment value estimates"""
         # Check offer responses
         new_offers = set()
-        offered_units = set()
-        for offer in self.out_offers:
-            if offer.accepted: continue
-            new_offer = offer.amount * 0.98 # TODO what to set this at?
-            est_future_rent = (self.trend_ests[offer.unit.building.parcel.neighborhood] - offer.unit.maintenance)
-            if est_future_rent > new_offer and new_offer > 0:
-                offer.amount = new_offer
-                new_offers.add(offer)
-                offered_units.add(offer.unit)
 
-        best_invest = max(self.invest_ests.keys(), key=lambda n: self.invest_ests[n])
+        # best_invest = max(self.invest_ests.keys(), key=lambda n: self.invest_ests[n])
+        # Weighted random choice; if they always choose best sometimes
+        # they only ever buy in one neighborhood
+        neighbs = list(self.invest_ests.keys())
+        weights = np.array([self.invest_ests[n] for n in neighbs])
+        z = np.sum(weights)
+        if z == 0:
+            best_invest = np.random.choice(neighbs)
+        else:
+            best_invest = np.random.choice(neighbs, p=weights/z)
         est_future_rent = self.trend_ests[best_invest]
         units = self.city.neighborhood_units(best_invest)
         for u in random.sample(units, min(len(units), sample_size)):
-            if u.owner == self or u in offered_units: continue
+            if u.owner == self: continue
             income = (u.rent_per_area - u.maintenance) * sim.conf['pricing_horizon']
             income_est = (est_future_rent - u.maintenance) * sim.conf['pricing_horizon']
             if income_est > 0 and income_est > income:
-                amount = income * 1.1 # TODO how should this value be determiend?
+                amount = income_est # TODO how should this value be determiend?
                 offer = Offer(self, u, amount)
                 u.offers.add(offer)
                 new_offers.add(offer)
@@ -156,6 +156,8 @@ class Landlord:
                 u.recently_sold = True
                 u.value = best_offer.amount
                 transfers.append((u, best_offer.landlord))
+                if best_offer.landlord.__class__.__name__ == 'DOMA':
+                    best_offer.landlord.property_fund -= best_offer.amount
             u.offers = set()
 
         # Have to do this here
@@ -238,15 +240,21 @@ class Tenant:
         self.work_building = None
         self.player = None
 
+        self.doma_dividends = 0
+        self.doma_member = False
+
     def desirability(self, unit, prefs):
         """Compute desirability of a housing unit
         for this tenant"""
+        # If DOMA is the unit owner,
+        # compute rent adjusted for dividends
+        rent = unit.adjusted_rent(tenants=unit.tenants|set([self]))
 
         # Numer of tenants, were they to move in
         n_tenants = len(unit.tenants) + 1
 
         # Is this place affordable?
-        rent_per_tenant = unit.rent/n_tenants
+        rent_per_tenant = rent/n_tenants
         if self.income < rent_per_tenant:
             return 0
 
@@ -315,7 +323,7 @@ class Tenant:
                     if new_unit.vacancies == 0:
                         vacants.remove(new_unit)
 
-        if not self.moved:
+        if not self.moved and self.unit is not None:
             self.months_stayed += 1
 
         # If they own units,
@@ -347,8 +355,11 @@ class Tenant:
                             best_offer.accepted = True
             if best_offer is not None:
                 self.sales += 1
+                u.recently_sold = True
                 u.value = best_offer.amount
                 transfers.append((u, best_offer.landlord))
+                if best_offer.landlord.__class__.__name__ == 'DOMA':
+                    best_offer.landlord.property_fund -= best_offer.amount
             u.offers = set()
 
         # Have to do this here

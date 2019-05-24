@@ -3,7 +3,7 @@ export default {
   colors: {
     'Tenant': 0xffffff,
     'Landlord': 0xe7d6f9,
-    'Doma': 0xffffff
+    'DOMA': 0xf4c1db
   },
   focusColor: 0xff0000,
   enableShadows: true,

@@ -1,5 +1,6 @@
 import random
 from enum import Enum
+from .doma import DOMA
 from .grid import HexGrid
 from collections import deque
 
@@ -195,6 +196,16 @@ class Unit:
         if self.owner is not None:
             self.owner.units.add(self)
 
+    def adjusted_rent(self, tenants=None):
+        """Compute adjusted rent,
+        which takes into account DOMA ownership"""
+        if not isinstance(self.owner, DOMA):
+            return self.rent
+        tenants = tenants or self.tenants
+        total_share = sum(self.owner.shares(t) for t in tenants)
+        reduction = self.owner.last_revenue * total_share
+        return max(0, self.rent - reduction)
+
     @property
     def vacant(self):
         return not self.tenants
@@ -206,6 +217,10 @@ class Unit:
     @property
     def rent_per_area(self):
         return self.rent/self.area
+
+    @property
+    def adjusted_rent_per_area(self):
+        return self.adjusted_rent()/self.area
 
     @property
     def rent_per_tenant(self):

@@ -4,6 +4,7 @@ import numpy as np
 import networkx as nx
 from .util import sync
 from .city import City
+from .doma import DOMA
 from .agent import Landlord, Tenant
 
 logger = logging.getLogger('DOMA-SIM')
@@ -21,6 +22,9 @@ class Simulation:
 
         # Initialize city
         self.city = City.from_map(map, neighborhoods, city)
+
+        # Initialize DOMA
+        self.doma = DOMA(self)
 
         # Initialize landlords
         self.landlords = [Landlord(self.city) for _ in range(city['landlords'])]
@@ -133,6 +137,9 @@ class Simulation:
                         u.value = mean_value_per_area * u.area
                     u.recently_sold = False
 
+        # DOMA step
+        self.doma.step(self)
+
         self.time += 1
 
     def stats(self):
@@ -143,11 +150,13 @@ class Simulation:
             'percent_homeless': (len(self.tenants) - len(housed))/len(self.tenants),
             'percent_vacant': sum(1 for u in units if u.vacant)/len(units),
             'mean_rent_per_area': sum(u.rent_per_area for u in units)/len(units),
+            'mean_adjusted_rent_per_area': sum(u.adjusted_rent_per_area for u in units)/len(units),
             'mean_months_vacant': sum(u.monthsVacant for u in units)/len(units),
             'mean_maintenance_costs': sum(u.maintenance/u.rent for u in units)/len(units),
             'mean_value_per_area': sum(u.value/u.area for u in units if u.value)/len(units),
             'mean_condition': sum(u.condition for u in units)/len(units),
             'unique_landlords': len(set(u.owner for u in units)),
+            'doma_properties': len(self.doma.units),
             'mean_offers': sum(len(u.offers) for u in units)/len(units),
             'n_sales': sum(t.sales for t in self.landlords + self.tenants),
             'n_moved': sum(1 for t in self.tenants if t.moved),
