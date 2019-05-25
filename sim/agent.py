@@ -3,8 +3,8 @@ import math
 import random
 import itertools
 import numpy as np
-import statsmodels.api as sm
 from collections import defaultdict
+from sklearn.linear_model import LinearRegression
 
 
 def distance(a, b):
@@ -59,7 +59,7 @@ class Landlord:
             sample = random.sample(units, samp_size)
             samples[neighb] = sample
             rents += [u.rent_per_area for u in sample]
-            rent_history.append(np.mean(rents))
+            rent_history.append((np.mean(rents), np.max(rents)))
 
         # Adjust maintenance for units per neighborhood
         # Look not at rent, but rental income over the past year
@@ -80,7 +80,7 @@ class Landlord:
                 u.maintenance = maintenance_to_rent_ratio * u.rent_per_area
 
 
-    def estimate_trends(self, months=12, horizon=36):
+    def estimate_trends(self, months=12):
         """Estimate rent trends for each neighborhood,
         looking ate past `months` of data, projecting
         out to `horizon` months"""
@@ -88,12 +88,13 @@ class Landlord:
         # These are rent per area
         for neighb, rent_history in self.rent_ests.items():
             if len(rent_history) < months: continue
-            y = rent_history[-months:]
-            X = list(range(len(y)))
-            m = sm.OLS(y, X).fit()
-            est_future_rent = m.predict([horizon])[0]
-            self.trend_ests[neighb] = est_future_rent
-            self.invest_ests[neighb] = est_future_rent - rent_history[-1]
+            means, maxs = zip(*rent_history[-months:])
+            X = list(range(len(maxs)))
+            m = LinearRegression()
+            m.fit(np.array(X).reshape(-1, 1), maxs)
+            est_market_rent = m.predict([[months]])[0]
+            self.trend_ests[neighb] = est_market_rent
+            self.invest_ests[neighb] = est_market_rent - maxs[-1]
 
     def make_purchase_offers(self, sim, sample_size=20):
         """Make purchase offers for units
@@ -105,7 +106,7 @@ class Landlord:
         # Weighted random choice; if they always choose best sometimes
         # they only ever buy in one neighborhood
         neighbs = list(self.invest_ests.keys())
-        weights = np.array([self.invest_ests[n] for n in neighbs])
+        weights = np.array([max(0, self.invest_ests[n]) for n in neighbs])
         z = np.sum(weights)
         if z == 0:
             best_invest = np.random.choice(neighbs)
@@ -115,31 +116,34 @@ class Landlord:
         units = self.city.neighborhood_units(best_invest)
         for u in random.sample(units, min(len(units), sample_size)):
             if u.owner == self: continue
-            income = (u.rent_per_area - u.maintenance) * sim.conf['pricing_horizon']
-            income_est = (est_future_rent - u.maintenance) * sim.conf['pricing_horizon']
-            if income_est > 0 and income_est > income:
-                amount = income_est # TODO how should this value be determiend?
+            est_value = (est_future_rent * u.area) * 12 * (sim.city.config['priceToRentRatio'] * u.building.parcel.weighted_desirability)
+            cur_value = u.rent * 12 * (sim.city.config['priceToRentRatio'] * u.building.parcel.weighted_desirability)
+
+            if est_value > 0 and est_value > cur_value:
+                amount = est_value
                 offer = Offer(self, u, amount)
                 u.offers.add(offer)
                 new_offers.add(offer)
         self.out_offers = new_offers
 
-
     def check_purchase_offers(self, sim):
         """Check purchase offers on units"""
         self.sales = 0
+        record = []
         transfers = []
         for u in self.units:
             if not u.offers: continue
+            last_val = u.value
 
             neighb = u.building.parcel.neighborhood
-            est_future_rent = (self.trend_ests[neighb] - u.maintenance) * sim.conf['pricing_horizon']
+            est_future_rent = self.trend_ests[neighb]
+            est_value = (est_future_rent * u.area) * 12 * (sim.city.config['priceToRentRatio'] * u.building.parcel.weighted_desirability)
 
             # Find best offer, if any
             # and mark offers as rejected or accepted
             best_offer = None
             for o in u.offers:
-                if o.amount <= est_future_rent:
+                if o.amount <= est_value:
                     o.accepted = False
                 else:
                     if best_offer is None:
@@ -158,6 +162,16 @@ class Landlord:
                 transfers.append((u, best_offer.landlord))
                 if best_offer.landlord.__class__.__name__ == 'DOMA':
                     best_offer.landlord.property_fund -= best_offer.amount
+
+            record.append({
+                'neighb': u.building.parcel.neighborhood,
+                'est_future_rent': est_future_rent,
+                'est_value': est_value,
+                'last_rent': u.rent/u.area,
+                'last_value': last_val,
+                'offers': [o.amount for o in u.offers],
+                'sold': u.recently_sold
+            })
             u.offers = set()
 
         # Have to do this here
@@ -165,6 +179,8 @@ class Landlord:
         # as we iterate
         for u, dev in transfers:
             u.setOwner(dev)
+
+        return record
 
     def step(self, sim):
         # Update market estimates
@@ -179,11 +195,10 @@ class Landlord:
 
         # Update rents
         self.manage_vacant_units()
-        self.manage_occupied_units(sim.time)
+        self.manage_occupied_units(sim.time, sim.conf['rent_increase_rate'])
 
         # Buy/sells
         self.make_purchase_offers(sim)
-        self.check_purchase_offers(sim)
 
     @property
     def vacant_units(self):
@@ -201,7 +216,7 @@ class Landlord:
             if u.monthsVacant % 2 == 0:
                 u.rent *= 0.98
 
-    def manage_occupied_units(self, month):
+    def manage_occupied_units(self, month, rent_increase_rate):
         # year-long leases
         for u in self.occupied_units:
             elapsed = month - u.leaseMonth
@@ -209,7 +224,8 @@ class Landlord:
                 # TODO this can be smarter
                 # i.e. depend on gap b/w
                 # current rent and rent estimate/projection
-                u.rent *= 1.02
+                neighb = u.building.parcel.neighborhood
+                u.rent = max(u.rent * rent_increase_rate, self.trend_ests[neighb])
 
                 # Cap rents so they don't go to infinity
                 u.rent = min(u.rent, sys.maxsize)
@@ -241,7 +257,6 @@ class Tenant:
         self.player = None
 
         self.doma_dividends = 0
-        self.doma_member = False
 
     def desirability(self, unit, prefs):
         """Compute desirability of a housing unit
@@ -254,7 +269,7 @@ class Tenant:
         n_tenants = len(unit.tenants) + 1
 
         # Is this place affordable?
-        rent_per_tenant = rent/n_tenants
+        rent_per_tenant = max(1, rent/n_tenants)
         if self.income < rent_per_tenant:
             return 0
 
@@ -326,8 +341,10 @@ class Tenant:
         if not self.moved and self.unit is not None:
             self.months_stayed += 1
 
+    def check_purchase_offers(self, sim):
         # If they own units,
         # check purchase offers
+        record = []
         transfers = []
         for u in self.units:
             if not u.offers: continue
@@ -335,13 +352,14 @@ class Tenant:
             # - since rents decrease as the apartment is vacant,
             #   the longer the vacancy, the more likely they are to sell
             # - maintenance costs become too much
-            est_future_rent = (u.rent_per_area - u.maintenance) * sim.conf['pricing_horizon']
+            est_value = (u.rent_per_area * u.area) * 12 * (sim.city.config['priceToRentRatio'] * u.building.parcel.weighted_desirability)
+            last_val = u.value
 
             # Find best offer, if any
             # and mark offers as rejected or accepted
             best_offer = None
             for o in u.offers:
-                if o.amount <= est_future_rent:
+                if o.amount <= est_value:
                     o.accepted = False
                 else:
                     if best_offer is None:
@@ -360,6 +378,17 @@ class Tenant:
                 transfers.append((u, best_offer.landlord))
                 if best_offer.landlord.__class__.__name__ == 'DOMA':
                     best_offer.landlord.property_fund -= best_offer.amount
+
+            record.append({
+                'neighb': u.building.parcel.neighborhood,
+                'est_future_rent': -1,
+                'est_value': est_value,
+                'last_rent': u.rent/u.area,
+                'last_value': last_val,
+                'offers': [o.amount for o in u.offers],
+                'sold': u.recently_sold
+            })
+
             u.offers = set()
 
         # Have to do this here
@@ -367,3 +396,5 @@ class Tenant:
         # as we iterate
         for u, dev in transfers:
             u.setOwner(dev)
+
+        return record

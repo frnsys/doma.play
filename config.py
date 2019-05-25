@@ -17,6 +17,7 @@ SIM = {
         'min_area': 50
     },
     'base_appreciation': 1.02,
+    'rent_increase_rate': 1.05,
 
     # Contagion/word-of-mouth model
     'sociality': 0.01, # Probability a tenant sees a friend,
@@ -24,5 +25,5 @@ SIM = {
     # Percent of rent paid to DOMA
     # that converts to shares
     'doma_rent_share': 0.1,
-    'doma_initial_fund': 1000000
+    'doma_initial_fund': 2000000
 }

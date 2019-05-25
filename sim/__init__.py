@@ -140,11 +140,18 @@ class Simulation:
         # DOMA step
         self.doma.step(self)
 
+        # Check purchase offers
+        market_history = []
+        for e in self.landlords + self.tenants:
+            market_history.extend(e.check_purchase_offers(self))
+
         self.time += 1
+        return market_history
 
     def stats(self):
         units = self.city.units
         housed = [t for t in self.tenants if t.unit is not None]
+        landlord_units = sum((list(l.units) for l in self.landlords), [])
 
         return {
             'percent_homeless': (len(self.tenants) - len(housed))/len(self.tenants),
@@ -153,23 +160,36 @@ class Simulation:
             'mean_adjusted_rent_per_area': sum(u.adjusted_rent_per_area for u in units)/len(units),
             'mean_months_vacant': sum(u.monthsVacant for u in units)/len(units),
             'mean_maintenance_costs': sum(u.maintenance/u.rent for u in units)/len(units),
-            'mean_value_per_area': sum(u.value/u.area for u in units if u.value)/len(units),
+            'mean_value_per_area': sum(u.value/u.area for u in units)/len(units),
             'mean_condition': sum(u.condition for u in units)/len(units),
             'unique_landlords': len(set(u.owner for u in units)),
-            'doma_properties': len(self.doma.units),
+            'mean_price_to_rent_ratio': sum(u.value/(u.rent*12) for u in units)/len(units),
+            'doma_members': len(self.doma.members),
+            'mean_value': sum(u.value for u in units)/len(units),
+            'mean_doma_rent_vs_market_rent': np.mean([u.adjusted_rent_per_area for u in self.doma.units])/np.mean([u.adjusted_rent_per_area for u in landlord_units]),
+            'doma_units': len(self.doma.units),
+            'doma_property_fund': self.doma.property_fund,
+            'doma_total_dividend_payout': self.doma.last_payout,
             'mean_offers': sum(len(u.offers) for u in units)/len(units),
+            'n_units': len(units),
             'n_sales': sum(t.sales for t in self.landlords + self.tenants),
             'n_moved': sum(1 for t in self.tenants if t.moved),
             'mean_stay_length': 0 if not housed else sum(t.months_stayed for t in housed)/len(housed),
             'landlords': {
-                landlord.id: len(landlord.units) for landlord in self.landlords
+                landlord.id: {
+                    'n_units': len(landlord.units),
+                    'mean_adjusted_rent_per_area': 0 if not landlord.units else sum(u.adjusted_rent_per_area for u in landlord.units)/len(landlord.units),
+                    'mean_condition': sum(u.condition for u in units)/len(units)
+                } for landlord in self.landlords + [self.doma]
             },
             'neighborhoods': {
                 neighb: {
                     'percent_vacant': sum(1 for u in units if u.vacant)/len(units),
                     'mean_rent_per_area': sum(u.rent_per_area for u in units)/len(units),
+                    'mean_adjusted_rent_per_area': sum(u.adjusted_rent_per_area for u in units)/len(units),
                     'mean_months_vacant': sum(u.monthsVacant for u in units)/len(units),
                     'mean_maintenance_costs': sum(u.maintenance/u.rent for u in units)/len(units),
+                    'mean_value_per_area': sum(u.value/u.area for u in units if u.value)/len(units),
                     'mean_condition': sum(u.condition for u in units)/len(units),
                 } for neighb, units in self.city.units_by_neighborhood().items()
             }

@@ -62,6 +62,7 @@ if __name__ == '__main__':
             }
         }
         output['history'] = [sim.stats()]
+        output['market'] = []
 
     # Pool of tenants for players
     tenants = random.sample(sim.tenants, 100)
@@ -107,7 +108,7 @@ if __name__ == '__main__':
                         unit_id = datas[-1]['unit_id']
                         sim.units_idx[unit_id].move_in(tenant, sim.time+1)
 
-            sim.step()
+            market_history = sim.step()
             sim.sync()
 
             # Synchronize player tenants
@@ -122,7 +123,9 @@ if __name__ == '__main__':
 
 
         reset_ready_players()
-        if DEBUG: output['history'].append(sim.stats())
+        if DEBUG:
+            output['history'].append(sim.stats())
+            output['market'].append(market_history)
         if not DEBUG: sleep(config.MIN_STEP_DELAY)
 
 

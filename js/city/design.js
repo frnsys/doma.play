@@ -38,6 +38,7 @@ const defaultCellData = {
 }
 const defaultCity = {
   pricePerSqm: 100,
+  priceToRentRatio: 10,
   population: 1000,
   landlords: 10,
   incomes: [{
@@ -268,6 +269,7 @@ gui.add(control, 'source');
 
 const citygui = gui.addFolder('City');
 citygui.add(design.city, 'pricePerSqm').min(0).step(1);
+citygui.add(design.city, 'priceToRentRatio').min(1).step(1);
 citygui.add(design.city, 'population').min(0).step(100);
 citygui.add(design.city, 'landlords').min(0).step(1);
 citygui.add(control, 'addIncome').name('+Income Range');

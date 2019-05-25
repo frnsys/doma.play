@@ -1,3 +1,4 @@
+import random
 from .agent import Offer
 from collections import defaultdict
 
@@ -8,7 +9,9 @@ class DOMA:
         self.funds = 0
         self.units = set()
         self._shares = defaultdict(int)
+        self._shares_denom = 0
 
+        self.last_payout = 0
         self.last_revenue = 0
         self.property_fund = sim.conf['doma_initial_fund']
         self.p_reserves = 0.05
@@ -18,6 +21,7 @@ class DOMA:
         self.funds += amount
         if p > 0:
             self._shares[tenant.id] += amount * p
+            self._shares_denom = sum(self._shares.values())
 
     def add_contribution(self, tenant, amount):
         """Direct contribution, all goes to property fund"""
@@ -49,9 +53,11 @@ class DOMA:
         # Pay out dividends
         p_dividend = 1.0 - self.p_reserves - self.p_expenses
         dividends = rent * p_dividend
+        self.last_payout = dividends
         for t in tenants:
-            if not t.doma_member: continue
-            t.doma_dividends += dividends * self.shares(t)
+            share = self.shares(t)
+            if not share: continue
+            t.doma_dividends += dividends * share
         self.property_fund += rent * self.p_reserves
 
     def make_offers(self, sim):
@@ -65,21 +71,25 @@ class DOMA:
             candidates = [u for u in sim.city.units if u.owner != self]
 
         # Filter to affordable
-        candidates = [u for u in candidates if u.value is not None and u.value <= self.property_fund]
+        candidates = [u for u in candidates if u.value <= self.property_fund]
 
         # Prioritize cheap properties with high rent-to-price ratios
         candidates = sorted(candidates, key=lambda u: u.value * (u.value/u.rent))
         committed = 0
+        offers = []
         for u in candidates:
             if committed + u.value >= self.property_fund: break
             committed += u.value
             offer = Offer(self, u, u.value)
             u.offers.add(offer)
+            offers.append(offers)
+        return offers
+
 
     def shares(self, tenant):
-        if self.funds is 0:
+        if self._shares_denom is 0:
             return 0
-        return self._shares[tenant]/self.funds
+        return self._shares[tenant.id]/self._shares_denom
 
     def revenue(self):
         return sum(u.rent for u in self.units if not u.vacant)
@@ -96,3 +106,9 @@ class DOMA:
         rent = self.collect_rent(sim.tenants)
         self.pay_dividends(rent, sim.tenants)
         self.make_offers(sim)
+
+        # Maintain properties
+        for u in self.units:
+            u.condition -= random.random() * 0.1 # TODO deterioration rate based on build year?
+            u.condition += u.maintenance
+            u.condition = min(max(u.condition, 0), 1)
