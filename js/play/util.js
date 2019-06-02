@@ -1,3 +1,5 @@
+import config from '../city/config';
+
 function distance(a, b) {
   let [x1, y1] = a;
   let [x2, y2] = b;
@@ -9,7 +11,7 @@ function dateFromTime(time) {
 }
 
 function randomChoice(choices) {
-  return choices[Math.floor(Math.random() * choices.length - 1)];
+  return choices[Math.floor(Math.random() * choices.length)];
 }
 
 export default { distance, dateFromTime, randomChoice };

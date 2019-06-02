@@ -35,13 +35,13 @@ function workActions() {
 
 const unitFailures = [{
   'name': 'No water',
-  'desc': 'Your water isn\'t working.',
+  'desc': 'Your water isn\'t working. (-1⚡)',
   'effect': {
     'energy': -1
   }
 }, {
   'name': 'No gas',
-  'desc': 'Your gas isn\'t working.',
+  'desc': 'Your gas isn\'t working. (-1⚡)',
   'effect': {
     'energy': -1
   }
@@ -190,16 +190,17 @@ const actions = {
             player.turnTimer = data.timer.split('-').map((t) => parseFloat(t));
             player.tenant = data.tenant;
             player.time = data.time;
+            player.energy = config.maxEnergy;
             updateHUD();
             document.querySelector('.event:last-child').style.opacity = 0.5;
 
             // Morning
-            player.energy = config.maxEnergy;
             let roll = Math.random();
             console.log(`Rolling ${roll} against condition ${data.tenant.unit.condition}`);
             if (roll > data.tenant.unit.condition) {
               let failure = util.randomChoice(unitFailures);
-              Object.keys(failure.effect).forEach((k) => player[k] -= failure.effect[k]);
+              Object.keys(failure.effect).forEach((k) => player[k] += failure.effect[k]);
+              updateHUD();
               publish({
                 message: `You wake up. ${failure.desc}`,
                 actions: [{
@@ -247,7 +248,6 @@ const actions = {
         transitFailure = true;
       }
     });
-    // transitFailure = true;
     if (transitFailure) {
       publish({
         message: 'The subway breaks down.',
@@ -307,7 +307,7 @@ const actions = {
     });
   },
   'work': () => {
-    if (!player.doma && Math.random() < 1.) {
+    if (!player.doma && Math.random() < 0.5) {
       player.doma = true;
       publish({
         message: 'A co-worker mentions this platform called DOMA. They said it\'s saved them some money on their rent.',
@@ -402,4 +402,5 @@ function publish(ev) {
   }
 
   logEl.appendChild(eventEl);
+  window.scrollTo(0, document.body.scrollHeight);
 }
