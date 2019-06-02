@@ -192,7 +192,7 @@ class Unit:
         self.setOwner(owner)
         self.monthsVacant = 0
 
-        self.maintenance = 0.1 * rent/area # TODO what to set as the starting value?
+        self.maintenance = 0.1 # TODO what to set as the starting value?
         self.condition = 1
 
         # Purchase offers

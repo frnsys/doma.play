@@ -175,6 +175,13 @@ class Simulation:
             'n_sales': sum(t.sales for t in self.landlords + self.tenants),
             'n_moved': sum(1 for t in self.tenants if t.moved),
             'mean_stay_length': 0 if not housed else sum(t.months_stayed for t in housed)/len(housed),
+            'mean_rent_income_ratio': 0 if not housed else sum(t.unit.rent_per_tenant/t.income for t in housed)/len(housed),
+            'incomes': {
+                'min': min(t.income for t in self.tenants),
+                'max': max(t.income for t in self.tenants),
+                'mean': np.mean([t.income for t in self.tenants]),
+                'median': np.median([t.income for t in self.tenants])
+            },
             'landlords': {
                 landlord.id: {
                     'n_units': len(landlord.units),
@@ -191,6 +198,7 @@ class Simulation:
                     'mean_maintenance_costs': sum(u.maintenance/u.rent for u in units)/len(units),
                     'mean_value_per_area': sum(u.value/u.area for u in units if u.value)/len(units),
                     'mean_condition': sum(u.condition for u in units)/len(units),
+                    'mean_rent_income_ratio': sum(sum(u.rent_per_tenant/t.income for t in u.tenants) for u in units)/sum(len(u.tenants) for u in units),
                 } for neighb, units in self.city.units_by_neighborhood().items()
             }
         }
