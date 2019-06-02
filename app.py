@@ -74,7 +74,10 @@ def player_select(id):
 
     # Get current state
     state = json.loads(redis.get('state'))
-    return jsonify(success=True, time=state['time'])
+
+    # Get turn timer
+    timer = redis.get('turn_timer').decode('utf8')
+    return jsonify(success=True, time=state['time'], timer=timer)
 
 
 @app.route('/play/leave', methods=['POST'])
@@ -122,7 +125,10 @@ def player_tenant(id):
 
     # Get current state
     state = json.loads(redis.get('state'))
-    return jsonify(success=True, tenant=json.loads(res.decode('utf8')), time=state['time'])
+
+    # Get turn timer
+    timer = redis.get('turn_timer').decode('utf8')
+    return jsonify(success=True, tenant=json.loads(res.decode('utf8')), time=state['time'], timer=timer)
 
 
 @app.route('/design', defaults={'id': None})

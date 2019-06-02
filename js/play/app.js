@@ -5,7 +5,8 @@ import displayListings from './listings';
 
 const id = uuid();
 const logEl = document.getElementById('log');
-const hudEl = document.getElementById('hud');
+const hudEl = document.getElementById('hud-info');
+const timerEl = document.getElementById('hud-timer-fill');
 
 function dateFromTime(time) {
   return `${(time % 12) + 1}/${config.startYear + Math.floor(time/12)}`;
@@ -71,13 +72,26 @@ api.get('/state/key', (data) => {
 let player = {
   energy: config.maxEnergy,
   funds: 0,
-  tenant: null
+  tenant: null,
+  turnTimer: null
 };
+
+// Turn timer
+setInterval(() => {
+  if (player.turnTimer) {
+    let time = Date.now() / 1000;
+    let [start, end] = player.turnTimer;
+    end -= start;
+    let width = Math.min(100, (time - start)/end * 100);
+    timerEl.style.width = `${width}%`;
+  }
+}, 10)
 
 const actions = {
   'chooseTenant': (chosenTenant) => {
     api.post(`/play/select/${id}`, {id: chosenTenant.id}, (data) => {
       console.log(`Player chose tenant ${chosenTenant.id}`);
+      player.turnTimer = data.timer.split('-').map((t) => parseFloat(t));
       player.tenant = chosenTenant;
       updateHUD({time: data.time, tenant: chosenTenant});
       publish({
@@ -133,6 +147,7 @@ const actions = {
 
           api.get(`/play/tenant/${id}`, (data) => {
             player.funds = Math.floor(data.tenant.monthlyDisposableIncome/100);
+            player.turnTimer = data.timer.split('-').map((t) => parseFloat(t));
             let tenant = data.tenant;
             updateHUD(data);
             document.querySelector('.event:last-child').style.opacity = 0.5;

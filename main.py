@@ -7,7 +7,7 @@ import random
 import config
 import logging
 from plot import make_plots
-from time import sleep #, time
+from time import sleep, time
 from datetime import datetime
 from sim import Simulation, logger
 from sim.util import Command, get_commands
@@ -139,13 +139,16 @@ if __name__ == '__main__':
                     'unit': t.unit.id if t.unit else None
                 }))
 
-
         reset_ready_players()
         if DEBUG:
             output['history'].append(sim.stats())
             output['market'].append(market_history)
-        if not DEBUG: sleep(config.MIN_STEP_DELAY)
 
+        if not DEBUG:
+            start = time()
+            end = start + config.MIN_STEP_DELAY
+            redis.set('turn_timer', '{}-{}'.format(start, end))
+            sleep(config.MIN_STEP_DELAY)
 
     try:
         if STEPS is not None:

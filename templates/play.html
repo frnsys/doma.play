@@ -7,17 +7,30 @@
         padding: 3em 1em 1em;
     }
     #hud {
-        display: none;
         position: fixed;
         top: 0;
         left: 0;
         right: 0;
         margin: 0 auto;
-        padding: 0.5em;
         background: aliceblue;
         z-index: 1;
-        min-width: 100%;
+        width: 100%;
+        max-width: 320px;
         text-align: center;
+    }
+    #hud-info {
+        display: none;
+        padding: 0.5em;
+    }
+    #hud-timer {
+        width: 100%;
+        height: 6px;
+    }
+    #hud-timer-fill {
+        width: 0%;
+        height: 100%;
+        background: blue;
+        background: #d5d5ff;
     }
     .event {
         margin-bottom: 1.5em;
@@ -40,7 +53,12 @@
         cursor: pointer;
     }
 </style>
-<div id="hud"></div>
+<div id="hud">
+    <div id="hud-timer">
+        <div id="hud-timer-fill"></div>
+    </div>
+    <div id="hud-info"></div>
+</div>
 <div id="log"></div>
 <script src="{{ url_for('static', filename='js/play.js') }}"></script>
 {% endblock %}
