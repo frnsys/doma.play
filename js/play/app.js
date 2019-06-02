@@ -1,4 +1,5 @@
 import api from '../api';
+import config from '../city/config';
 import uuid from 'uuid/v4';
 import displayListings from './listings';
 
@@ -6,8 +7,15 @@ const id = uuid();
 const logEl = document.getElementById('log');
 const hudEl = document.getElementById('hud');
 
+function dateFromTime(time) {
+  return `${(time % 12) + 1}/${config.startYear + Math.floor(time/12)}`;
+}
+
+let date;
+
 // Joining/leaving
 api.post('/play/join', {id}, (data) => {
+  date = dateFromTime(data.time);
   publish({
     message: 'Welcome to doma.play. Choose a tenant to play as.',
     actions: data.tenants.map((t) => {
@@ -42,7 +50,7 @@ let tenant;
 const actions = {
   'chooseTenant': (chosenTenant) => {
     hudEl.style.display = 'block';
-    hudEl.innerHTML = `Tenant ${chosenTenant.id}, Income $${Math.round(chosenTenant.income/12).toLocaleString()}/month, Unit ${chosenTenant.unit}`;
+    hudEl.innerHTML = `${date}; Tenant ${chosenTenant.id}, Income $${Math.round(chosenTenant.income/12).toLocaleString()}/month, Unit ${chosenTenant.unit}`;
     tenant = chosenTenant;
 
     api.post(`/play/select/${id}`, {id: chosenTenant.id}, (data) => {
@@ -89,8 +97,9 @@ const actions = {
           clearInterval(update);
 
           api.get(`/play/tenant/${id}`, (data) => {
+            date = dateFromTime(data.time);
             let tenant = data.tenant;
-            hudEl.innerHTML = `Tenant ${tenant.id}, Income $${Math.round(tenant.income/12).toLocaleString()}/month, Unit ${tenant.unit}`;
+            hudEl.innerHTML = `${date}; Tenant ${tenant.id}, Income $${Math.round(tenant.income/12).toLocaleString()}/month, Unit ${tenant.unit}`;
             document.querySelector('.event:last-child').style.opacity = 0.5;
             publish({
               message: 'What should I do?',

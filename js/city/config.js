@@ -1,4 +1,5 @@
 export default {
+  startYear: 2019,
   cellSize: 28,
   colors: {
     'Tenant': 0xffffff,
