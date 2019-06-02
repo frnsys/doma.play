@@ -22,7 +22,7 @@ function update() {
       api.get('/state', (state) => {
         stateKey = state.key;
         HUD.updateStats(state);
-        HUD.updateChart(statsChart, state);
+        HUD.updateCharts(state);
 
         // Update units
         Object.values(state.units).forEach((u) => {
@@ -93,7 +93,6 @@ function render(time) {
 
 // Initial setup
 let city;
-let statsChart;
 api.get('/state', (state) => {
   stateKey = state.key;
   city = new City(state);
@@ -112,7 +111,7 @@ api.get('/state', (state) => {
 
   // Init HUD/stats
   HUD.updateStats(state);
-  statsChart = HUD.createChart(state);
+  HUD.createCharts(state);
 
   render();
 });

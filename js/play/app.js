@@ -51,7 +51,7 @@ function updateHUD() {
   if (!player.tenant) return;
   console.log(player);
   let date = util.dateFromTime(player.time);
-  aet tenant = player.tenant;
+  let tenant = player.tenant;
   let energy = [...Array(player.energy)].map(() => {
     return '<span>⚡</span>';
   }).join('');
