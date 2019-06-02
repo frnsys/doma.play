@@ -2,10 +2,13 @@ import os
 import sys
 import json
 import redis
+import shutil
 import random
 import config
 import logging
+from plot import make_plots
 from time import time, sleep
+from datetime import datetime
 from sim import Simulation, logger
 from sim.util import Command, get_commands
 from collections import defaultdict
@@ -41,6 +44,7 @@ def reset_ready_players():
 
 
 if __name__ == '__main__':
+    dt = datetime.utcnow()
     random.seed(int(SEED))
     logger.info('Seed:{}'.format(SEED))
 
@@ -140,5 +144,20 @@ if __name__ == '__main__':
         pass
 
     if DEBUG:
-        with open('output.json', 'w') as f:
+        output_id = '{}_{}'.format(dt.strftime('%d.%m.%Y.%H.%M'), SEED)
+        output_dir = 'runs/{}'.format(output_id)
+        os.mkdir(output_dir)
+
+        with open(os.path.join(output_dir, 'config.json'), 'w') as f:
+            json.dump(config.SIM, f)
+        with open(os.path.join(output_dir, 'output.json'), 'w') as f:
             json.dump(output, f)
+
+        # Copy code for this run too
+        shutil.copytree('sim', os.path.join(output_dir, 'code'))
+
+        make_plots(output_dir)
+
+        os.remove('runs/latest')
+        os.symlink(output_id, 'runs/latest')
+        print(output_dir)
