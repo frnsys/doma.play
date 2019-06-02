@@ -1,4 +1,5 @@
 import api from '../api';
+import util from './util';
 import config from '../city/config';
 import uuid from 'uuid/v4';
 import displayListings from './listings';
@@ -8,19 +9,6 @@ const logEl = document.getElementById('log');
 const hudEl = document.getElementById('hud-info');
 const timerEl = document.getElementById('hud-timer-fill');
 
-function distance(a, b) {
-  let [x1, y1] = a;
-  let [x2, y2] = b;
-  return Math.sqrt((x1-x2)**2 + (y1-y2)**2);
-}
-
-function dateFromTime(time) {
-  return `${(time % 12) + 1}/${config.startYear + Math.floor(time/12)}`;
-}
-
-function randomChoice(choices) {
-  return choices[Math.floor(Math.random() * choices.length - 1)];
-}
 
 function workActions() {
   if (player.energy >= 1) {
@@ -62,8 +50,8 @@ const unitFailures = [{
 function updateHUD() {
   if (!player.tenant) return;
   console.log(player);
-  let date = dateFromTime(player.time);
-  let tenant = player.tenant;
+  let date = util.dateFromTime(player.time);
+  aet tenant = player.tenant;
   let energy = [...Array(player.energy)].map(() => {
     return '<span>⚡</span>';
   }).join('');
@@ -210,7 +198,7 @@ const actions = {
             let roll = Math.random();
             console.log(`Rolling ${roll} against condition ${data.tenant.unit.condition}`);
             if (roll > data.tenant.unit.condition) {
-              let failure = randomChoice(unitFailures);
+              let failure = util.randomChoice(unitFailures);
               Object.keys(failure.effect).forEach((k) => player[k] -= failure.effect[k]);
               publish({
                 message: `You wake up. ${failure.desc}`,
@@ -252,7 +240,7 @@ const actions = {
     });
   },
   'commute': () => {
-    let commuteDistance = distance(player.tenant.unit.pos, player.tenant.work);
+    let commuteDistance = util.distance(player.tenant.unit.pos, player.tenant.work);
     let transitFailure = false;
     [...Array(Math.floor(commuteDistance))].forEach(() => {
       if (Math.random() > config.transitReliability) {
