@@ -116,6 +116,17 @@ def player_move(id):
     return jsonify(success=True)
 
 
+@app.route('/play/doma/<id>', methods=['POST'])
+def player_doma(id):
+    """Player contribute to DOMA"""
+    amount = request.get_json()['amount']
+    send_command(Command.DOMA_ADD, {
+        'player_id': id,
+        'amount': amount
+    })
+    return jsonify(success=True)
+
+
 @app.route('/play/tenant/<id>')
 def player_tenant(id):
     """Player tenant data"""

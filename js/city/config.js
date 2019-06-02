@@ -1,6 +1,8 @@
 export default {
   startYear: 2019,
   maxEnergy: 5,
+  transitReliability: 0.95,
+
   cellSize: 28,
   colors: {
     'Tenant': 0xffffff,

@@ -124,6 +124,9 @@ if __name__ == '__main__':
                         # Last move is actual move
                         unit_id = datas[-1]['unit_id']
                         sim.units_idx[unit_id].move_in(tenant, sim.time+1)
+                    elif cmd is Command.DOMA_ADD:
+                        amount = sum(d['amount'] for d in datas)
+                        sim.doma.add_funds(tenant, amount)
 
             market_history = sim.step()
             sim.sync()
@@ -136,7 +139,11 @@ if __name__ == '__main__':
                     'income': t.income,
                     'monthlyDisposableIncome': (t.income/12) - (t.unit.rent_per_tenant if t.unit else 0),
                     'work': t.work_building.parcel.pos,
-                    'unit': t.unit.id if t.unit else None
+                    'unit': {
+                        'id': t.unit.id,
+                        'condition': t.unit.condition,
+                        'pos': t.unit.building.parcel.pos
+                    } if t.unit else None
                 }))
 
         reset_ready_players()

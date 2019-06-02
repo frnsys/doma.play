@@ -12,6 +12,7 @@ class Command(Enum):
     SELECT_TENANT = 1
     RELEASE_TENANT = 2
     MOVE_TENANT = 3
+    DOMA_ADD = 4
 
 
 def jsonify(city, time):

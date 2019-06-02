@@ -8,15 +8,62 @@ const logEl = document.getElementById('log');
 const hudEl = document.getElementById('hud-info');
 const timerEl = document.getElementById('hud-timer-fill');
 
+function distance(a, b) {
+  let [x1, y1] = a;
+  let [x2, y2] = b;
+  return Math.sqrt((x1-x2)**2 + (y1-y2)**2);
+}
+
 function dateFromTime(time) {
   return `${(time % 12) + 1}/${config.startYear + Math.floor(time/12)}`;
 }
 
-function updateHUD(data) {
+function randomChoice(choices) {
+  return choices[Math.floor(Math.random() * choices.length - 1)];
+}
+
+function workActions() {
+  if (player.energy >= 1) {
+    return [{
+      'id': 'work',
+      'name': 'Another day of work (-1⚡)',
+      'cost': {
+        'energy': 1
+      }
+    }, {
+      'id': 'work',
+      'name': 'Work hard (-2⚡)',
+      'cost': {
+        'energy': 2
+      }
+    }];
+  } else {
+    return [{
+      'id': 'work',
+      'name': 'Too exhausted...just scrape by'
+    }];
+  }
+}
+
+const unitFailures = [{
+  'name': 'No water',
+  'desc': 'Your water isn\'t working.',
+  'effect': {
+    'energy': -1
+  }
+}, {
+  'name': 'No gas',
+  'desc': 'Your gas isn\'t working.',
+  'effect': {
+    'energy': -1
+  }
+}];
+
+function updateHUD() {
+  if (!player.tenant) return;
   console.log(player);
-  hudEl.style.display = 'block';
-  let date = dateFromTime(data.time);
-  let tenant = data.tenant;
+  let date = dateFromTime(player.time);
+  let tenant = player.tenant;
   let energy = [...Array(player.energy)].map(() => {
     return '<span>⚡</span>';
   }).join('');
@@ -30,7 +77,7 @@ function updateHUD(data) {
   if (fundTens > 0) {
     funds += `${fundTens}💰`;
   }
-  funds += `${fundOnes}C`;
+  funds += `${fundOnes}🔶`;
 
   hudEl.innerHTML = `
     ${date}; Income: $${Math.round(tenant.income/12).toLocaleString()}/month
@@ -69,11 +116,13 @@ api.get('/state/key', (data) => {
   stateKey = data.key;
 });
 
-let player = {
-  energy: config.maxEnergy,
+const player = {
+  time: null,
+  energy: 0,
   funds: 0,
   tenant: null,
-  turnTimer: null
+  turnTimer: null,
+  doma: false
 };
 
 // Turn timer
@@ -85,15 +134,17 @@ setInterval(() => {
     let width = Math.min(100, (time - start)/end * 100);
     timerEl.style.width = `${width}%`;
   }
-}, 10)
+}, 100)
 
 const actions = {
   'chooseTenant': (chosenTenant) => {
     api.post(`/play/select/${id}`, {id: chosenTenant.id}, (data) => {
       console.log(`Player chose tenant ${chosenTenant.id}`);
+      hudEl.style.display = 'block';
       player.turnTimer = data.timer.split('-').map((t) => parseFloat(t));
       player.tenant = chosenTenant;
-      updateHUD({time: data.time, tenant: chosenTenant});
+      player.time = data.time;
+      updateHUD();
       publish({
         message: 'I\'ve  been evicted. I need to find a new apartment.',
         actions: [{
@@ -114,7 +165,7 @@ const actions = {
           message: 'Ok, I\'ll move in there.',
           actions: [{
             id: 'searchApartments',
-            name: 'Look for a different apartment',
+            name: 'I change my mind...look again',
           }, {
             id: 'endTurn',
             name: 'End Turn',
@@ -146,24 +197,179 @@ const actions = {
           clearInterval(update);
 
           api.get(`/play/tenant/${id}`, (data) => {
+            console.log(data);
             player.funds = Math.floor(data.tenant.monthlyDisposableIncome/100);
             player.turnTimer = data.timer.split('-').map((t) => parseFloat(t));
-            let tenant = data.tenant;
-            updateHUD(data);
+            player.tenant = data.tenant;
+            player.time = data.time;
+            updateHUD();
             document.querySelector('.event:last-child').style.opacity = 0.5;
-            publish({
-              message: 'What should I do?',
-              actions: [{
-                id: 'searchApartments',
-                name: 'Look for a new apartment',
-              }, {
-                id: 'endTurn',
-                name: 'End Turn',
-              }]
-            });
+
+            // Morning
+            player.energy = config.maxEnergy;
+            let roll = Math.random();
+            console.log(`Rolling ${roll} against condition ${data.tenant.unit.condition}`);
+            if (roll > data.tenant.unit.condition) {
+              let failure = randomChoice(unitFailures);
+              Object.keys(failure.effect).forEach((k) => player[k] -= failure.effect[k]);
+              publish({
+                message: `You wake up. ${failure.desc}`,
+                actions: [{
+                  id: 'commute',
+                  name: 'Go to work',
+                }]
+              });
+            } else {
+              publish({
+                message: 'You wake up.',
+                actions: [{
+                  id: 'commute',
+                  name: 'Go to work',
+                }]
+              });
+            }
           });
         }
       });
+    }, 200);
+  },
+  'commuteRun': () => {
+    publish({
+      message: 'You arrive at work breathless and sweating, but on time.',
+      actions: workActions()
+    });
+  },
+  'commuteTaxi': () => {
+    publish({
+      message: 'You arrive at work on time.',
+      actions: workActions()
+    });
+  },
+  'commuteWait': () => {
+    publish({
+      message: 'After some time the subway finally starts again. You arrive to work late. Your boss gives you a disapproving glance.',
+      actions: workActions()
+    });
+  },
+  'commute': () => {
+    let commuteDistance = distance(player.tenant.unit.pos, player.tenant.work);
+    let transitFailure = false;
+    [...Array(Math.floor(commuteDistance))].forEach(() => {
+      if (Math.random() > config.transitReliability) {
+        transitFailure = true;
+      }
+    });
+    // transitFailure = true;
+    if (transitFailure) {
+      publish({
+        message: 'The subway breaks down.',
+        actions: [{
+          'id': 'commuteRun',
+          'name': 'Run to work (-1⚡)',
+          'cost': {
+            'energy': 1
+          }
+        }, {
+          'id': 'commuteTaxi',
+          'name': 'Get a cab (-5🔶)',
+          'cost': {
+            'funds': 5
+          }
+        }, {
+          'id': 'commuteWait',
+          'name': 'Wait for the subway'
+        }]
+      });
+    } else {
+      publish({
+        message: 'You arrive at work.',
+        actions: [{
+          'id': 'work',
+          'name': 'Another day of work'
+        }]
+      });
+    }
+  },
+  'doma': () => {
+    let actions = [1, 5, 10, 20, 50, 100].filter((amount) => amount <= player.funds).map((amount) => {
+      let f = amount < 10 ? amount : amount/10;
+      return {
+        'id': 'domaContribute',
+        'name': `Give ${f}${amount < 10 ? '🔶' : '💰'}`,
+        'args': [amount]
+      };
+    });
+    publish({
+      message: 'You look at the DOMA website. It\'s described as a way of collectively owning a city\'s housing. You can join by contributing to the platform\'s funds, which entitles you to a share of dividends.',
+      actions: actions.concat([{
+        'id': 'work',
+        'name': 'Nah, I\'m good'
+      }])
+    })
+  },
+  'domaContribute': (amount) => {
+    api.post(`/play/doma/${id}`, {amount: amount * 100}, (data) => {
+      publish({
+        message: 'You\'re a member of DOMA!',
+        actions: [{
+          'id': 'work',
+          'name': 'Back to work!'
+        }]
+      });
+    });
+  },
+  'work': () => {
+    if (!player.doma && Math.random() < 1.) {
+      player.doma = true;
+      publish({
+        message: 'A co-worker mentions this platform called DOMA. They said it\'s saved them some money on their rent.',
+        actions: [{
+          'id': 'doma',
+          'name': 'Sounds interesting...what\'s this about?'
+        }, {
+          'id': 'work',
+          'name': 'Sounds like a scam. Back to work!'
+        }]
+      })
+    } else {
+      publish({
+        message: 'The work day is finished. Where to now?',
+        actions: [{
+          'id': 'endTurn',
+          'name': 'Have an early night (end turn)'
+        }, {
+          'id': 'bar',
+          'name': 'Go out with some friends (-1⚡, -5🔶)',
+          'cost': {
+            'energy': 1,
+            'funds': 5
+          }
+        }, {
+          'id': 'movie',
+          'name': 'Go see a movie (-5🔶)',
+          'cost': {
+            'funds': 5
+          }
+        }]
+      })
+    }
+  },
+  'bar': () => {
+    publish({
+      message: 'It was good seeing your friends',
+      actions: [{
+        'id': 'endTurn',
+        'name': 'Call it a night(end turn)'
+      }]
+    });
+  },
+  'movie': () => {
+    publish({
+      message: 'That movie was pretty good',
+      actions: [{
+        'id': 'endTurn',
+        'name': 'Call it a night(end turn)'
+      }]
     });
   }
 };
@@ -180,17 +386,28 @@ function publish(ev) {
     let actsEl = document.createElement('div');
     actsEl.className = 'actions';
     ev.actions.forEach((a) => {
-      let actEl = document.createElement('span');
+      let actEl = document.createElement('div');
       actEl.innerText = a.name;
-      actEl.resolve = () => {
-        [...actsEl.querySelectorAll('span')].forEach((el) => {
-          eventEl.style.opacity = 0.5;
-          el.removeEventListener('click', el.resolve);
-        });
-        let args = a.args || [];
-        actions[a.id](...args);
+
+      // Get cost, if any
+      let cost = a.cost || {};
+      let afford = Object.keys(cost).every((k) => player[k] > cost[k]);
+      if (afford) {
+        actEl.resolve = () => {
+          [...actsEl.querySelectorAll('div')].forEach((el) => {
+            eventEl.style.opacity = 0.5;
+            el.removeEventListener('click', el.resolve);
+          });
+          let args = a.args || [];
+          Object.keys(cost).forEach((k) => player[k] -= cost[k]);
+          actions[a.id](...args);
+          updateHUD();
+        }
+        actEl.addEventListener('click', actEl.resolve);
+
+      } else {
+        actEl.style.opacity = 0.25;
       }
-      actEl.addEventListener('click', actEl.resolve);
       actsEl.appendChild(actEl);
     });
     eventEl.appendChild(actsEl);
