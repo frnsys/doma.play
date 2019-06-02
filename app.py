@@ -59,11 +59,8 @@ def player_join():
     tenants = [json.loads(r.decode('utf8')) for r
                in redis.lrange('tenants', 0, -1)]
 
-    # Get current state
-    state = json.loads(redis.get('state'))
-
     tenants = random.sample(tenants, 5)
-    return jsonify(success=True, tenants=tenants, time=state['time'])
+    return jsonify(success=True, tenants=tenants)
 
 
 @app.route('/play/select/<id>', methods=['POST'])
@@ -74,7 +71,10 @@ def player_select(id):
         'tenant_id': tenant_id,
         'player_id': id
     })
-    return jsonify(success=True)
+
+    # Get current state
+    state = json.loads(redis.get('state'))
+    return jsonify(success=True, time=state['time'])
 
 
 @app.route('/play/leave', methods=['POST'])

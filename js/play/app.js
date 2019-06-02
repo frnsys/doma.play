@@ -11,11 +11,34 @@ function dateFromTime(time) {
   return `${(time % 12) + 1}/${config.startYear + Math.floor(time/12)}`;
 }
 
-let date;
+function updateHUD(data) {
+  console.log(player);
+  hudEl.style.display = 'block';
+  let date = dateFromTime(data.time);
+  let tenant = data.tenant;
+  let energy = [...Array(player.energy)].map(() => {
+    return '<span>⚡</span>';
+  }).join('');
+  energy += [...Array(config.maxEnergy - player.energy)].map(() => {
+    return '<span style="opacity:0.25;">⚡</span>';
+  }).join('');;
+
+  let fundTens = Math.floor(player.funds/10);
+  let fundOnes = player.funds % 10;
+  let funds = '';
+  if (fundTens > 0) {
+    funds += `${fundTens}💰`;
+  }
+  funds += `${fundOnes}C`;
+
+  hudEl.innerHTML = `
+    ${date}; Income: $${Math.round(tenant.income/12).toLocaleString()}/month
+    Energy: ${energy} Money: ${funds}
+  `;
+}
 
 // Joining/leaving
 api.post('/play/join', {id}, (data) => {
-  date = dateFromTime(data.time);
   publish({
     message: 'Welcome to doma.play. Choose a tenant to play as.',
     actions: data.tenants.map((t) => {
@@ -45,15 +68,18 @@ api.get('/state/key', (data) => {
   stateKey = data.key;
 });
 
-let tenant;
+let player = {
+  energy: config.maxEnergy,
+  funds: 0,
+  tenant: null
+};
 
 const actions = {
   'chooseTenant': (chosenTenant) => {
-    hudEl.style.display = 'block';
-    hudEl.innerHTML = `${date}; Tenant ${chosenTenant.id}, Income $${Math.round(chosenTenant.income/12).toLocaleString()}/month, Unit ${chosenTenant.unit}`;
-    tenant = chosenTenant;
-
     api.post(`/play/select/${id}`, {id: chosenTenant.id}, (data) => {
+      console.log(`Player chose tenant ${chosenTenant.id}`);
+      player.tenant = chosenTenant;
+      updateHUD({time: data.time, tenant: chosenTenant});
       publish({
         message: 'I\'ve  been evicted. I need to find a new apartment.',
         actions: [{
@@ -66,7 +92,7 @@ const actions = {
   'searchApartments': () => {
     let el = document.createElement('div');
     logEl.appendChild(el);
-    displayListings(el, tenant, (unit) => {
+    displayListings(el, player.tenant, (unit) => {
       api.post(`/play/move/${id}`, {id: unit.id}, (data) => {
         logEl.removeChild(el);
         document.querySelector('.tooltip').style.display = 'none';
@@ -80,6 +106,15 @@ const actions = {
             name: 'End Turn',
           }]
         });
+      });
+    }, (msg) => {
+      logEl.removeChild(el);
+      publish({
+        message: msg,
+        actions: [{
+          id: 'endTurn',
+          name: 'End Turn',
+        }]
       });
     });
   },
@@ -97,9 +132,9 @@ const actions = {
           clearInterval(update);
 
           api.get(`/play/tenant/${id}`, (data) => {
-            date = dateFromTime(data.time);
+            player.funds = Math.floor(data.tenant.monthlyDisposableIncome/100);
             let tenant = data.tenant;
-            hudEl.innerHTML = `${date}; Tenant ${tenant.id}, Income $${Math.round(tenant.income/12).toLocaleString()}/month, Unit ${tenant.unit}`;
+            updateHUD(data);
             document.querySelector('.event:last-child').style.opacity = 0.5;
             publish({
               message: 'What should I do?',

@@ -26,6 +26,7 @@ const altTextMat = new THREE.MeshLambertMaterial({
 
 const cellSize = 32;
 function createMap(state, tenant, detailsEl, cb, onSelect) {
+  let vacantUnits = [];
   let {cols, rows, parcels} = state.map;
   const grid = new Grid(cols, rows, cellSize);
 
@@ -40,6 +41,7 @@ function createMap(state, tenant, detailsEl, cb, onSelect) {
           color = state.neighborhoods[parseInt(p.neighb)].color;
           vacancies = state.buildings[`${r}_${c}`].units
             .filter((uId) => state.units[uId].occupancy > state.units[uId].tenants.length);
+          vacantUnits = vacantUnits.concat(vacancies.map((id) => state.units[id]));
           color = parseInt(color.substr(1), 16);
           if (vacancies.length > 0) {
             let geometry = new THREE.TextGeometry(vacancies.length.toString(), {
@@ -97,19 +99,25 @@ function createMap(state, tenant, detailsEl, cb, onSelect) {
                 vacancies.map((id) => {
                     let u = state.units[id];
                     let el = document.createElement('li');
+                    let rentPerTenant = Math.round(u.rent/(u.tenants.length + 1));
                     el.className = 'listing';
                     el.innerHTML = `
                       ${u.occupancy} bedroom (${u.occupancy - u.tenants.length} available)<br />
-                      Rent: $${numberWithCommas(Math.round(u.rent/(u.tenants.length + 1)))}/month<br />
+                      Rent: $${numberWithCommas(rentPerTenant)}/month<br />
                       Total Rent: $${numberWithCommas(Math.round(u.rent))}/month<br />
                       On the market for ${u.monthsVacant} months<br />`;
 
+                    let affordable = rentPerTenant <= tenant.income/12;
                     let select = document.createElement('div');
-                    select.innerText = 'Select';
                     select.className = 'select-listing';
-                    select.addEventListener('click', () => {
-                      onSelect(u);
-                    });
+                    if (affordable) {
+                      select.innerText = 'Select';
+                      select.addEventListener('click', () => {
+                        onSelect(u);
+                      });
+                    } else {
+                      select.innerText = 'Too Expensive';
+                    }
                     el.appendChild(select);
                     return el;
                 }).forEach((el) => {
@@ -117,7 +125,7 @@ function createMap(state, tenant, detailsEl, cb, onSelect) {
                 });
               }
             },
-            tooltip: 'testing'
+            tooltip: p.type != 'Residential' ? p.type : state.neighborhoods[parseInt(p.neighb)].name
           },
           focus: (ev) => {
             cell.focus();
@@ -128,11 +136,11 @@ function createMap(state, tenant, detailsEl, cb, onSelect) {
         }
       });
     });
-    cb(grid);
+    cb(grid, vacantUnits);
   });
 }
 
-function displayListings(el, tenant, onSelect) {
+function displayListings(el, tenant, onSelect, noVacancies) {
   // Setup scene
   const scene = new Scene({
     width: el.clientWidth,
@@ -158,15 +166,25 @@ function displayListings(el, tenant, onSelect) {
   }
 
   api.get('/state', (state) => {
-    createMap(state, tenant, listingDetailsEl, (grid) => {
-      // Setup interactable objects
-      let selectables = grid.cells.filter(c => c !== null).map(c => c.mesh);
-      let ixn = new InteractionLayer(scene, selectables);
-      scene.add(grid.group);
+    createMap(state, tenant, listingDetailsEl, (grid, vacantUnits) => {
+      if (vacantUnits.length === 0) {
+        noVacancies('No vacancies');
+      } else {
+        let affordableUnits = vacantUnits.filter((u) => Math.round(u.rent/(u.tenants.length + 1)) <= (tenant.income/12))
+        if (affordableUnits.length === 0) {
+          noVacancies('No affordable vacancies');
+        } else {
+          // Setup interactable objects
+          let selectables = grid.cells.filter(c => c !== null).map(c => c.mesh);
+          let ixn = new InteractionLayer(scene, selectables);
+          scene.add(grid.group);
+          render();
+        }
+      }
     }, onSelect);
-
-    render();
   });
 }
 
 export default displayListings;
+
+

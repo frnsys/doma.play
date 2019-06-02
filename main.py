@@ -7,7 +7,7 @@ import random
 import config
 import logging
 from plot import make_plots
-from time import time, sleep
+from time import sleep #, time
 from datetime import datetime
 from sim import Simulation, logger
 from sim.util import Command, get_commands
@@ -29,18 +29,24 @@ config.SIM.update(design)
 
 def all_players_ready():
     all_players_ready = False
-    start = time()
+    # start = time()
     logger.info('Waiting for players...')
     while not all_players_ready:# and time() - start < config.PLAYER_READY_TIMEOUT:
         ready_players = [r.decode('utf8') for r
                          in redis.lrange('ready_players', 0, -1)]
         active_players = [r.decode('utf8') for r
                           in redis.lrange('active_players', 0, -1)]
+        print('Ready', len(ready_players), 'Active', len(active_players))
         all_players_ready = all(id in ready_players for id in active_players)
     return True
 
 def reset_ready_players():
     redis.delete('ready_players')
+
+def reset():
+    redis.delete('cmds')
+    redis.delete('active_players')
+    reset_ready_players()
 
 
 if __name__ == '__main__':
@@ -68,6 +74,9 @@ if __name__ == '__main__':
         output['history'] = [sim.stats()]
         output['market'] = []
 
+    # Reset players and commands
+    reset()
+
     # Pool of tenants for players
     tenants = random.sample(sim.tenants, 100)
     redis.delete('tenants')
@@ -91,7 +100,11 @@ if __name__ == '__main__':
                 elif typ is Command.SELECT_TENANT:
                     pid, tid = data['player_id'], data['tenant_id']
                     sim.players[pid] = tid
-                    sim.tenants_idx[tid].player = pid
+                    tenant = sim.tenants_idx[tid]
+                    tenant.player = pid
+                    # Evicted
+                    if tenant.unit:
+                        tenant.unit.move_out(tenant)
                 elif typ is Command.RELEASE_TENANT:
                     pid = data['player_id']
                     tid = sim.players.get(pid)
@@ -121,6 +134,7 @@ if __name__ == '__main__':
                 redis.set('player:{}:tenant'.format(pid), json.dumps({
                     'id': t.id,
                     'income': t.income,
+                    'monthlyDisposableIncome': (t.income/12) - (t.unit.rent_per_tenant if t.unit else 0),
                     'work': t.work_building.parcel.pos,
                     'unit': t.unit.id if t.unit else None
                 }))

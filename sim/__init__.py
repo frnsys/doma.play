@@ -186,7 +186,7 @@ class Simulation:
                 landlord.id: {
                     'n_units': len(landlord.units),
                     'mean_adjusted_rent_per_area': 0 if not landlord.units else sum(u.adjusted_rent_per_area for u in landlord.units)/len(landlord.units),
-                    'mean_condition': sum(u.condition for u in units)/len(units)
+                    'mean_condition': 0 if not landlord.units else sum(u.condition for u in landlord.units)/len(landlord.units)
                 } for landlord in self.landlords + [self.doma]
             },
             'neighborhoods': {
@@ -198,7 +198,7 @@ class Simulation:
                     'mean_maintenance_costs': sum(u.maintenance/u.rent for u in units)/len(units),
                     'mean_value_per_area': sum(u.value/u.area for u in units if u.value)/len(units),
                     'mean_condition': sum(u.condition for u in units)/len(units),
-                    'mean_rent_income_ratio': sum(sum(u.rent_per_tenant/t.income for t in u.tenants) for u in units)/sum(len(u.tenants) for u in units),
+                    'mean_rent_income_ratio': sum(sum(u.rent_per_tenant/t.income for t in u.tenants) for u in units)/(sum(len(u.tenants) for u in units) or 1),
                 } for neighb, units in self.city.units_by_neighborhood().items()
             }
         }
