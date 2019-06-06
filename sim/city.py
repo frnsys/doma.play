@@ -147,6 +147,11 @@ class City:
     def parcels_of_type(self, type):
         return [p for p in self if p.type == type]
 
+    def residential_parcels(self):
+        return self.parcels_of_type(ParcelType.Residential)
+
+    def residential_parcels_by_neighborhood(self):
+        return {neighb: [p for p in self if p.neighborhood == neighb and p.type == ParcelType.Residential] for neighb in self.neighborhoods.keys()}
 
 class Parcel:
     def __init__(self, pos):

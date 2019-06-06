@@ -181,6 +181,7 @@ class Landlord:
         # so we don't modify self.units
         # as we iterate
         for u, dev in transfers:
+            u.sold_on = sim.time
             u.setOwner(dev)
 
         return record
@@ -293,7 +294,7 @@ class Tenant:
             commute = 0
 
         # TODO balance this
-        return ratio * (spaciousness + unit.building.parcel.desirability + unit.condition + commute)
+        return ratio * (spaciousness + unit.building.parcel.weighted_desirability + unit.condition + commute)
 
     def step(self, sim, vacants):
         sample_size = 20
@@ -398,6 +399,7 @@ class Tenant:
         # so we don't modify self.units
         # as we iterate
         for u, dev in transfers:
+            u.sold_on = sim.time
             u.setOwner(dev)
 
         return record

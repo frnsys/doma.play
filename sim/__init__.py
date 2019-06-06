@@ -145,6 +145,13 @@ class Simulation:
         for e in self.landlords + self.tenants:
             market_history.extend(e.check_purchase_offers(self))
 
+        # Desirability changes, random walk
+        mn, mx = [-0.1, 0.1]
+        for neighb, parcels in self.city.residential_parcels_by_neighborhood().items():
+            change = mn + (mx - mn) * random.random()
+            for p in parcels:
+                p.weighted_desirability += change
+
         self.time += 1
         return market_history
 
@@ -152,6 +159,8 @@ class Simulation:
         units = self.city.units
         housed = [t for t in self.tenants if t.unit is not None]
         landlord_units = sum((list(l.units) for l in self.landlords), [])
+        parcels_by_neighb = self.city.residential_parcels_by_neighborhood()
+        parcels = [p for p in self.city.residential_parcels()]
 
         return {
             'percent_homeless': (len(self.tenants) - len(housed))/len(self.tenants),
@@ -169,6 +178,7 @@ class Simulation:
             'min_value': min(u.value for u in units),
             'mean_doma_rent_vs_market_rent': 0 if not landlord_units or not self.doma.units else np.mean([u.adjusted_rent_per_area for u in self.doma.units])/np.mean([u.adjusted_rent_per_area for u in landlord_units]),
             'doma_units': len(self.doma.units),
+            'mean_desirability': sum(p.weighted_desirability for p in parcels)/len(parcels),
             'doma_property_fund': self.doma.property_fund,
             'doma_total_dividend_payout': self.doma.last_payout,
             'mean_offers': sum(len(u.offers) for u in units)/len(units),
@@ -192,6 +202,7 @@ class Simulation:
             },
             'neighborhoods': {
                 neighb: {
+                    'mean_desirability': sum(p.weighted_desirability for p in parcels_by_neighb[neighb])/len(parcels_by_neighb[neighb]),
                     'percent_vacant': sum(1 for u in units if u.vacant)/len(units),
                     'mean_rent_per_area': sum(u.rent_per_area for u in units)/len(units),
                     'mean_adjusted_rent_per_area': sum(u.adjusted_rent_per_area for u in units)/len(units),

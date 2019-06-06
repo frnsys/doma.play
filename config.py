@@ -28,5 +28,5 @@ SIM = {
     # Percent of rent paid to DOMA
     # that converts to shares
     'doma_rent_share': 0.1,
-    'doma_initial_fund': 5000000
+    'doma_initial_fund': 1000000
 }
