@@ -3,6 +3,7 @@
     pkg:
       - python3
       - python3-pip
+      - python3-tk
       - redis-server
       - tzdata
     state: present
