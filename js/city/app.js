@@ -22,7 +22,7 @@ function update() {
       api.get('/state', (state) => {
         stateKey = state.key;
         HUD.updateStats(state);
-        HUD.updateChart(statsChart, state);
+        HUD.updateCharts(state);
 
         // Update units
         Object.values(state.units).forEach((u) => {
@@ -47,10 +47,13 @@ function render(time) {
     update();
   }
   city.animate();
-  angle += 0.0001;
 
   // Day-Night cycle
   let progress = (angle % (2*Math.PI))/Math.PI;
+  let isNight = progress > 1;
+
+  angle += isNight ? 0.02 : 0.002;
+
   let startSunset = 0.75;
   let endSunrise = 0.25;
   if (progress >= startSunset && progress < 1) {
@@ -76,7 +79,7 @@ function render(time) {
       city.lights.forEach((l) => l.visible = false);
     }
   }
-  if (progress > 1) {
+  if (isNight) {
     scene.sun.visible = false;
   } else {
     scene.sun.visible = true;
@@ -90,7 +93,6 @@ function render(time) {
 
 // Initial setup
 let city;
-let statsChart;
 api.get('/state', (state) => {
   stateKey = state.key;
   city = new City(state);
@@ -109,7 +111,7 @@ api.get('/state', (state) => {
 
   // Init HUD/stats
   HUD.updateStats(state);
-  statsChart = HUD.createChart(state);
+  HUD.createCharts(state);
 
   render();
 });

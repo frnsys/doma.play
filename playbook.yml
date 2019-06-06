@@ -4,6 +4,7 @@
       - python3
       - python3-pip
       - redis-server
+      - tzdata
     state: present
 - name: Copy app files
   synchronize:

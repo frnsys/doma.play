@@ -1,32 +1,49 @@
 import Chart from 'chart.js';
+import config from './config';
 
-const hud = document.getElementById('hud');
-const stats = document.getElementById('stats');
+const hud = document.getElementById('charts');
+const time = document.getElementById('time');
 
-Chart.defaults.scale.ticks.display = false;
+Chart.defaults.scale.ticks.fontSize = 9;
+Chart.defaults.scale.ticks.fontFamily = 'monospace';
 const statHistoryLength = 50;
-const chartStats = ['mean_rent_per_area'];
+const chartStats = [
+  'mean_adjusted_rent_per_area',
+  'percent_homeless',
+  'mean_value_per_area',
+  'mean_price_to_rent_ratio',
+  'doma_property_fund',
+  'doma_units'
+];
+const charts = {};
 
+function createCharts(state) {
+  chartStats.forEach((k) => {
+    let {chart, chartEl} = createChart(k, state.stats[k]);
+    let parentEl = document.createElement('div');
+    parentEl.className = 'chart';
+    parentEl.dataset.key = k;
+    parentEl.appendChild(chartEl);
+    hud.appendChild(parentEl);
+    charts[k] = chart;
+  });
+}
 
-function createChart(state) {
-  let chart = document.createElement('canvas');
-  hud.appendChild(chart);
-
-  return new Chart(chart, {
+function createChart(name, stats) {
+  let chartEl = document.createElement('canvas');
+  let chart = new Chart(chartEl, {
     type: 'line',
     data: {
       labels: [...Array(statHistoryLength)].map((_, i) => -i).reverse(),
-      datasets: chartStats.map((k) => {
-        return {
-          label: k,
-          fill: false,
-          borderWidth: 1,
-          pointRadius: 0,
-          backgroundColor: 'rgb(255,0,0)',
-          borderColor: 'rgb(255,0,0)',
-          data: [state.stats[k]]
-        };
-      })
+      datasets: [{
+        label: name,
+        fill: false,
+        borderWidth: 1,
+        pointRadius: 0,
+        backgroundColor: 'rgb(255,255,255)',
+        borderColor: 'rgb(255,255,255)',
+        data: [stats]
+      }]
     },
     options: {
       animation: {
@@ -38,27 +55,35 @@ function createChart(state) {
           fontSize: 9,
           fontFamily: 'monospace'
         }
+      },
+      scales: {
+        yAxes: [{
+          ticks: {
+            min: 0
+          }
+        }],
+        xAxes: [{
+          display: false
+        }]
       }
     }
   });
+  return {chart, chartEl};
 }
 
-function updateChart(chart, state) {
-  chart.data.datasets.forEach((dataset) => {
-    dataset.data.push(state.stats[dataset.label]);
-    dataset.data = dataset.data.splice(Math.max(0, dataset.data.length - statHistoryLength))
+function updateCharts(state) {
+  Object.keys(charts).forEach((k) => {
+    let chart = charts[k];
+    chart.data.datasets.forEach((dataset) => {
+      dataset.data.push(state.stats[dataset.label]);
+      dataset.data = dataset.data.splice(Math.max(0, dataset.data.length - statHistoryLength))
+    });
+    chart.update();
   });
-  chart.update();
 }
 
 function updateStats(state) {
-  stats.innerHTML = `<ul>
-    <li>Step ${state.time}</li>
-    <li>Vacant ${(state.stats.percent_vacant*100).toFixed(2)}%</li>
-    <li>Homeless ${(state.stats.percent_homeless*100).toFixed(2)}%</li>
-    <li>Mean rent/sqft $${state.stats.mean_rent_per_area.toLocaleString()}</li>
-    <li>Mean months vacant ${Math.round(state.stats.mean_months_vacant)}</li>
-  </ul>`;
+  time.innerHTML = `${(state.time % 12) + 1}/${config.startYear + Math.floor(state.time/12)}`;
 }
 
-export default {updateStats, updateChart, createChart};
+export default {updateStats, updateCharts, createCharts};

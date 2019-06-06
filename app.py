@@ -2,23 +2,17 @@ import json
 import uuid
 import redis
 import config
-from flask import Flask, jsonify, request, redirect, url_for, abort, render_template
+from player import bp, prune_players
+from flask import Flask, jsonify, request, redirect, url_for, render_template
 
 app = Flask(__name__)
+app.register_blueprint(bp)
 redis = redis.Redis(**config.REDIS)
-
 
 @app.route('/')
 def city():
     """City view"""
     return render_template('city.html')
-
-
-@app.route('/play')
-def play():
-    """Player view"""
-    return render_template('play.html')
-
 
 @app.route('/design', defaults={'id': None})
 @app.route('/design/<id>', methods=['GET', 'POST'])
@@ -60,5 +54,15 @@ def state_key():
     return jsonify(key=redis.get('state_key').decode('utf8'))
 
 
+
 if __name__ == '__main__':
+    import atexit
+    from apscheduler.schedulers.background import BackgroundScheduler
+
+    # Prune inactive players regularly
+    scheduler = BackgroundScheduler()
+    scheduler.add_job(func=prune_players, trigger='interval', seconds=60)
+    scheduler.start()
+    atexit.register(lambda: scheduler.shutdown())
+
     app.run(host='0.0.0.0', port=8000, debug=True)

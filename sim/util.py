@@ -9,6 +9,10 @@ redis = redis.Redis(**config.REDIS)
 
 class Command(Enum):
     RESTART = 0
+    SELECT_TENANT = 1
+    RELEASE_TENANT = 2
+    MOVE_TENANT = 3
+    DOMA_ADD = 4
 
 
 def jsonify(city, time):
@@ -32,6 +36,7 @@ def jsonify(city, time):
                     'id': u.id,
                     'rent': u.rent,
                     'tenants': [t.id for t in u.tenants],
+                    'occupancy': u.occupancy,
                     'owner': {
                         'id': u.owner.id,
                         'type': type(u.owner).__name__

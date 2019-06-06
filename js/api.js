@@ -9,7 +9,7 @@ function get(endpoint, onSuccess, onErr) {
     method: 'GET',
   })
     .then(res => res.json())
-    .then((data) => onSuccess(data))
+    .then((data) => onSuccess && onSuccess(data))
     .catch(err => { console.log(err) });
 }
 
@@ -25,7 +25,7 @@ function post(endpoint, data, onSuccess, onErr) {
     body: JSON.stringify(data)
   })
     .then(res => res.json())
-    .then((data) => onSuccess(data))
+    .then((data) => onSuccess && onSuccess(data))
     .catch(err => { throw err });
 }
 

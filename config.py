@@ -1,4 +1,7 @@
-import json
+# All in seconds
+MIN_STEP_DELAY = 10
+PLAYER_TIMEOUT = 60
+PLAYER_READY_TIMEOUT = 30
 
 REDIS = {
     'host': 'localhost',
@@ -12,5 +15,15 @@ SIM = {
     'tenants': {
         'moving_penalty': 10,
         'min_area': 50
-    }
+    },
+    'base_appreciation': 1.02,
+    'rent_increase_rate': 1.05,
+
+    # Contagion/word-of-mouth model
+    'sociality': 0.01, # Probability a tenant sees a friend,
+
+    # Percent of rent paid to DOMA
+    # that converts to shares
+    'doma_rent_share': 0.1,
+    'doma_initial_fund': 2000000
 }

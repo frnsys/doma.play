@@ -1,6 +1,6 @@
-import math
 import random
 from enum import Enum
+from .doma import DOMA
 from .grid import HexGrid
 from collections import deque
 
@@ -46,6 +46,8 @@ class City:
 
     def update_parcel_desirabilities(self):
         """Compute desireability of parcels"""
+        total = 0
+        count = 0
         parks = self.parcels_of_type(ParcelType.Park)
         for p in self:
             if p.type == ParcelType.Residential:
@@ -62,6 +64,19 @@ class City:
 
                 # TODO calibrate this
                 p.desirability = (1/park_dist * 10) + self.neighborhoods[p.neighborhood]['desirability'] + n_commercial/10
+                total += p.desirability
+                count += 1
+
+        mean_desirability = total/count
+
+        # Update weighted parcel desirabilities
+        for p in self:
+            if p.type == ParcelType.Residential:
+                p.weighted_desirability = p.desirability/mean_desirability
+
+        # Update unit values
+        for u in self.units:
+            u.value = round(self.config['priceToRentRatio']*(u.rent*12)*u.building.parcel.weighted_desirability)
 
     def build_residences(self):
         """Build residences"""
@@ -85,9 +100,11 @@ class City:
             for _ in range(n_units):
                 area = random.randint(neighb['minArea'], neighb['maxArea'])
                 rent = round(self.config['pricePerSqm']*area*neighb['desirability'])
+                value = round(self.config['priceToRentRatio']*(rent*12)*neighb['desirability'])
                 units.append(Unit(
                     area=area,
                     rent=rent,
+                    value=value,
                     occupancy=max(1, round(area/neighb['sqmPerOccupant'])),
                 ))
             p.build(Building('{}_{}'.format(*p.pos), units, n_commercial))
@@ -114,6 +131,10 @@ class City:
 
     def units_by_neighborhood(self):
         return {neighb: self.neighborhood_units(neighb) for neighb in self.neighborhoods.keys()}
+
+    @property
+    def commercial_buildings(self):
+        return [(b, b.n_commercial) for b in self.buildings if b.n_commercial > 0]
 
     @property
     def buildings(self):
@@ -162,7 +183,7 @@ class Building:
 
 
 class Unit:
-    def __init__(self, rent, occupancy, area, owner=None):
+    def __init__(self, area, rent, value, occupancy, owner=None):
         self.rent = rent
         self.occupancy = occupancy
         self.area = area
@@ -171,11 +192,13 @@ class Unit:
         self.setOwner(owner)
         self.monthsVacant = 0
 
-        self.maintenance = 0.1 * rent/area # TODO what to set as the starting value?
+        self.maintenance = 0.1 # TODO what to set as the starting value?
         self.condition = 1
 
         # Purchase offers
         self.offers = set()
+        self.recently_sold = False
+        self.value = value
 
         # Keep track of YTD income and maintenance
         self.income_history = deque([], maxlen=12)
@@ -190,6 +213,16 @@ class Unit:
         if self.owner is not None:
             self.owner.units.add(self)
 
+    def adjusted_rent(self, tenants=None):
+        """Compute adjusted rent,
+        which takes into account DOMA ownership"""
+        if not isinstance(self.owner, DOMA):
+            return self.rent
+        tenants = tenants or self.tenants
+        total_share = sum(self.owner.shares(t) for t in tenants)
+        reduction = self.owner.last_revenue * total_share
+        return max(0, self.rent - reduction)
+
     @property
     def vacant(self):
         return not self.tenants
@@ -201,6 +234,10 @@ class Unit:
     @property
     def rent_per_area(self):
         return self.rent/self.area
+
+    @property
+    def adjusted_rent_per_area(self):
+        return self.adjusted_rent()/self.area
 
     @property
     def rent_per_tenant(self):

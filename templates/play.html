@@ -1,6 +1,66 @@
 {% extends 'layout.html' %}
 {% block content %}
+<style>
+    #log {
+        width: 320px;
+        margin: 0 auto;
+        padding: 3em 1em 1em;
+    }
+    #hud {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        margin: 0 auto;
+        background: aliceblue;
+        z-index: 1;
+        width: 100%;
+        max-width: 320px;
+        text-align: center;
+    }
+    #hud-info {
+        display: none;
+        padding: 0.5em;
+    }
+    #hud-timer {
+        width: 100%;
+        height: 6px;
+    }
+    #hud-timer-fill {
+        width: 0%;
+        height: 100%;
+        background: blue;
+        background: #d5d5ff;
+    }
+    .event {
+        margin-bottom: 1.5em;
+    }
+    .actions {
+        padding: 0.5em 0;
+    }
+    .actions > div {
+        cursor: pointer;
+        text-decoration: underline;
+        margin-right: 1em;
+        margin-bottom: 0.5em;
+        display: inline-block;
+    }
+    .listing {
+        margin: 0.5em 0;
+    }
+    .select-listing {
+        background: rgba(0,0,0,0.2);
+        color: #fff;
+        padding: 0.2em 0.5em;
+        cursor: pointer;
+    }
+</style>
+<div id="hud">
+    <div id="hud-timer">
+        <div id="hud-timer-fill"></div>
+    </div>
+    <div id="hud-info"></div>
+</div>
+<div id="log"></div>
 <script src="{{ url_for('static', filename='js/play.js') }}"></script>
 {% endblock %}
-
-

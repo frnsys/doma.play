@@ -1,8 +1,10 @@
 {% extends 'layout.html' %}
 {% block content %}
-<div id="hud">
-    <div id="stats"></div>
-</div>
+<style>
+html { overflow: hidden; }
+</style>
+<div id="charts"></div>
+<div id="time"></div>
 <main id="main"></main>
 <audio id="audio" autoplay loop>
   <source src="/static/cityscape.ogg" type="audio/ogg">
