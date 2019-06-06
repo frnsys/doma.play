@@ -50,6 +50,10 @@ def reset():
 
 
 if __name__ == '__main__':
+    speedup = False
+    redis.delete('game_step')
+    redis.set('game_state', 'loading')
+
     dt = datetime.utcnow()
     random.seed(int(SEED))
     logger.info('Seed:{}'.format(SEED))
@@ -89,7 +93,7 @@ if __name__ == '__main__':
 
     def step():
         global sim
-        if DEBUG or all_players_ready():
+        if DEBUG or speedup or all_players_ready():
             cmds = get_commands()
             player_actions = defaultdict(lambda: defaultdict(list))
             for typ, data in cmds:
@@ -134,13 +138,17 @@ if __name__ == '__main__':
             # Synchronize player tenants
             for pid, tid in sim.players.items():
                 t = sim.tenants_idx[tid]
+                desirability = t.desirability(t.unit, sim.conf['tenants']) if t.unit else -1
                 redis.set('player:{}:tenant'.format(pid), json.dumps({
                     'id': t.id,
                     'income': t.income,
-                    'monthlyDisposableIncome': (t.income/12) - (t.unit.rent_per_tenant if t.unit else 0),
+                    'monthlyDisposableIncome': (t.income/12) - (t.unit.adjusted_rent_per_tenant if t.unit else 0),
+                    'rent': t.unit.adjusted_rent_per_tenant if t.unit else 0,
                     'work': t.work_building.parcel.pos,
+                    'desirability': desirability,
                     'unit': {
                         'id': t.unit.id,
+                        'rent': t.unit.adjusted_rent(),
                         'condition': t.unit.condition,
                         'pos': t.unit.building.parcel.pos
                     } if t.unit else None
@@ -151,19 +159,67 @@ if __name__ == '__main__':
             output['history'].append(sim.stats())
             output['market'].append(market_history)
 
-        if not DEBUG:
+        if not DEBUG and not speedup:
             start = time()
             end = start + config.MIN_STEP_DELAY
             redis.set('turn_timer', '{}-{}'.format(start, end))
             sleep(config.MIN_STEP_DELAY)
 
+    redis.set('game_state', 'ready')
     try:
         if STEPS is not None:
-            for _ in range(int(STEPS)):
+            for i in range(int(STEPS)):
+                redis.set('game_step', i)
                 step()
         else:
             while True:
+                redis.set('game_step', sim.time)
                 step()
+                if sim.time >= config.TURN_LIMIT and not speedup:
+                    redis.set('game_state', 'fast_forward')
+                    speedup = True
+
+                    # Relinquish player tenants so they can
+                    # go and do their thing
+                    for tid in sim.players.values():
+                        sim.tenants_idx[tid].player = None
+
+                if sim.time >= config.N_STEPS:
+                    speedup = False
+                    redis.set('game_state', 'finished')
+
+                    # Restart
+                    reset()
+                    SEED = random.randrange(sys.maxsize)
+                    random.seed(int(SEED))
+                    logger.info('Seed:{}'.format(SEED))
+                    sim = Simulation(**config.SIM)
+
+                    sleep(config.PAUSE_BETWEEN_RUNS)
+
+                    # Pool of tenants for players
+                    tenants = random.sample(sim.tenants, 100)
+                    redis.delete('tenants')
+                    redis.lpush('tenants', *[json.dumps({
+                        'id': t.id,
+                        'income': t.income,
+                        'work': t.work_building.parcel.pos,
+                        'unit': t.unit.id if t.unit else None
+                    }) for t in tenants])
+
+                    # TODO -- right now, players don't join until
+                    # the simulation is ready, so this is a bit
+                    # of a catch-22
+                    # Wait for active players
+                    # logger.info('Waiting for active players')
+                    # active_players = []
+                    # while not active_players:
+                    #     print('active:', active_players)
+                    #     active_players = [r.decode('utf8') for r
+                    #         in redis.lrange('active_players', 0, -1)]
+                    sim.sync()
+                    redis.set('game_state', 'ready')
+
     except KeyboardInterrupt:
         pass
 
