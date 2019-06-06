@@ -36,44 +36,6 @@ Basic usage:
     - Visualizes the state of a single player-tenant
     - Provides interactivity for controlling the player-tenant
 
-## Simulation
-
-### Initialization
-
-- Initialize $r \times c$ grid of parcel-buildings
-- Initialize $q$ neighborhoods
-- For each building $b$, initialize $n_b$ units, for a total of $n$ units
-    - Each unit has a random rent per square foot $r_u$
-- Initialize $m$ tenants, where $m < n$
-    - Each tenant has a random income $i_t$
-- Assign each tenant $t$ to a vacant unit $u^* = \text{argmax}_{\{u | o_u == 0\}} P_t(u)$, where $o_u$ is the occupancy of unit $u$ and $P_t(u)$ is the preference for unit $u$ of tenant $t$. Note that $P_t(u) = 0$ if $r_u a_u > i_t$, where $a_u$ is the area of unit $u$.
-- Initialize $k$ landlord-developers
-- Assign ownership of each unit $u$ to either:
-    - a random landlord-developer $d$
-    - its tenant $t_u$
-    - a random tenant $t \neq t_u$
-
-### Monthly loop
-
-For each month $m$:
-
-- For each landlord-developer $d$
-    - __Update rent estimates__: For each unit $u_d$ owned by $d$, update estimated market rent $r_u^* := E_d(u)$, where $E_d$ is the rent estimation function for landlord-developer $d$
-    - __Update neighborhood trend estimates__: For each neighborhood $B$, where $B$ is a set of units, fit a linear model of mean rents for the past $j$ months ($\bar r_{B,i} = r_u \forall \{u \in B; i \in j\}$) and get estimated rent for month $m+h_d$, where $h_d$ is the time horizon (in months) for developer $d$, estimated investment value $v_B$ of neighborhood $B$ is $r_{B,m_h+d} - \bar r_{B,m}$
-    - __Update vacant rents__: for each vacant unit $u_d$ owned by $d$, update rent $r_u := V_d(u, m_u)$, where $V_d$ is the vacant rent update function for developer $d$ and $m_u$ is how many months $u$ has been vacant for. $V_d(u, m_u)$ should go down as $m_u$ goes up.
-    - __Update occupied rents__: For each unit that is starting a new lease-year, update its rent $r_u := r_u^*$
-    - __Make purchase offers__: Take the neighborhood with the greatest estimated investment value and get the units with the lowest rents. Submit a purchase offer $p_u = r_u * h_d$.
-    - __Response to purchase offers__: For each received purchase offer $q_{u,i}$, accept highest purchase offer $q_{u,i}$ if $v_B * h_d < q_{u,i}$
-- For each tenant $t$
-    - If at the end of a lease-year, compute $P_t(u)$ for each of a sample of $n$ vacant units, and compute the preference difference $P^*_{t, u} = P_t(u) - P_t(u_t) - p_t$ where $u_t$ is the tenant's current residence and $p_t$ is a moving penalty for tenant $t$. If any $P^*_{t, u} > 0$, choose the maximum to move into.
-    - If the tenant has no unit, compute $P_t(u)$ for all vacant units, and if any $P_t(u) > 0$, choose the maximum to move into.
-
-### Possible enhancements
-
-- Add in maintenance costs, which affect the attractiveness of a unit. Landlords decide how much to invest into maintenance, by estimating return for each dollar spend on maintenance (some maybe learn a linear model of appeal of unit $u$, $l_u$, relationship to $r_u$).
-- Add in migration (people moving to/from the city)
-- Demolition/construction of new buildings
-
 # Tuning the model
 
 You can run the simulation with:
@@ -84,54 +46,38 @@ Which will create a file called `history.json` upon quitting (`CTRL+C`) the simu
 
 ---
 
-# misc
+# Simulation design
 
-- how do landlords device how much to invest in maintenance?
-    - depending on risk of lease-breaking? if so, how is this risk computed? maybe based on availability of other units in the neighborhood at comparable price and below and comparable quality. look at mean vacancy of these units over the past year.
-    - should really be expected return per dollar of maintenance expenditure. this takes into account mean vacancy (by way of expected rental income), and landlords learn a log-linear model for the marginal return (in % of rent) of an additional dollar of maintenance expenditure, based on data points from other units in the neighborhood
-    - maintenance cost can be a scale of 0-1% of property value; maintenance level is a function of unit age and maintenance expenditure
-- how to determine value horizon for owners? there may be conditions where the horizon becomes shorter, but how do those conditions occur? (and can we use NPV here as the formula?)
-    - this could just change randomly for tenant-owners, based on a global `precarity` parameter
+## Initialization
 
-Net Present Value (NPV)/Discounted Cash Flow: a way of computing the present value of something, taking into account present & future income and cash outflows (e.g. investment)
-1. compute present value of all cash inflows and outflows
+The city has a tenant population, who live in the city, and a set of landlords, who represent institutional property owners.
 
-Weighted Average Cost of Capital (WACC), e.g. interest on a loan
-Present is $t=0$ and is usually negative b/c of investment, for every $t > 1$ estimate the expected cash inflow and divide that by $(1+WACC)^t$
-You go out some number of years, e.g. 5, and then add these up.
+1. Generate the city, based on the specified design
+2. Generate `n` tenants, with an income drawn from the specified distribution and a random work location drawn from commercial buildings
+3. Tenants decide where to move in, based on desirability and affordability. Tenants are on one year leases starting on a random month.
+4. Distribute properties randomly to tenants and landlords
+    - If there are occupying tenants, a property has 1/3 chance of going to a landlord, 1/3 a chance of going to an occupying tenant, and 1/3 chance of going to a random tenant
+    - If there are no occupying tenants, there's a 50/50 chance of it going to a landlord or a random tenant
+5. Generate a tenant social network. Each tenant is friends with 2 to 16 other random tenants. This social network is used for a word-of-mouth model.
 
-Internal Rate of Return (IRR): the discount rate at which NPV becomes 0, i.e. set NPV to 0 and solve for WACC. The solution for WACC is the IRR.
+## Steps
 
-landlords should make offers based on recent sale prices in that neighborhood for comparable homes, per sq m. then they calculate the NPV of their investment over 5 years, with a desired rate of return as the discount rate
+Each step represents one month.
 
----
-
-Improvements: look at all TODOs, also, incomes don't change and they probably should; the population is also static, and that should probably change over time
-
----
-
-TO DO:
-
-- Contagion model for word-of-mouth
-- Compute property value?
-    - Annual appraisals: Select each property, compare to similar properties and their last sale prices
-        - Rule of thumb: 2% increase
-- Actions
-    - Give money to DOMA (buy token)
-        - Finite supply
-            - price = (DOMA property value+platform costs)/(number of tokens)
-        - Tokens are minted when new properties are purchased
-        - Dividends are shares of rent
-            - Income of the platform, minus expenses of the platform, minus what DOMA reserves for future members
-        - Do tokens represent a share of a particular property, or DOMA overall?
-    - Vote on financial structure
-    - Renting from DOMA
-        - Pay rent as normal, difference is as a member some of that comes back to you
-        - How many tokens do you get?
-            - 1-2 tokens per rent payment, scaled w/ rent payment
-    - Purchase properties
-        - Commit to keep current tenant for at least 5 years
-- Bot decisions
-    - Whether or not to join platform
-        - Depends on capital/excess income the bot has
-    - Voting
+1. Each unit's owner collects rent (if occupied).
+2. In random order, step through landlords. Each landlord:
+    1. Estimates market rents for each neighborhood. The landlord looks at rents of occupied units they own as well as a random sample of occupied units in each neighborhood. The landlord saves the maximum values of these rents.
+    2. These samples are also used to estimate a ratio of maintenance to rental income; the landlord adjusts their maintenance expenditures based on these samples (i.e. they estimate the minimum maintenance expenditure they can get away with).
+    3. For each neighborhood, the landlord fits a line to the past 12 months of these maximum rent samples to estimate the rental trends for that neighborhood. This also lets them estimate the profit of purchasing that unit now (i.e. the different in its current rent vs its projected rent).
+    4. Each of the landlord's units' conditions decay randomly, and then improve based on their maintenance expenditure.
+    5. Lowers the rent of vacant units, multiplying the existing rent by 0.98 every two months.
+    6. Increases the rent of occupied units with lease renewals. The rent is increased either by their estimate for the rent trends of that neighborhood, or by `config.rent_increase_rate`, whichever is higher.
+    7. Decides what properties to make offers on. A random neighborhood is chosen, weighted by estimated profits for each neighborhood, and a random sample of 20 properties is chosen. An estimated value is calculated for that property, based on projected rent, and compared to the current value (based on current rent). If the estimated value is greater, an offer is made at the estimated value.
+3. In random order, step through tenants. Each tenant:
+    1. Decides if they should move. If the tenant is homeless, they always look for an affordable option. Otherwise, they only look if they are between leases, or if their current rent is no longer affordable. In either case, they consider a random sample of vacant units and look for a unit that balances affordability and desirability (if the tenant has a current unit, a moving penalty is incorporated).
+4. If this month is the start of a new year, all units are appraised, using the mean of recent (past year) sale prices in that neighborhood. If there haven't been any sales, `config.base_appreciation` is used instead.
+5. DOMA:
+    1. Collects rent from its tenants
+    2. Pays dividends from this rent to its members
+    3. Makes offers on properties. DOMA prioritizes non-DOMA properties of their members and cheap properties with high rent-to-price ratios. DOMA makes offers on as many properties as it can afford.
+6. All property owners check purchase offers. Tenants compare the offer to the last appraised value of the property, landlords compare to their own estimate of its value based on projected rent. They accept when the offer is greater than that value.
