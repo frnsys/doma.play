@@ -97,7 +97,7 @@ def make_plots(output_dir):
 
     # DOMA fund
     plt.title('doma_fund')
-    for k in ['doma_property_fund', 'mean_value']:
+    for k in ['doma_property_fund', 'mean_value', 'min_value']:
         vals = stats[k]
         plt.plot(range(len(vals)), stats[k], label=k)
     plt.legend()
