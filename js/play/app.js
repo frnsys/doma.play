@@ -185,7 +185,6 @@ const actions = {
           clearInterval(update);
 
           api.get(`/play/tenant/${id}`, (data) => {
-            console.log(data);
             player.funds = Math.floor(data.tenant.monthlyDisposableIncome/100);
             player.turnTimer = data.timer.split('-').map((t) => parseFloat(t));
             player.tenant = data.tenant;

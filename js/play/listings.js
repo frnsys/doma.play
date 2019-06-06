@@ -23,10 +23,15 @@ const textMat = new THREE.MeshLambertMaterial({
 const altTextMat = new THREE.MeshLambertMaterial({
   color: 0xffffff
 });
+const mutedTextMat = new THREE.MeshLambertMaterial({
+  color: 0x383838,
+  opacity: 0.2,
+  transparent: true
+});
 
 const cellSize = 32;
 function createMap(state, tenant, detailsEl, cb, onSelect) {
-  let vacantUnits = [];
+  let allVacantUnits = [];
   let {cols, rows, parcels} = state.map;
   const grid = new Grid(cols, rows, cellSize);
 
@@ -41,17 +46,23 @@ function createMap(state, tenant, detailsEl, cb, onSelect) {
           color = state.neighborhoods[parseInt(p.neighb)].color;
           vacancies = state.buildings[`${r}_${c}`].units
             .filter((uId) => state.units[uId].occupancy > state.units[uId].tenants.length);
-          vacantUnits = vacantUnits.concat(vacancies.map((id) => state.units[id]));
+          let vacantUnits = vacancies.map((id) => state.units[id]);
+          allVacantUnits = allVacantUnits.concat(vacantUnits);
+          let affordable = vacantUnits.filter((u) => {
+            let rentPerTenant = Math.round(u.rent/(u.tenants.length + 1));
+            return rentPerTenant <= tenant.income/12;
+          });
           color = parseInt(color.substr(1), 16);
           if (vacancies.length > 0) {
-            let geometry = new THREE.TextGeometry(vacancies.length.toString(), {
+            let anyDOMA = vacantUnits.some((u) => u.doma);
+            let geometry = new THREE.TextGeometry(`${vacancies.length.toString()}${anyDOMA ? '*': ''}`, {
               font: font,
               size: 10,
               height: 5,
               curveSegments: 6,
               bevelEnabled: false,
             });
-            text = new THREE.Mesh(geometry, textMat);
+            text = new THREE.Mesh(geometry, affordable.length > 0 ? textMat : mutedTextMat);
 
             // Center text
             let bbox = new THREE.Box3().setFromObject(text);
@@ -98,16 +109,18 @@ function createMap(state, tenant, detailsEl, cb, onSelect) {
               if (vacancies) {
                 vacancies.map((id) => {
                     let u = state.units[id];
-                    let el = document.createElement('li');
                     let rentPerTenant = Math.round(u.rent/(u.tenants.length + 1));
+                    let affordable = rentPerTenant <= tenant.income/12;
+                    let el = document.createElement('li');
+                    if (!affordable) el.style.opacity = 0.5;
                     el.className = 'listing';
                     el.innerHTML = `
+                      ${u.doma ? '<b>📌 DOMA-owned apartment</b><br />': ''}
                       ${u.occupancy} bedroom (${u.occupancy - u.tenants.length} available)<br />
                       Rent: $${numberWithCommas(rentPerTenant)}/month<br />
                       Total Rent: $${numberWithCommas(Math.round(u.rent))}/month<br />
                       On the market for ${u.monthsVacant} months<br />`;
 
-                    let affordable = rentPerTenant <= tenant.income/12;
                     let select = document.createElement('div');
                     select.className = 'select-listing';
                     if (affordable) {
@@ -136,7 +149,7 @@ function createMap(state, tenant, detailsEl, cb, onSelect) {
         }
       });
     });
-    cb(grid, vacantUnits);
+    cb(grid, allVacantUnits);
   });
 }
 
