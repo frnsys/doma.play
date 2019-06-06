@@ -40,6 +40,38 @@ def make_plots(output_dir):
             stats[k].append(v)
 
     fnames = []
+
+    # Rents
+    plt.title('rents')
+    for k in ['mean_rent_per_area', 'mean_adjusted_rent_per_area']:
+        vals = stats[k]
+        plt.plot(range(len(vals)), vals, label=k)
+    plt.legend()
+    fnames.append('rents.png')
+    plt.savefig(os.path.join(output_dir, 'plots/rents.png'))
+    plt.close()
+
+    # Incomes
+    plt.title('incomes')
+    for k, vals in incomes.items():
+        plt.plot(range(len(vals)), vals, label=k)
+    plt.legend()
+    fnames.append('incomes.png')
+    plt.savefig(os.path.join(output_dir, 'plots/incomes.png'))
+    plt.close()
+
+    # DOMA fund
+    plt.title('doma_fund')
+    for k in ['doma_property_fund', 'mean_value', 'min_value']:
+        vals = stats[k]
+        plt.plot(range(len(vals)), stats[k], label=k)
+    plt.legend()
+    fnames.append('doma_fund.png')
+    plt.savefig(os.path.join(output_dir, 'plots/doma_fund.png'))
+    plt.close()
+    del stats['min_value']
+
+
     for k, vals in stats.items():
         solo = True
 
@@ -75,35 +107,6 @@ def make_plots(output_dir):
             fnames.append('{}.png'.format(k))
             plt.savefig(os.path.join(output_dir, 'plots/{}.png'.format(k)))
             plt.close()
-
-    # Rents
-    plt.title('rents')
-    for k in ['mean_rent_per_area', 'mean_adjusted_rent_per_area']:
-        vals = stats[k]
-        plt.plot(range(len(vals)), vals, label=k)
-    plt.legend()
-    fnames.append('rents.png')
-    plt.savefig(os.path.join(output_dir, 'plots/rents.png'))
-    plt.close()
-
-    # Incomes
-    plt.title('incomes')
-    for k, vals in incomes.items():
-        plt.plot(range(len(vals)), vals, label=k)
-    plt.legend()
-    fnames.append('incomes.png')
-    plt.savefig(os.path.join(output_dir, 'plots/incomes.png'))
-    plt.close()
-
-    # DOMA fund
-    plt.title('doma_fund')
-    for k in ['doma_property_fund', 'mean_value', 'min_value']:
-        vals = stats[k]
-        plt.plot(range(len(vals)), stats[k], label=k)
-    plt.legend()
-    fnames.append('doma_fund.png')
-    plt.savefig(os.path.join(output_dir, 'plots/doma_fund.png'))
-    plt.close()
 
     # Market history
     MARKET_HISTORY = False

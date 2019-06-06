@@ -167,7 +167,7 @@ class Simulation:
             'doma_members': len(self.doma.members),
             'mean_value': sum(u.value for u in units)/len(units),
             'min_value': min(u.value for u in units),
-            'mean_doma_rent_vs_market_rent': 0 if not landlord_units else np.mean([u.adjusted_rent_per_area for u in self.doma.units])/np.mean([u.adjusted_rent_per_area for u in landlord_units]),
+            'mean_doma_rent_vs_market_rent': 0 if not landlord_units or not self.doma.units else np.mean([u.adjusted_rent_per_area for u in self.doma.units])/np.mean([u.adjusted_rent_per_area for u in landlord_units]),
             'doma_units': len(self.doma.units),
             'doma_property_fund': self.doma.property_fund,
             'doma_total_dividend_payout': self.doma.last_payout,
