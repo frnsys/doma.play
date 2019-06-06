@@ -2,6 +2,9 @@
 MIN_STEP_DELAY = 10
 PLAYER_TIMEOUT = 60
 PLAYER_READY_TIMEOUT = 30
+TURN_LIMIT = 2
+N_STEPS = 120
+PAUSE_BETWEEN_RUNS = 20
 
 REDIS = {
     'host': 'localhost',
@@ -25,5 +28,5 @@ SIM = {
     # Percent of rent paid to DOMA
     # that converts to shares
     'doma_rent_share': 0.1,
-    'doma_initial_fund': 2000000
+    'doma_initial_fund': 5000000
 }

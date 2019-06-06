@@ -7,103 +7,10 @@ import displayListings from './listings';
 const id = uuid();
 const logEl = document.getElementById('log');
 const hudEl = document.getElementById('hud-info');
+const statusEl = document.getElementById('status');
 const timerEl = document.getElementById('hud-timer-fill');
 
-
-function workActions() {
-  if (player.energy >= 1) {
-    return [{
-      'id': 'work',
-      'name': 'Another day of work (-1⚡)',
-      'cost': {
-        'energy': 1
-      }
-    }, {
-      'id': 'work',
-      'name': 'Work hard (-2⚡)',
-      'cost': {
-        'energy': 2
-      }
-    }];
-  } else {
-    return [{
-      'id': 'work',
-      'name': 'Too exhausted...just scrape by'
-    }];
-  }
-}
-
-const unitFailures = [{
-  'name': 'No water',
-  'desc': 'Your water isn\'t working. (-1⚡)',
-  'effect': {
-    'energy': -1
-  }
-}, {
-  'name': 'No gas',
-  'desc': 'Your gas isn\'t working. (-1⚡)',
-  'effect': {
-    'energy': -1
-  }
-}];
-
-function updateHUD() {
-  if (!player.tenant) return;
-  console.log(player);
-  let date = util.dateFromTime(player.time);
-  let tenant = player.tenant;
-  let energy = [...Array(player.energy)].map(() => {
-    return '<span>⚡</span>';
-  }).join('');
-  energy += [...Array(config.maxEnergy - player.energy)].map(() => {
-    return '<span style="opacity:0.25;">⚡</span>';
-  }).join('');;
-
-  let fundTens = Math.floor(player.funds/10);
-  let fundOnes = player.funds % 10;
-  let funds = '';
-  if (fundTens > 0) {
-    funds += `${fundTens}💰`;
-  }
-  funds += `${fundOnes}🔶`;
-
-  hudEl.innerHTML = `
-    ${date}; Income: $${Math.round(tenant.income/12).toLocaleString()}/month
-    Energy: ${energy} Money: ${funds}
-  `;
-}
-
-// Joining/leaving
-api.post('/play/join', {id}, (data) => {
-  publish({
-    message: 'Welcome to doma.play. Choose a tenant to play as.',
-    actions: data.tenants.map((t) => {
-      return {
-        id: 'chooseTenant',
-        name: `Tenant ${t.id}, Income $${Math.round(t.income/12).toLocaleString()}/month`,
-        args: [t]
-      }
-    })
-  });
-});
-window.addEventListener('unload', () => {
-  api.post('/play/leave', {id});
-}, false);
-
-// Keep alive
-function ping() {
-  api.post(`/play/ping/${id}`);
-}
-setInterval(() => {
-  ping();
-}, 5000)
-
-
 let stateKey = null;
-api.get('/state/key', (data) => {
-  stateKey = data.key;
-});
-
 const player = {
   time: null,
   energy: 0,
@@ -112,17 +19,6 @@ const player = {
   turnTimer: null,
   doma: false
 };
-
-// Turn timer
-setInterval(() => {
-  if (player.turnTimer) {
-    let time = Date.now() / 1000;
-    let [start, end] = player.turnTimer;
-    end -= start;
-    let width = Math.min(100, (time - start)/end * 100);
-    timerEl.style.width = `${width}%`;
-  }
-}, 100)
 
 const actions = {
   'chooseTenant': (chosenTenant) => {
@@ -184,37 +80,47 @@ const actions = {
           stateKey = data.key;
           clearInterval(update);
 
-          api.get(`/play/tenant/${id}`, (data) => {
-            player.funds = Math.floor(data.tenant.monthlyDisposableIncome/100);
-            player.turnTimer = data.timer.split('-').map((t) => parseFloat(t));
-            player.tenant = data.tenant;
-            player.time = data.time;
-            player.energy = config.maxEnergy;
-            updateHUD();
-            document.querySelector('.event:last-child').style.opacity = 0.5;
+          api.get('/state/game', ({state}) => {
+            if (state == 'fast_forward') {
+              statusEl.innerHTML = 'Fast-forwarding through time...';
+              fastForward();
 
-            // Morning
-            let roll = Math.random();
-            console.log(`Rolling ${roll} against condition ${data.tenant.unit.condition}`);
-            if (roll > data.tenant.unit.condition) {
-              let failure = util.randomChoice(unitFailures);
-              Object.keys(failure.effect).forEach((k) => player[k] += failure.effect[k]);
-              updateHUD();
-              publish({
-                message: `You wake up. ${failure.desc}`,
-                actions: [{
-                  id: 'commute',
-                  name: 'Go to work',
-                }]
+            } else if (state == 'ready') {
+
+              api.get(`/play/tenant/${id}`, (data) => {
+                player.funds = Math.floor(data.tenant.monthlyDisposableIncome/100);
+                player.turnTimer = data.timer.split('-').map((t) => parseFloat(t));
+                player.tenant = data.tenant;
+                player.time = data.time;
+                player.energy = config.maxEnergy;
+                updateHUD();
+                document.querySelector('.event:last-child').style.opacity = 0.5;
+
+                // Morning
+                let roll = Math.random();
+                console.log(`Rolling ${roll} against condition ${data.tenant.unit.condition}`);
+                if (roll > data.tenant.unit.condition) {
+                  let failure = util.randomChoice(unitFailures);
+                  Object.keys(failure.effect).forEach((k) => player[k] += failure.effect[k]);
+                  updateHUD();
+                  publish({
+                    message: `You wake up. ${failure.desc}`,
+                    actions: [{
+                      id: 'commute',
+                      name: 'Go to work',
+                    }]
+                  });
+                } else {
+                  publish({
+                    message: 'You wake up.',
+                    actions: [{
+                      id: 'commute',
+                      name: 'Go to work',
+                    }]
+                  });
+                }
               });
-            } else {
-              publish({
-                message: 'You wake up.',
-                actions: [{
-                  id: 'commute',
-                  name: 'Go to work',
-                }]
-              });
+
             }
           });
         }
@@ -360,6 +266,160 @@ const actions = {
     });
   }
 };
+
+function workActions() {
+  if (player.energy >= 1) {
+    return [{
+      'id': 'work',
+      'name': 'Another day of work (-1⚡)',
+      'cost': {
+        'energy': 1
+      }
+    }, {
+      'id': 'work',
+      'name': 'Work hard (-2⚡)',
+      'cost': {
+        'energy': 2
+      }
+    }];
+  } else {
+    return [{
+      'id': 'work',
+      'name': 'Too exhausted...just scrape by'
+    }];
+  }
+}
+
+const unitFailures = [{
+  'name': 'No water',
+  'desc': 'Your water isn\'t working. (-1⚡)',
+  'effect': {
+    'energy': -1
+  }
+}, {
+  'name': 'No gas',
+  'desc': 'Your gas isn\'t working. (-1⚡)',
+  'effect': {
+    'energy': -1
+  }
+}];
+
+function updateHUD() {
+  if (!player.tenant) return;
+  let date = util.dateFromTime(player.time);
+  let tenant = player.tenant;
+  let energy = [...Array(player.energy)].map(() => {
+    return '<span>⚡</span>';
+  }).join('');
+  energy += [...Array(config.maxEnergy - player.energy)].map(() => {
+    return '<span style="opacity:0.25;">⚡</span>';
+  }).join('');;
+
+  let fundTens = Math.floor(player.funds/10);
+  let fundOnes = player.funds % 10;
+  let funds = '';
+  if (fundTens > 0) {
+    funds += `${fundTens}💰`;
+  }
+  funds += `${fundOnes}🔶`;
+
+  hudEl.innerHTML = `
+    ${date}; Income: $${Math.round(tenant.income/12).toLocaleString()}/month
+    Energy: ${energy} Money: ${funds}
+  `;
+}
+
+// Keep alive
+function ping() {
+  api.post(`/play/ping/${id}`);
+}
+
+function startPlayer() {
+  // Joining/leaving
+  api.post('/play/join', {id}, (data) => {
+    publish({
+      message: 'Welcome to doma.play. Choose a tenant to play as.',
+      actions: data.tenants.map((t) => {
+        return {
+          id: 'chooseTenant',
+          name: `Tenant ${t.id}, Income $${Math.round(t.income/12).toLocaleString()}/month`,
+          args: [t]
+        }
+      })
+    });
+  });
+  window.addEventListener('unload', () => {
+    api.post('/play/leave', {id});
+  }, false);
+
+  setInterval(() => {
+    ping();
+  }, 5000)
+
+  api.get('/state/key', (data) => {
+    stateKey = data.key;
+  });
+
+  // Turn timer
+  setInterval(() => {
+    if (player.turnTimer) {
+      let time = Date.now() / 1000;
+      let [start, end] = player.turnTimer;
+      end -= start;
+      let width = Math.min(100, (time - start)/end * 100);
+      timerEl.style.width = `${width}%`;
+    }
+  }, 100)
+}
+
+function fastForward() {
+  hudEl.style.display = 'none';
+  api.get(`/play/tenant/${id}`, (data) => {
+    let startData = data;
+    let latestStep;
+    let interval = setInterval(() => {
+      api.get('/state/game', ({state}) => {
+        if (state == 'finished') {
+          clearInterval(interval);
+          api.get(`/play/tenant/${id}`, (data) => {
+            console.log(startData);
+            console.log(data);
+            let years = Math.floor((latestStep - player.time) / 12);
+            if (!data.tenant.unit) {
+              statusEl.innerHTML = `${years} years later, the city\'s housing landscape has changed. You are one who has suffered -- the market has left you without a home.`;
+            } else {
+              let desirabilityChange = data.tenant.desirability/startData.tenant.desirability;
+              let rentChange = data.tenant.rent/startData.tenant.rent;
+              statusEl.innerHTML = `${years} years later, the city\'s housing landscape has changed. Your apartment is ${desirabilityChange.toFixed(1)}x as desirable as your old one, and your rent is ${rentChange.toFixed(1)}x what it was before.`;
+            }
+          });
+        } else {
+          api.get('/state/progress', ({step, progress}) => {
+            statusEl.innerHTML = `Fast-forwarding through time (${util.dateFromTime(step)}, ${(progress*100).toFixed(1)}%)...`;
+            latestStep = step;
+          });
+        }
+      });
+    }, 500);
+  });
+}
+
+api.get('/state/game', ({state}) => {
+  if (state == 'ready') {
+    startPlayer();
+  } else {
+    statusEl.innerHTML = 'Waiting for simulation to load...';
+    let interval = setInterval(() => {
+      api.get('/state/game', ({state}) => {
+        if (state == 'ready') {
+          statusEl.innerHTML = '';
+          clearInterval(interval);
+          startPlayer();
+        }
+      });
+    }, 1000);
+  }
+});
 
 function publish(ev) {
   let eventEl = document.createElement('div');

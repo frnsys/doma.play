@@ -19,6 +19,13 @@ function update() {
     // Compare state keys to
     // see if state changed
     if (data.key !== stateKey) {
+      api.get('/state/game', ({state}) => {
+        if (state == 'fast_forward') {
+          cycleSpeed = 0.25;
+        } else {
+          cycleSpeed = 0.02;
+        }
+      });
       api.get('/state', (state) => {
         stateKey = state.key;
         HUD.updateStats(state);
@@ -37,6 +44,7 @@ function update() {
 let stateKey = null;
 let lastTime = null;
 let angle = Math.PI/2;
+let cycleSpeed = 0.02;
 const sunRadius = 200;
 function render(time) {
   // update every 2000ms
@@ -52,7 +60,7 @@ function render(time) {
   let progress = (angle % (2*Math.PI))/Math.PI;
   let isNight = progress > 1;
 
-  angle += isNight ? 0.02 : 0.002;
+  angle += isNight ? cycleSpeed : cycleSpeed/10;
 
   let startSunset = 0.75;
   let endSunrise = 0.25;

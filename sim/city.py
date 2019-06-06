@@ -243,6 +243,10 @@ class Unit:
     def rent_per_tenant(self):
         return self.rent/len(self.tenants)
 
+    @property
+    def adjusted_rent_per_tenant(self):
+        return self.adjusted_rent()/len(self.tenants)
+
     def move_in(self, tenant, month):
         if tenant.unit is not None:
             tenant.unit.move_out(tenant)

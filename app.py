@@ -40,6 +40,25 @@ def design(id):
     return render_template('design.html', data=json.loads(data))
 
 
+@app.route('/state/game')
+def game_state():
+    """Query current game state"""
+    state = redis.get('game_state')
+    if state: state = state.decode('utf8')
+    return jsonify(state=state)
+
+
+@app.route('/state/progress')
+def game_progress():
+    """Query current game state"""
+    step = redis.get('game_step')
+    if step:
+        step = int(step.decode('utf8'))
+    else:
+        step = 0
+    return jsonify(progress=step/config.N_STEPS, step=step)
+
+
 @app.route('/state')
 def state():
     """Query current state"""
