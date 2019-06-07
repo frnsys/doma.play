@@ -115,14 +115,10 @@ class DOMA:
 
         # Check offers
         mean_value = sum(u.value for u in sim.city.units)/len(sim.city.units)
-        print('MEAN:', mean_value)
         for u in self.units:
             # Only consider after 5 years of ownership
             if not u.offers or (sim.time - u.sold_on)/12 < 5: continue
             best_offer = max(u.offers, key=lambda o: o.amount)
             if best_offer.amount > u.value:
                 diff = best_offer.amount - u.value
-                print('---')
-                print(best_offer.amount)
-                print(u.value)
-                print(diff)
+                print('OFFER', best_offer.amount, 'VALUE', u.value, 'PERCENT', best_offer.amount/u.value, 'TOMEAN', best_offer.amount/mean_value)

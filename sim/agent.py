@@ -279,9 +279,11 @@ class Tenant:
 
         # Ratio of income to rent they'd pay
         ratio = self.income/rent_per_tenant
+        ratio = math.sqrt(ratio)
 
         # Space per tenant
         spaciousness = unit.area/n_tenants - prefs['min_area']
+        spaciousness = math.pow(spaciousness, 1/32)
 
         # Distance to work
         if self.work_building is not None:
@@ -293,8 +295,9 @@ class Tenant:
         else:
             commute = 0
 
-        # TODO balance this
-        return ratio * (spaciousness + unit.building.parcel.weighted_desirability + unit.condition + commute)
+        total = ratio * (spaciousness + unit.building.parcel.weighted_desirability + unit.condition + commute)
+        # print('RATIO', ratio, 'SPACIOUSNESS', spaciousness, 'DESIRABILITY', unit.building.parcel.weighted_desirability, 'CONDITION', unit.condition, 'COMMUTE', commute, 'TOTAL', total)
+        return total
 
     def step(self, sim, vacants):
         sample_size = 20

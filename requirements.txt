@@ -7,3 +7,4 @@ APScheduler==3.6.0
 networkx==2.2
 scikit-learn==0.20.2
 matplotlib==2.2.2
+opensimplex==0.2

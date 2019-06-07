@@ -1,3 +1,4 @@
+import noise
 import random
 import logging
 import numpy as np
@@ -6,6 +7,7 @@ from .util import sync
 from .city import City
 from .doma import DOMA
 from .agent import Landlord, Tenant
+from opensimplex import OpenSimplex
 
 logger = logging.getLogger('DOMA-SIM')
 
@@ -78,6 +80,11 @@ class Simulation:
                 if t == f: continue
                 self.social_network.add_edge(t, f)
 
+        # Neighborhood desirability trend parameters
+        self.noises = {
+            id: OpenSimplex(seed=int(random.random() * 10e6))
+            for id in self.city.neighborhoods.keys()}
+
     def random_owner(self, unit):
         roll = random.random()
         if unit.tenants:
@@ -146,11 +153,15 @@ class Simulation:
             market_history.extend(e.check_purchase_offers(self))
 
         # Desirability changes, random walk
-        mn, mx = [-0.1, 0.1]
         for neighb, parcels in self.city.residential_parcels_by_neighborhood().items():
-            change = mn + (mx - mn) * random.random()
+            if self.time > 0:
+                last_val = self.noises[neighb].noise2d((self.time-1)/self.conf['desirability_stretch_factor'], 0)
+            else:
+                last_val = 0
+            val = self.noises[neighb].noise2d(self.time/self.conf['desirability_stretch_factor'], 0)
+            change = val - last_val
             for p in parcels:
-                p.weighted_desirability += change
+                p.weighted_desirability = max(0, p.weighted_desirability - change)
 
         self.time += 1
         return market_history
