@@ -8,23 +8,41 @@ import InteractionLayer from './3d/interact';
 
 const scene = new Scene({});
 const main = document.getElementById('main');
+const players = document.getElementById('players');
 main.appendChild(scene.renderer.domElement);
 
 // NOTE: this doesn't work unless user explicitly
 // allows autoplay
 // document.getElementById('audio').play();
 
+let lastState;
 function update() {
+  api.get('/play/players', (data) => {
+    players.innerHTML = `${data.players.length} players`;
+  });
+
   api.get('/state/key', (data) => {
     // Compare state keys to
     // see if state changed
     if (data.key !== stateKey) {
       api.get('/state/game', ({state}) => {
         if (state == 'fast_forward') {
+          statusEl.style.display = 'inline-block';
+          statusEl.innerHTML = 'Going to the future...';
           cycleSpeed = 0.25;
         } else {
           cycleSpeed = 0.02;
+          if (state == 'finished') {
+            statusEl.innerHTML = 'Waiting for the next session to start...';
+          } else if (state == 'ready') {
+            statusEl.style.display = 'none';
+            // Just reload to reset graphs
+            if (lastState == 'finished') {
+              window.location.reload();
+            }
+          }
         }
+        lastState = state;
       });
       api.get('/state', (state) => {
         stateKey = state.key;
@@ -101,25 +119,42 @@ function render(time) {
 
 // Initial setup
 let city;
-api.get('/state', (state) => {
-  stateKey = state.key;
-  city = new City(state);
-  scene.add(city.grid.group);
+const statusEl = document.getElementById('city-status');
 
-  // Setup interactable objects
-  let selectables = [];
-  city.grid.cells.filter((c) => c).forEach((c) => {
-    selectables.push(c.mesh);
-    if (c.building) {
-      selectables = selectables.concat(Object.values(c.building.units).map((u) => u.mesh));
-      selectables = selectables.concat(Object.values(c.building.commercial));
+let loadWait = setInterval(() => {
+  api.get('/state/game', ({state}) => {
+    if (state == 'ready' || state == 'fast_forward') {
+
+      if (state == 'ready') {
+        statusEl.style.display = 'none';
+      } else {
+        statusEl.innerHTML = 'Going to the future...';
+      }
+      clearInterval(loadWait);
+      api.get('/state', (state) => {
+        stateKey = state.key;
+        city = new City(state);
+        scene.add(city.grid.group);
+
+        // Setup interactable objects
+        let selectables = [];
+        city.grid.cells.filter((c) => c).forEach((c) => {
+          selectables.push(c.mesh);
+          if (c.building) {
+            selectables = selectables.concat(Object.values(c.building.units).map((u) => u.mesh));
+            selectables = selectables.concat(Object.values(c.building.commercial));
+          }
+        });
+        let ixn = new InteractionLayer(scene, selectables);
+
+        // Init HUD/stats
+        HUD.updateStats(state);
+        HUD.createCharts(state);
+
+        render();
+      });
+    } else if (state == 'finished') {
+      statusEl.innerHTML = 'Waiting for the next session to start...';
     }
   });
-  let ixn = new InteractionLayer(scene, selectables);
-
-  // Init HUD/stats
-  HUD.updateStats(state);
-  HUD.createCharts(state);
-
-  render();
-});
+}, 500);

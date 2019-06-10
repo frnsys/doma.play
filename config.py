@@ -28,7 +28,11 @@ SIM = {
     # Percent of rent paid to DOMA
     # that converts to shares
     'doma_rent_share': 0.1,
-    'doma_initial_fund': 1000000,
+    'doma_initial_fund': 10000000,
+
+    # How long DOMA waits before
+    # considering selling a unit
+    'doma_min_hold_time':  5 * 12,
 
     # Desirability dynamics (simplex noise walk)
     # Higher this is, the wider the curves (i.e. slower changes)

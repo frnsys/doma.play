@@ -92,33 +92,42 @@ const actions = {
                 player.turnTimer = data.timer.split('-').map((t) => parseFloat(t));
                 player.tenant = data.tenant;
                 player.time = data.time;
-                player.energy = config.maxEnergy;
-                updateHUD();
                 document.querySelector('.event:last-child').style.opacity = 0.5;
 
                 // Morning
-                let roll = Math.random();
-                console.log(`Rolling ${roll} against condition ${data.tenant.unit.condition}`);
-                if (roll > data.tenant.unit.condition) {
-                  let failure = util.randomChoice(unitFailures);
-                  Object.keys(failure.effect).forEach((k) => player[k] += failure.effect[k]);
-                  updateHUD();
-                  publish({
-                    message: `You wake up. ${failure.desc}`,
-                    actions: [{
-                      id: 'commute',
-                      name: 'Go to work',
-                    }]
-                  });
+                if (data.tenant.unit) {
+                  player.energy = config.maxEnergy;
+                  let roll = Math.random();
+                  console.log(`Rolling ${roll} against condition ${data.tenant.unit.condition}`);
+                  if (roll > data.tenant.unit.condition) {
+                    let failure = util.randomChoice(unitFailures);
+                    Object.keys(failure.effect).forEach((k) => player[k] += failure.effect[k]);
+                    publish({
+                      message: `You wake up. ${failure.desc}`,
+                      actions: [{
+                        id: 'commute',
+                        name: 'Go to work',
+                      }]
+                    });
+                  } else {
+                    publish({
+                      message: 'You wake up.',
+                      actions: [{
+                        id: 'commute',
+                        name: 'Go to work',
+                      }]
+                    });
+                  }
                 } else {
-                  publish({
-                    message: 'You wake up.',
-                    actions: [{
-                      id: 'commute',
-                      name: 'Go to work',
-                    }]
-                  });
+                    publish({
+                      message: 'You wake up.',
+                      actions: [{
+                        id: 'commute',
+                        name: 'Go to work',
+                      }]
+                    });
                 }
+                updateHUD();
               });
 
             }
@@ -324,7 +333,7 @@ function updateHUD() {
   funds += `${fundOnes}🔶`;
 
   hudEl.innerHTML = `
-    ${date}; Income: $${Math.round(tenant.income/12).toLocaleString()}/month
+    ${date}; Income: $${Math.round(tenant.income/12).toLocaleString()}/month<br />
     Energy: ${energy} Money: ${funds}
   `;
 }
@@ -392,9 +401,11 @@ function fastForward() {
               let rentChange = data.tenant.rent/startData.tenant.rent;
               statusEl.innerHTML = `${years} years later, the city\'s housing landscape has changed. Your apartment is ${desirabilityChange.toFixed(1)}x as desirable as your old one, and your rent is ${rentChange.toFixed(1)}x what it was before.`;
             }
+            statusEl.style.background = '#4c4cf5';
           });
         } else {
           api.get('/state/progress', ({step, progress}) => {
+            document.querySelector('.event:last-child').style.opacity = 0.5;
             statusEl.innerHTML = `Fast-forwarding through time (${util.dateFromTime(step)}, ${(progress*100).toFixed(1)}%)...`;
             latestStep = step;
           });

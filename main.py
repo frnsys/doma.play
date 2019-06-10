@@ -6,6 +6,7 @@ import shutil
 import random
 import config
 import logging
+from tqdm import tqdm
 from plot import make_plots
 from time import sleep, time
 from datetime import datetime
@@ -132,6 +133,8 @@ if __name__ == '__main__':
                         amount = sum(d['amount'] for d in datas)
                         sim.doma.add_funds(tenant, amount)
 
+            if not STEPS:
+                logger.info('Step {}'.format(sim.time))
             market_history = sim.step()
             sim.sync()
 
@@ -168,7 +171,7 @@ if __name__ == '__main__':
     redis.set('game_state', 'ready')
     try:
         if STEPS is not None:
-            for i in range(int(STEPS)):
+            for i in tqdm(range(int(STEPS)), total=int(STEPS)):
                 redis.set('game_step', i)
                 step()
         else:

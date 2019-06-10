@@ -162,6 +162,8 @@ class Landlord:
                 self.sales += 1
                 u.recently_sold = True
                 u.value = best_offer.amount
+                u.sold_on = sim.time
+                u.sold_for = best_offer.amount
                 transfers.append((u, best_offer.landlord))
                 if best_offer.landlord.__class__.__name__ == 'DOMA':
                     best_offer.landlord.property_fund -= best_offer.amount
@@ -181,7 +183,6 @@ class Landlord:
         # so we don't modify self.units
         # as we iterate
         for u, dev in transfers:
-            u.sold_on = sim.time
             u.setOwner(dev)
 
         return record
@@ -382,6 +383,8 @@ class Tenant:
                 self.sales += 1
                 u.recently_sold = True
                 u.value = best_offer.amount
+                u.sold_on = sim.time
+                u.sold_for = best_offer.amount
                 transfers.append((u, best_offer.landlord))
                 if best_offer.landlord.__class__.__name__ == 'DOMA':
                     best_offer.landlord.property_fund -= best_offer.amount
@@ -402,7 +405,6 @@ class Tenant:
         # so we don't modify self.units
         # as we iterate
         for u, dev in transfers:
-            u.sold_on = sim.time
             u.setOwner(dev)
 
         return record

@@ -12,6 +12,9 @@ def make_plots(output_dir):
     history = output['history']
     stats = defaultdict(list)
 
+    config = json.load(open(os.path.join(output_dir, 'config.json')))
+    config.pop('map')
+
     # Get neighborhood-specific stats
     by_neighb = [h.pop('neighborhoods') for h in history]
     neighborhoods = defaultdict(lambda: defaultdict(list))
@@ -155,6 +158,7 @@ def make_plots(output_dir):
                 <h3>Generated on {dt}</h3>
                 <div>
                     {meta}
+                    {config}
                 </div>
                 <div>
                     {imgs}
@@ -165,6 +169,7 @@ def make_plots(output_dir):
             </html>
         '''.format(
             dt=datetime.now().isoformat(),
+            config=json.dumps(config),
             market='\n'.join(market_history),
             meta=', '.join('{}: {}'.format(k, v) for k, v in output['meta'].items()),
             imgs='\n'.join(['<img style="width:400px;" src="{}">'.format(fname) for fname in fnames]))

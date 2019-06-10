@@ -133,3 +133,7 @@ def player_tenant(id):
     # Get turn timer
     timer = redis.get('turn_timer').decode('utf8')
     return jsonify(success=True, tenant=json.loads(res.decode('utf8')), time=state['time'], timer=timer)
+
+@bp.route('/players')
+def players():
+    return jsonify(players=active_players())

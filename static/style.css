@@ -46,4 +46,30 @@ ul, li {
   bottom: 0;
   right: 0;
   padding: 0.5em;
+  background: #4c4cf5;
+  color: #fff;
 }
+#players {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  padding: 0.5em;
+  background: #4c4cf5;
+  color: #fff;
+}
+#city-status-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  text-align: center;
+}
+#city-status {
+  color: #fff;
+  background: #f53a3a;
+  padding: 1em;
+  margin: 0em auto;
+  display: inline-block;
+}
+

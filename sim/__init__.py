@@ -1,4 +1,3 @@
-import noise
 import random
 import logging
 import numpy as np
@@ -105,7 +104,6 @@ class Simulation:
         sync(self.city, self.stats(), self.time)
 
     def step(self):
-        logger.info('Step {}'.format(self.time))
         for b in self.city.buildings:
             for u in b.units:
                 u.collect_rent()
@@ -184,7 +182,7 @@ class Simulation:
             'mean_condition': sum(u.condition for u in units)/len(units),
             'unique_landlords': len(set(u.owner for u in units)),
             'mean_price_to_rent_ratio': sum(u.value/(u.rent*12) for u in units)/len(units),
-            'doma_members': len(self.doma.members),
+            'doma_members': len(self.doma.members)/len(self.tenants),
             'mean_value': sum(u.value for u in units)/len(units),
             'min_value': min(u.value for u in units),
             'mean_doma_rent_vs_market_rent': 0 if not landlord_units or not self.doma.units else np.mean([u.adjusted_rent_per_area for u in self.doma.units])/np.mean([u.adjusted_rent_per_area for u in landlord_units]),
@@ -222,6 +220,7 @@ class Simulation:
                     'mean_value_per_area': sum(u.value/u.area for u in units if u.value)/len(units),
                     'mean_condition': sum(u.condition for u in units)/len(units),
                     'mean_rent_income_ratio': sum(sum(u.rent_per_tenant/t.income for t in u.tenants) for u in units)/(sum(len(u.tenants) for u in units) or 1),
+                    'doma_units': len([u for u in units if u.owner == self.doma])
                 } for neighb, units in self.city.units_by_neighborhood().items()
             }
         }

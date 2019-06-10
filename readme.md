@@ -81,3 +81,9 @@ Each step represents one month.
     2. Pays dividends from this rent to its members
     3. Makes offers on properties. DOMA prioritizes non-DOMA properties of their members and cheap properties with high rent-to-price ratios. DOMA makes offers on as many properties as it can afford.
 6. All property owners check purchase offers. Tenants compare the offer to the last appraised value of the property, landlords compare to their own estimate of its value based on projected rent. They accept when the offer is greater than that value.
+
+## Key simplifying assumptions
+
+- We assume landlords have access to limitless capital
+- There is a point-to-point transit system for commutes
+- We don't include developers
