@@ -36,7 +36,7 @@ ul, li {
   pointer-events: none;
 }
 #charts .chart {
-  width: 320px;
+  width: 30%;
   display: inline-block;
   background: rgba(242, 153, 153, 0.2);
   padding: 1em;

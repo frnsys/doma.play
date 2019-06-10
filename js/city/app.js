@@ -8,7 +8,7 @@ import InteractionLayer from './3d/interact';
 
 const scene = new Scene({});
 const main = document.getElementById('main');
-const players = document.getElementById('players');
+const players = document.getElementById('n_players');
 main.appendChild(scene.renderer.domElement);
 
 // NOTE: this doesn't work unless user explicitly
@@ -18,7 +18,7 @@ main.appendChild(scene.renderer.domElement);
 let lastState;
 function update() {
   api.get('/play/players', (data) => {
-    players.innerHTML = `${data.players.length} players`;
+    players.innerHTML = data.players.length;
   });
 
   api.get('/state/key', (data) => {

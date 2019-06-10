@@ -52,7 +52,7 @@ function createChart(name, stats) {
       legend: {
         labels: {
           boxWidth: 2,
-          fontSize: 9,
+          fontSize: 13,
           fontFamily: 'monospace'
         }
       },
