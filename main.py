@@ -37,7 +37,7 @@ def all_players_ready():
                          in redis.lrange('ready_players', 0, -1)]
         active_players = [r.decode('utf8') for r
                           in redis.lrange('active_players', 0, -1)]
-        print('Ready', len(ready_players), 'Active', len(active_players))
+        # print('Ready', len(ready_players), 'Active', len(active_players))
         all_players_ready = all(id in ready_players for id in active_players)
     return True
 
@@ -210,18 +210,15 @@ if __name__ == '__main__':
                         'unit': t.unit.id if t.unit else None
                     }) for t in tenants])
 
-                    # TODO -- right now, players don't join until
-                    # the simulation is ready, so this is a bit
-                    # of a catch-22
-                    # Wait for active players
-                    # logger.info('Waiting for active players')
-                    # active_players = []
-                    # while not active_players:
-                    #     print('active:', active_players)
-                    #     active_players = [r.decode('utf8') for r
-                    #         in redis.lrange('active_players', 0, -1)]
                     sim.sync()
                     redis.set('game_state', 'ready')
+
+                    # Wait for active players
+                    logger.info('Waiting for active players')
+                    active_players = []
+                    while not active_players:
+                        active_players = [r.decode('utf8') for r
+                            in redis.lrange('active_players', 0, -1)]
 
     except KeyboardInterrupt:
         pass
