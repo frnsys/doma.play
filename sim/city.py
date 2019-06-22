@@ -1,3 +1,4 @@
+import math
 import random
 from enum import Enum
 from .doma import DOMA
@@ -19,11 +20,12 @@ class City:
         # Assume map has already been "minimized"
         # and that the map rows are not ragged
         # Note that the designer outputs cols/rows flipped
-        rows = len(map)
-        cols = len(map[0])
+        layout = map['layout']
+        rows = len(layout)
+        cols = len(layout[0])
         city = cls((cols, rows), neighborhoods, config)
 
-        for r, row in enumerate(map):
+        for r, row in enumerate(layout):
             for c, cell in enumerate(row):
                 if cell is None: continue
                 neighb_id, parcel_type = cell.split('|')
@@ -89,9 +91,9 @@ class City:
                 while n_units % 4 != 0:
                     n_units += 1
 
-                n_commercial = 0
-                while random.random() < neighb['pCommercial']:
-                    n_commercial += 1
+                n_floors = n_units/4
+                total_floors = math.ceil(n_floors/(1-neighb['pCommercial']))
+                n_commercial = total_floors - n_floors
             else:
                 # Houses have no commercial floors
                 n_commercial = 0
@@ -131,6 +133,9 @@ class City:
 
     def units_by_neighborhood(self):
         return {neighb: self.neighborhood_units(neighb) for neighb in self.neighborhoods.keys()}
+
+    def neighborhoods_with_units(self):
+        return {neighb: units for neighb, units in self.units_by_neighborhood().items() if units}
 
     @property
     def commercial_buildings(self):

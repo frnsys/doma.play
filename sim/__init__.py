@@ -177,11 +177,11 @@ class Simulation:
             'mean_rent_per_area': sum(u.rent_per_area for u in units)/len(units),
             'mean_adjusted_rent_per_area': sum(u.adjusted_rent_per_area for u in units)/len(units),
             'mean_months_vacant': sum(u.monthsVacant for u in units)/len(units),
-            'mean_maintenance_costs': sum(u.maintenance/u.rent for u in units)/len(units),
+            'mean_maintenance_costs': sum(u.maintenance/u.rent if u.rent else 0 for u in units)/len(units),
             'mean_value_per_area': sum(u.value/u.area for u in units)/len(units),
             'mean_condition': sum(u.condition for u in units)/len(units),
             'unique_landlords': len(set(u.owner for u in units)),
-            'mean_price_to_rent_ratio': sum(u.value/(u.rent*12) for u in units)/len(units),
+            'mean_price_to_rent_ratio': sum(u.value/(u.rent*12) if u.rent else 0 for u in units)/len(units),
             'doma_members': len(self.doma.members)/len(self.tenants),
             'mean_value': sum(u.value for u in units)/len(units),
             'min_value': min(u.value for u in units),
@@ -216,11 +216,11 @@ class Simulation:
                     'mean_rent_per_area': sum(u.rent_per_area for u in units)/len(units),
                     'mean_adjusted_rent_per_area': sum(u.adjusted_rent_per_area for u in units)/len(units),
                     'mean_months_vacant': sum(u.monthsVacant for u in units)/len(units),
-                    'mean_maintenance_costs': sum(u.maintenance/u.rent for u in units)/len(units),
+                    'mean_maintenance_costs': sum(u.maintenance/u.rent if u.rent else 0 for u in units)/len(units),
                     'mean_value_per_area': sum(u.value/u.area for u in units if u.value)/len(units),
                     'mean_condition': sum(u.condition for u in units)/len(units),
                     'mean_rent_income_ratio': sum(sum(u.rent_per_tenant/t.income for t in u.tenants) for u in units)/(sum(len(u.tenants) for u in units) or 1),
                     'doma_units': len([u for u in units if u.owner == self.doma])
-                } for neighb, units in self.city.units_by_neighborhood().items()
+                } for neighb, units in self.city.neighborhoods_with_units().items()
             }
         }

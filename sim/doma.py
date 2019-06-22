@@ -87,7 +87,7 @@ class DOMA:
         #     candidates = [u for u in candidates if trend_changes[u.building.parcel.neighborhood]]
 
         # Prioritize cheap properties with high rent-to-price ratios
-        candidates = sorted(candidates, key=lambda u: u.value * (u.value/u.rent))
+        candidates = sorted(candidates, key=lambda u: u.value * (u.value/u.rent) if u.rent else 0)
         # candidates = sorted(candidates, key=lambda u: u.rent/u.value, reverse=True)
         # candidates = sorted(candidates, key=lambda u: u.value)
         committed = 0
@@ -129,7 +129,7 @@ class DOMA:
 
         # Update trends
         neighb_trends = {}
-        for neighb_id, units in sim.city.units_by_neighborhood().items():
+        for neighb_id, units in sim.city.neighborhoods_with_units().items():
             mean_value_per_area = sum(u.value/u.area for u in units if u.value)/len(units)
             self.price_trends[neighb_id].append(mean_value_per_area)
             m = LinearRegression()

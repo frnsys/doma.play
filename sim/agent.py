@@ -38,7 +38,8 @@ class Landlord:
         self.rent_ests = {}
         self.trend_ests = {}
         self.invest_ests = {}
-        for neighb_id in city.neighborhoods.keys():
+        for neighb_id, units in city.units_by_neighborhood().items():
+            if not units: continue
             self.rent_ests[neighb_id] = []
             self.trend_ests[neighb_id] = 0
             self.invest_ests[neighb_id] = 0
@@ -78,7 +79,9 @@ class Landlord:
         for neighb, units in neighborhoods.items():
             # TODO if we add building age, need to consider that
             sample = units + samples[neighb]
-            maintenance_to_rent_ratio = min([u.mean_ytd_maintenance/u.mean_ytd_income for u in sample if u.mean_ytd_income > 0])
+            ratios = [u.mean_ytd_maintenance/u.mean_ytd_income for u in sample if u.mean_ytd_income > 0]
+            if not ratios: continue
+            maintenance_to_rent_ratio = min(ratios)
             for u in units:
                 u.maintenance = maintenance_to_rent_ratio * u.rent_per_area
 
@@ -283,7 +286,7 @@ class Tenant:
         ratio = math.sqrt(ratio)
 
         # Space per tenant
-        spaciousness = unit.area/n_tenants - prefs['min_area']
+        spaciousness = max(unit.area/n_tenants - prefs['min_area'], 0)
         spaciousness = math.pow(spaciousness, 1/32)
 
         # Distance to work

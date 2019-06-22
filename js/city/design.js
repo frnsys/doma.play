@@ -123,13 +123,15 @@ function updateCellColor(cell) {
 }
 
 function loadMap(map) {
-  let nRows = map.length;
-  let nCols = map[0].length;
+  let layout = map.layout;
+  let nRows = layout.length;
+  let nCols = layout[0].length;
   let rShift = Math.round(rows/2) - Math.round(nRows/2);
   let cShift = Math.round(cols/2) - Math.round(nCols/2);
+  if (cShift % 2 != map.offset.col) cShift++;
 
   // Set grid cell data
-  map.forEach((row, r) => {
+  layout.forEach((row, r) => {
     row.forEach((d, c) => {
       if (d === null) return;
       let [neighborhoodId, type] = d.split('|');
@@ -140,7 +142,7 @@ function loadMap(map) {
         neighborhoodName = 'None';
       } else {
         neighb = design.neighborhoods.filter((n) => n.id == neighborhoodId)[0];
-        neighborhoodName = neighb.name;
+        neighborhoodName = neighb ? neighb.name : 'UNDEFINED';
       }
       cell.data = {
         neighborhood: neighborhoodName,
@@ -202,11 +204,21 @@ function serialize() {
   colEnd = colEnd == -1 ? grid.grid[0].length : grid.grid[0].length - colEnd;
 
   // Prepare export data
+  let minRow = null, minCol = null;
+  let layout = map.map((row) => row.slice(colStart, colEnd).map(c => {
+    if (minRow == null || c.row < minRow) minRow = c.row;
+    if (minCol == null || c.col < minCol) minCol = c.col;
+    if (c.data.type == 'Empty') return null;
+    return `${c.data.neighborhoodId}|${c.data.type}`;
+  }));
   let data = {
-    map: map.map((row) => row.slice(colStart, colEnd).map(c => {
-      if (c.data.type == 'Empty') return null;
-      return `${c.data.neighborhoodId}|${c.data.type}`;
-    })),
+    map: {
+      offset: {
+        row: minRow % 2 != 0,
+        col: minCol % 2 != 0
+      },
+      layout: layout
+    },
     neighborhoods: design.neighborhoods.reduce((acc, n) => {
       acc[n.id] = n;
       return acc;
@@ -288,9 +300,11 @@ cgui.add(dummyCell, 'type').options(parcelTypes).listen().onChange((t) => {
 });
 cgui.open();
 
+const iguis = {};
 function makeIncomeGUI(i) {
   let idx = design.city.incomes.indexOf(i);
   let igui = cityguiIncomes.addFolder(idx);
+  iguis[i] = igui;
   igui.add(i, 'low').min(0).step(1);
   igui.add(i, 'high').min(0).step(1);
   igui.add(i, 'p').min(0).max(1).step(0.01);
@@ -298,6 +312,7 @@ function makeIncomeGUI(i) {
     delete: () => {
       cityguiIncomes.removeFolder(igui);
       design.city.incomes.splice(idx, 1);
+      delete iguis[i];
     }
   }, 'delete');
 }
@@ -369,6 +384,10 @@ function loadDesign(source) {
     makeNeighborhoodGUI(n);
   });
 
+  Object.keys(iguis).forEach((i) => {
+    cityguiIncomes.removeFolder(iguis[i]);
+    delete iguis[i];
+  });
   design.city.incomes.forEach((i) => {
     makeIncomeGUI(i);
   });
@@ -376,7 +395,7 @@ function loadDesign(source) {
   design.city = source.city || defaultCity;
 
   // Try to center map
-  if (source.map.length > 0) loadMap(source.map);
+  if (source.map.layout && source.map.layout.length > 0) loadMap(source.map);
 
   updateCityLimits();
 }

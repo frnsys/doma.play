@@ -13,7 +13,7 @@ REDIS = {
 }
 
 SIM = {
-    'design_id': 'chicago',
+    'design_id': 'philadelphia',
     'pricing_horizon': 5 * 12,
     'tenants': {
         'moving_penalty': 10,

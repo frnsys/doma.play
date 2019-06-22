@@ -214,11 +214,11 @@ if __name__ == '__main__':
                     redis.set('game_state', 'ready')
 
                     # Wait for active players
-                    logger.info('Waiting for active players')
-                    active_players = []
-                    while not active_players:
-                        active_players = [r.decode('utf8') for r
-                            in redis.lrange('active_players', 0, -1)]
+                    # logger.info('Waiting for active players')
+                    # active_players = []
+                    # while not active_players:
+                    #     active_players = [r.decode('utf8') for r
+                    #         in redis.lrange('active_players', 0, -1)]
 
     except KeyboardInterrupt:
         pass

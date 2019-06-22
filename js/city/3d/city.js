@@ -37,15 +37,17 @@ class City {
 
         if (parcel.neighb !== null) {
           let neighb = neighborhoods[parcel.neighb];
-          parcel.color = parseInt(neighb.color.substr(1), 16);
-          parcel.tooltip = `
-            <div>Type ${parcel.type}</div>
-            <div>Neighborhood ${parcel.neighb}</div>
-            <div>Desirability: ${parcel.desirability.toFixed(2)}</div>
-          `;
+          if (neighb) {
+            parcel.color = parseInt(neighb.color.substr(1), 16);
+            parcel.tooltip = `
+              <div>Type ${parcel.type}</div>
+              <div>Neighborhood ${parcel.neighb}</div>
+              <div>Desirability: ${parcel.desirability.toFixed(2)}</div>
+            `;
 
-          if (parcel.type == 'Commercial') {
-            parcel.color = shadeColor(parcel.color, 0.8);
+            if (parcel.type == 'Commercial') {
+              parcel.color = shadeColor(parcel.color, 0.8);
+            }
           }
         } else {
           parcel.tooltip = `
