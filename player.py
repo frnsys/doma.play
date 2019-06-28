@@ -3,11 +3,15 @@ import redis
 import config
 import random
 from datetime import datetime
-from sim.util import Command, send_command
 from flask import Blueprint, render_template, request, jsonify
 
 bp = Blueprint('player', __name__, url_prefix='/play')
 redis = redis.Redis(**config.REDIS)
+
+def send_command(cmd, data):
+    redis.lpush('cmds', json.dumps({
+        cmd: data
+    }))
 
 
 def active_players():
@@ -16,9 +20,7 @@ def active_players():
 
 def remove_player(id):
     redis.lrem('active_players', 0, id)
-    send_command(Command.RELEASE_TENANT, {
-        'player_id': id
-    })
+    send_command('ReleaseTenant', id)
 
 def prune_players():
     now = round(datetime.utcnow().timestamp())
@@ -60,10 +62,7 @@ def player_join():
 def player_select(id):
     """Player select tenant"""
     tenant_id = request.get_json()['id']
-    send_command(Command.SELECT_TENANT, {
-        'tenant_id': tenant_id,
-        'player_id': id
-    })
+    send_command('SelectTenant', [id, tenant_id])
 
     # Get current state
     state = json.loads(redis.get('state'))
@@ -102,10 +101,7 @@ def player_move(id):
 
     # TODO what if two players choose the same unit?
     # May need to stagger turns
-    send_command(Command.MOVE_TENANT, {
-        'player_id': id,
-        'unit_id': unit_id
-    })
+    send_command('MoveTenant', [id, unit_id])
     return jsonify(success=True)
 
 
@@ -113,10 +109,7 @@ def player_move(id):
 def player_doma(id):
     """Player contribute to DOMA"""
     amount = request.get_json()['amount']
-    send_command(Command.DOMA_ADD, {
-        'player_id': id,
-        'amount': amount
-    })
+    send_command('DOMAAdd', [id, amount])
     return jsonify(success=True)
 
 
