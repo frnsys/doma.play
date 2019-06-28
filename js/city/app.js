@@ -26,7 +26,7 @@ function update() {
     // see if state changed
     if (data.key !== stateKey) {
       api.get('/state/game', ({state}) => {
-        if (state == 'fast_forward') {
+        if (state == 'fastforward') {
           statusEl.style.display = 'inline-block';
           statusEl.innerHTML = 'Going to the future...';
           cycleSpeed = 0.25;
@@ -123,7 +123,7 @@ const statusEl = document.getElementById('city-status');
 
 let loadWait = setInterval(() => {
   api.get('/state/game', ({state}) => {
-    if (state == 'ready' || state == 'fast_forward') {
+    if (state == 'ready' || state == 'fastforward') {
 
       if (state == 'ready') {
         statusEl.style.display = 'none';

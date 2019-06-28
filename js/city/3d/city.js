@@ -35,7 +35,7 @@ class City {
       Object.keys(map.parcels[row]).forEach((col) => {
         let parcel = map.parcels[row][col];
 
-        if (parcel.neighb !== null) {
+        if (parcel.neighb !== -1) {
           let neighb = neighborhoods[parcel.neighb];
           if (neighb) {
             parcel.color = parseInt(neighb.color.substr(1), 16);
@@ -44,10 +44,6 @@ class City {
               <div>Neighborhood ${parcel.neighb}</div>
               <div>Desirability: ${parcel.desirability.toFixed(2)}</div>
             `;
-
-            if (parcel.type == 'Commercial') {
-              parcel.color = shadeColor(parcel.color, 0.8);
-            }
           }
         } else {
           parcel.tooltip = `

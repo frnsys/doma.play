@@ -14,6 +14,7 @@ def city():
     """City view"""
     return render_template('city.html')
 
+
 @app.route('/design', defaults={'id': None})
 @app.route('/design/<id>', methods=['GET', 'POST'])
 def design(id):
@@ -52,11 +53,12 @@ def game_state():
 def game_progress():
     """Query current game state"""
     step = redis.get('game_step')
+    progress = float(redis.get('game_progress').decode('utf8'))
     if step:
         step = int(step.decode('utf8'))
     else:
         step = 0
-    return jsonify(progress=step/config.N_STEPS, step=step)
+    return jsonify(progress=progress, step=step)
 
 
 @app.route('/state')
