@@ -19,7 +19,7 @@ class Unit {
     this.data.tooltip = `
       <div>Owner: ${unit.owner.type} ${unit.owner.id}</div>
       <div>Rent: $${unit.rent.toFixed(2)}</div>
-      <div>Tenants: ${unit.tenants.length}</div>
+      <div>Tenants: ${unit.tenants}</div>
       <div>Months vacant: ${unit.monthsVacant}</div>
     `;
     if (material !== this.material) {

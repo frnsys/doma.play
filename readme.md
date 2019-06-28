@@ -1,9 +1,26 @@
 # doma.play
 
+## Setup
+
+The main simulation (in `/sim`, included as a submodule) is implemented in Rust; you'll need to compile it first:
+
+```
+cd sim
+cargo build --release
+```
+
+For the front end, install the NPM and Python packages:
+
+```
+npm install -d
+pip install -r requirements.txt
+```
+
 ## Usage
 
-- `npm start` to start the frontend and API server, hen go to `localhost:5000` for the city view.
-- `python main.py` to run the simulation
+- Run `redis-server`.
+- `npm start` to start the frontend and API server, then go to `localhost:8000` for the city view.
+- Run the simulation with `./sim/target/release/doma_sim`. The API server will interface with this via Redis.
 
 ## Designer
 
@@ -18,31 +35,6 @@ Basic usage:
     - You can paste in map data here to "load" an existing map
 
 ![](static/designer.gif)
-
-## Architecture
-
-- Simulation process (Python)
-    - Runs simulation
-    - Reads commands from Redis
-    - Outputs simulation state to Redis
-- API server (Python)
-    - Reads simulation state from Redis
-    - Writes commands to Redis
-    - Provides API for querying simulation state and executing actions in the simulation
-    - Continues running in absence of players (i.e. persistent)
-- Visualization client (JS, desktop)
-    - Visualizes the simulation at the macro level (i.e. the cityscape)
-- Player client (JS, mobile)
-    - Visualizes the state of a single player-tenant
-    - Provides interactivity for controlling the player-tenant
-
-# Tuning the model
-
-You can run the simulation with:
-
-    DEBUG=1 python main.py
-
-Which will create a file called `history.json` upon quitting (`CTRL+C`) the simulation. You can then run `plot.py` to see plots for each of the collected stats.
 
 ---
 

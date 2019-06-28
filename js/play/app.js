@@ -81,7 +81,7 @@ const actions = {
           clearInterval(update);
 
           api.get('/state/game', ({state}) => {
-            if (state == 'fast_forward') {
+            if (state == 'fastforward') {
               statusEl.innerHTML = 'Fast-forwarding through time...';
               fastForward();
 
@@ -155,7 +155,10 @@ const actions = {
     });
   },
   'commute': () => {
-    let commuteDistance = util.distance(player.tenant.unit.pos, player.tenant.work);
+    let commuteDistance = 1;
+    if (player.tenant.unit) {
+      commuteDistance = util.distance(player.tenant.unit.pos, player.tenant.work);
+    }
     let transitFailure = false;
     [...Array(Math.floor(commuteDistance))].forEach(() => {
       if (Math.random() > config.transitReliability) {
@@ -391,8 +394,6 @@ function fastForward() {
         if (state == 'finished') {
           clearInterval(interval);
           api.get(`/play/tenant/${id}`, (data) => {
-            console.log(startData);
-            console.log(data);
             let years = Math.floor((latestStep - player.time) / 12);
             if (!data.tenant.unit) {
               statusEl.innerHTML = `${years} years later, the city\'s housing landscape has changed. You are one who has suffered -- the market has left you without a home.`;

@@ -9,7 +9,7 @@
     state: present
 - name: Copy app files
   synchronize:
-    src: ~/work/doma/doma/
+    src: ~/work/doma/doma.play/
     dest: /srv/app/
     delete: yes
 - name: Install dependencies (app)

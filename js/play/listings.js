@@ -45,11 +45,11 @@ function createMap(state, tenant, detailsEl, cb, onSelect) {
         if (p.type == 'Residential' && p.neighb !== null) {
           color = state.neighborhoods[parseInt(p.neighb)].color;
           vacancies = state.buildings[`${r}_${c}`].units
-            .filter((uId) => state.units[uId].occupancy > state.units[uId].tenants.length);
+            .filter((uId) => state.units[uId].occupancy > state.units[uId].tenants);
           let vacantUnits = vacancies.map((id) => state.units[id]);
           allVacantUnits = allVacantUnits.concat(vacantUnits);
           let affordable = vacantUnits.filter((u) => {
-            let rentPerTenant = Math.round(u.rent/(u.tenants.length + 1));
+            let rentPerTenant = Math.round(u.rent/(u.tenants + 1));
             return rentPerTenant <= tenant.income/12;
           });
           color = parseInt(color.substr(1), 16);
@@ -109,14 +109,14 @@ function createMap(state, tenant, detailsEl, cb, onSelect) {
               if (vacancies) {
                 vacancies.map((id) => {
                     let u = state.units[id];
-                    let rentPerTenant = Math.round(u.rent/(u.tenants.length + 1));
+                    let rentPerTenant = Math.round(u.rent/(u.tenants + 1));
                     let affordable = rentPerTenant <= tenant.income/12;
                     let el = document.createElement('li');
                     if (!affordable) el.style.opacity = 0.5;
                     el.className = 'listing';
                     el.innerHTML = `
                       ${u.doma ? '<b>📌 DOMA-owned apartment</b><br />': ''}
-                      ${u.occupancy} bedroom (${u.occupancy - u.tenants.length} available)<br />
+                      ${u.occupancy} bedroom (${u.occupancy - u.tenants} available)<br />
                       Rent: $${numberWithCommas(rentPerTenant)}/month<br />
                       Total Rent: $${numberWithCommas(Math.round(u.rent))}/month<br />
                       On the market for ${u.monthsVacant} months<br />`;
@@ -183,7 +183,7 @@ function displayListings(el, tenant, onSelect, noVacancies) {
       if (vacantUnits.length === 0) {
         noVacancies('No vacancies');
       } else {
-        let affordableUnits = vacantUnits.filter((u) => Math.round(u.rent/(u.tenants.length + 1)) <= (tenant.income/12))
+        let affordableUnits = vacantUnits.filter((u) => Math.round(u.rent/(u.tenants + 1)) <= (tenant.income/12))
         if (affordableUnits.length === 0) {
           noVacancies('No affordable vacancies');
         } else {
