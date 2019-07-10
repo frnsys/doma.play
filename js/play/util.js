@@ -14,4 +14,16 @@ function randomChoice(choices) {
   return choices[Math.floor(Math.random() * choices.length)];
 }
 
-export default { distance, dateFromTime, randomChoice };
+function randomWeightedChoice(choices, weights) {
+  let total = weights.reduce((acc, w) => acc + w, 0);
+  let roll = Math.random() * total;
+  let sum = 0;
+  for (let i=0; i<weights.length; i++) {
+    sum += weights[i];
+    if (roll <= sum) {
+      return choices[i];
+    }
+  }
+}
+
+export default { distance, dateFromTime, randomChoice, randomWeightedChoice };
