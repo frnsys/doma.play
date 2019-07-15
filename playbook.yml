@@ -1,3 +1,5 @@
+- name: build simulation binary
+  local_action: shell chdir=~/work/doma/doma.play/sim cargo build --release
 - name: install dependencies (system)
   apt:
     pkg:
@@ -16,5 +18,5 @@
   pip: requirements=/srv/app/requirements.txt executable=pip3
 - name: overwrite start.sh
   copy:
-    content: "#!/bin/bash\ncd /srv/app\nredis-server &\npython3 main.py &\npython3 app.py &\nwait"
+    content: "#!/bin/bash\ncd /srv/app\nredis-server &\ncd sim\n./target/release/doma_sim &\ncd ..\npython3 app.py &\nwait"
     dest: /usr/share/start.sh
