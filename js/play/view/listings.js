@@ -1,9 +1,9 @@
-import api from '../api';
+import api from '../../api';
 import * as THREE from 'three';
-import Scene from '../city/3d/scene';
-import Grid from '../city/3d/grid';
-import InteractionLayer from '../city/3d/interact';
-import {shadeColor} from '../city/3d/color';
+import Scene from '../../city/3d/scene';
+import Grid from '../../city/3d/grid';
+import InteractionLayer from '../../city/3d/interact';
+import {shadeColor} from '../../city/3d/color';
 
 function numberWithCommas(x) {
   return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
@@ -42,32 +42,35 @@ function createMap(state, tenant, detailsEl, cb, onSelect) {
         let p = parcels[r][c];
         let color = parcelColors[p.type];
         let text, vacancies;
+        let neighb = state.neighborhoods[parseInt(p.neighb)];
         if (p.type == 'Residential' && p.neighb !== null) {
-          color = state.neighborhoods[parseInt(p.neighb)].color;
-          vacancies = state.buildings[`${r}_${c}`].units
-            .filter((uId) => state.units[uId].occupancy > state.units[uId].tenants);
-          let vacantUnits = vacancies.map((id) => state.units[id]);
-          allVacantUnits = allVacantUnits.concat(vacantUnits);
-          let affordable = vacantUnits.filter((u) => {
-            let rentPerTenant = Math.round(u.rent/(u.tenants + 1));
-            return rentPerTenant <= tenant.income/12;
-          });
-          color = parseInt(color.substr(1), 16);
-          if (vacancies.length > 0) {
-            let anyDOMA = vacantUnits.some((u) => u.doma);
-            let geometry = new THREE.TextGeometry(`${vacancies.length.toString()}${anyDOMA ? '*': ''}`, {
-              font: font,
-              size: 10,
-              height: 5,
-              curveSegments: 6,
-              bevelEnabled: false,
+          if (neighb) {
+            color = neighb.color;
+            vacancies = state.buildings[`${r}_${c}`].units
+              .filter((uId) => state.units[uId].occupancy > state.units[uId].tenants);
+            let vacantUnits = vacancies.map((id) => state.units[id]);
+            allVacantUnits = allVacantUnits.concat(vacantUnits);
+            let affordable = vacantUnits.filter((u) => {
+              let rentPerTenant = Math.round(u.rent/(u.tenants + 1));
+              return rentPerTenant <= tenant.income/12;
             });
-            text = new THREE.Mesh(geometry, affordable.length > 0 ? textMat : mutedTextMat);
+            color = parseInt(color.substr(1), 16);
+            if (vacancies.length > 0) {
+              let anyDOMA = vacantUnits.some((u) => u.doma);
+              let geometry = new THREE.TextGeometry(`${vacancies.length.toString()}${anyDOMA ? '*': ''}`, {
+                font: font,
+                size: 10,
+                height: 5,
+                curveSegments: 6,
+                bevelEnabled: false,
+              });
+              text = new THREE.Mesh(geometry, affordable.length > 0 ? textMat : mutedTextMat);
 
-            // Center text
-            let bbox = new THREE.Box3().setFromObject(text);
-            bbox.center(text.position);
-            text.position.multiplyScalar(-1);
+              // Center text
+              let bbox = new THREE.Box3().setFromObject(text);
+              bbox.center(text.position);
+              text.position.multiplyScalar(-1);
+            }
           }
         }
         let cell = grid.setCellAt(c, r, color);
@@ -138,7 +141,7 @@ function createMap(state, tenant, detailsEl, cb, onSelect) {
                 });
               }
             },
-            tooltip: p.type != 'Residential' ? p.type : state.neighborhoods[parseInt(p.neighb)].name
+            tooltip: p.type != 'Residential' || !neighb ? p.type : neighb.name
           },
           focus: (ev) => {
             cell.focus();
@@ -184,7 +187,7 @@ function displayListings(el, tenant, onSelect, noVacancies) {
         noVacancies('No vacancies');
       } else {
         let affordableUnits = vacantUnits.filter((u) => Math.round(u.rent/(u.tenants + 1)) <= (tenant.income/12))
-        if (affordableUnits.length === 0) {
+        if (false && affordableUnits.length === 0) { // TODO TEMPORARY FALSE
           noVacancies('No affordable vacancies');
         } else {
           // Setup interactable objects
@@ -199,5 +202,3 @@ function displayListings(el, tenant, onSelect, noVacancies) {
 }
 
 export default displayListings;
-
-

@@ -119,7 +119,7 @@ class City {
       cell.mesh.add(light);
     });
 
-    this.bubble();
+    // this.bubble();
   }
 
   bubble() {

@@ -21,6 +21,10 @@ def active_players():
 def remove_player(id):
     redis.lrem('active_players', 0, id)
     send_command('ReleaseTenant', id)
+    active_tenants = json.loads(redis.get('active_tenants') or '{}')
+    del active_tenants[id]
+    redis.set('active_tenants', json.dumps(active_tenants))
+
 
 def prune_players():
     now = round(datetime.utcnow().timestamp())
@@ -54,22 +58,21 @@ def player_join():
     tenants = [json.loads(r.decode('utf8')) for r
                in redis.lrange('tenants', 0, -1)]
 
-    tenants = random.sample(tenants, 5)
-    return jsonify(success=True, tenants=tenants)
+    # Get tenants not claimed by players
+    active_tenants = json.loads(redis.get('active_tenants') or '{}')
+    available_tenants = [t for t in tenants if t['id'] not in active_tenants.values()]
 
-
-@bp.route('/select/<id>', methods=['POST'])
-def player_select(id):
-    """Player select tenant"""
-    tenant_id = request.get_json()['id']
+    # Choose random tenant
+    tenant = random.choice(available_tenants)
+    tenant_id = tenant['id']
+    active_tenants[id] = tenant_id
+    redis.set('active_tenants', json.dumps(active_tenants))
     send_command('SelectTenant', [id, tenant_id])
 
     # Get current state
     state = json.loads(redis.get('state'))
-
-    # Get turn timer
     timer = redis.get('turn_timer').decode('utf8')
-    return jsonify(success=True, time=state['time'], timer=timer)
+    return jsonify(success=True, time=state['time'], timer=timer, tenant=tenant)
 
 
 @bp.route('/leave', methods=['POST'])
@@ -126,6 +129,7 @@ def player_tenant(id):
     # Get turn timer
     timer = redis.get('turn_timer').decode('utf8')
     return jsonify(success=True, tenant=json.loads(res.decode('utf8')), time=state['time'], timer=timer)
+
 
 @bp.route('/players')
 def players():

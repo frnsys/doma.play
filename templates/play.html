@@ -40,11 +40,14 @@
     }
     #scene--body {
         padding: 1em;
+        display: flex;
+        flex-direction: column;
     }
     #scene h3 {
         font-weight: normal;
     }
     #scene--desc {
+        flex: 1;
         font-size: 0.8em;
         margin: 1em 0 2em 0;
     }
@@ -56,6 +59,8 @@
     }
 </style>
 <main>
+    <div id="status"></div>
+
     <div id="act">
         <h2 id="act--number"></h2>
         <h1 id="act--title"></h1>
