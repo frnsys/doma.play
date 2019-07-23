@@ -6,6 +6,8 @@ import Scene from './3d/scene';
 import {shadeColor} from './3d/color';
 import InteractionLayer from './3d/interact';
 
+import * as THREE from 'three';
+
 const scene = new Scene({});
 const main = document.getElementById('main');
 const players = document.getElementById('n_players');
@@ -15,10 +17,85 @@ main.appendChild(scene.renderer.domElement);
 // allows autoplay
 // document.getElementById('audio').play();
 
+const playerPositions = {};
+const loader = new THREE.FontLoader();
+const textMat = new THREE.MeshLambertMaterial({
+  color: 0x222222
+});
+const arrowGeo = new THREE.ConeBufferGeometry(4, 8, 4);
+const arrowMat = new THREE.MeshBasicMaterial({
+  color: 0xf1f442
+});
+
+function labelCell(cell, label, font) {
+  let labelGroup = new THREE.Group();
+  let buildingHeight = 0;
+  if (cell.building) {
+    let box = new THREE.Box3().setFromObject(cell.building.group);
+    buildingHeight = box.getSize().y;
+  }
+
+  let arrowMesh = new THREE.Mesh(arrowGeo, arrowMat);
+  arrowMesh.rotation.x = -Math.PI/2;
+  labelGroup.add(arrowMesh);
+
+  let textGeo = new THREE.TextGeometry(label, {
+    font: font,
+    size: 10,
+    height: 2,
+    curveSegments: 6,
+    bevelEnabled: false,
+  });
+  let textMesh = new THREE.Mesh(textGeo, textMat);
+
+  // Center text
+  let bbox = new THREE.Box3().setFromObject(textMesh);
+  bbox.center(textMesh.position);
+  textMesh.rotation.x = Math.PI/2;
+  textMesh.position.multiplyScalar(-1);
+  textMesh.position.z = 8;
+  textMesh.position.y = 0;
+  labelGroup.add(textMesh);
+
+  cell.mesh.add(labelGroup);
+  labelGroup.position.z = buildingHeight + 15;
+
+  return labelGroup;
+}
+
+
 let lastState;
 function update() {
   api.get('/play/players', (data) => {
-    players.innerHTML = data.players.length;
+    players.innerHTML = Object.keys(data.players).length;
+    console.log(data.players);
+    loader.load('/static/helvetiker_bold.typeface.json', (font) => {
+      Object.keys(data.players).forEach((id) => {
+        let tenant = data.players[id];
+        if (!tenant.unit) {
+          if (id in playerPositions) {
+            playerPositions[id].parent.remove(playerPositions[id]);
+            delete playerPositions[id];
+          }
+        } else {
+          let cell = city.grid.cellAt(tenant.unit.pos[1], tenant.unit.pos[0]);
+          if (id in playerPositions) {
+            if (playerPositions[id].parent !== cell.mesh) {
+              playerPositions[id].parent.remove(playerPositions[id]);
+              playerPositions[id] = labelCell(cell, `Player ${id.slice(0, 4)}`, font);
+            }
+          } else {
+            playerPositions[id] = labelCell(cell, `Player ${id.slice(0, 4)}`, font);
+          }
+        }
+      });
+      Object.keys(playerPositions).forEach((id) => {
+        if (!(id in data.players)) {
+          playerPositions[id].parent.remove(playerPositions[id]);
+          delete playerPositions[id];
+        }
+      });
+    });
   });
 
   api.get('/state/key', (data) => {

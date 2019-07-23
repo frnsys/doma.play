@@ -104,6 +104,10 @@ class Scene {
     this.scene.add(mesh);
   }
 
+  remove(mesh) {
+    this.scene.remove(mesh);
+  }
+
   render() {
     this.renderer.render(this.scene, this.camera);
   }

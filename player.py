@@ -50,6 +50,7 @@ def play():
 @bp.route('/join', methods=['POST'])
 def player_join():
     """Player joined"""
+    print('PLAYER JOINED')
     id = request.get_json()['id']
     redis.lpush('active_players', id)
     redis.set('player:{}:ping'.format(id), round(datetime.utcnow().timestamp()))
@@ -60,7 +61,7 @@ def player_join():
 
     # Get tenants not claimed by players
     active_tenants = json.loads(redis.get('active_tenants') or '{}')
-    available_tenants = [t for t in tenants if t['id'] not in active_tenants.values()]
+    available_tenants = [t for t in tenants if t['id'] not in active_tenants.values() and t['unit'] is not None]
 
     # Choose random tenant
     tenant = random.choice(available_tenants)
@@ -133,4 +134,13 @@ def player_tenant(id):
 
 @bp.route('/players')
 def players():
-    return jsonify(players=active_players())
+    player_ids = active_players()
+    players = {}
+    for id in player_ids:
+        res = redis.get('player:{}:tenant'.format(id))
+        if res is not None:
+            res = json.loads(res.decode('utf8'))
+        else:
+            res = {}
+        players[id] = res
+    return jsonify(players=players)

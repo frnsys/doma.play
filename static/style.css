@@ -69,7 +69,8 @@ ul, li {
   padding: 0 0.5em;
 }
 #sparks .chart-group.focused-chart {
-  background: #FF4040;
+  /* background: #FF4040; */
+  background: #3f71ff;
 }
 #sparks .chart-title {
   margin-right: 2px;
@@ -81,6 +82,7 @@ ul, li {
   right: 0;
   bottom: 0;
   text-align: center;
+  z-index: -1;
 }
 #city-status {
   color: #fff;

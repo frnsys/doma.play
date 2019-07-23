@@ -42,7 +42,7 @@ class Building {
     let nUnits = units.length;
 
     // Note: this assumes towers have units in multiples of 4
-    let building = nUnits <= 3 ? makeHouse(nUnits) : makeTower(nUnits/4, Math.ceil(nCommercial/4));
+    let building = nUnits <= 3 ? makeHouse(nUnits) : makeTower(nUnits/4, Math.ceil(nCommercial/8));
     this.group = building.group;
 
     this.units = {};
