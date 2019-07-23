@@ -1,35 +1,81 @@
 import Chart from 'chart.js';
 import config from './config';
 
-const hud = document.getElementById('charts');
+const stage = document.getElementById('chart');
+const bar = document.getElementById('sparks');
 const time = document.getElementById('time');
+const chartCycleSec = 10;
 
 Chart.defaults.scale.ticks.fontSize = 9;
 Chart.defaults.scale.ticks.fontFamily = 'monospace';
 const statHistoryLength = 50;
 const chartStats = [
   'mean_adjusted_rent_per_area',
-  'percent_homeless',
   'mean_value_per_area',
   'mean_price_to_rent_ratio',
+  'percent_homeless',
   'doma_property_fund',
-  'doma_units'
+];
+const shortNames = [
+  'rent',
+  'value',
+  'ptr',
+  'hl',
+  'fund',
 ];
 const charts = {};
 
 function createCharts(state) {
-  chartStats.forEach((k) => {
-    let {chart, chartEl} = createChart(k, state.stats[k]);
+  let focusIdx = 0;
+  let chartEls = [];
+
+  chartStats.forEach((k, i) => {
+    let spark = createChart(k, state.stats[k], true);
     let parentEl = document.createElement('div');
     parentEl.className = 'chart';
     parentEl.dataset.key = k;
+    parentEl.appendChild(spark.chartEl);
+
+    let groupEl = document.createElement('div');
+    let titleEl = document.createElement('span');
+    titleEl.className = 'chart-title';
+    groupEl.className = 'chart-group';
+    titleEl.innerText = shortNames[i];
+
+    groupEl.appendChild(titleEl);
+    groupEl.appendChild(parentEl);
+    bar.appendChild(groupEl);
+
+    let {chart, chartEl} = createChart(k, state.stats[k], false);
+    parentEl = document.createElement('div');
+    parentEl.className = 'chart';
     parentEl.appendChild(chartEl);
-    hud.appendChild(parentEl);
-    charts[k] = chart;
+    stage.appendChild(parentEl);
+    charts[k] = {
+      spark: spark.chart,
+      focus: chart
+    };
+    chartEls.push({
+      spark: groupEl,
+      focus: parentEl
+    });
   });
+
+  chartEls[focusIdx].focus.style.display = 'block';
+  chartEls[focusIdx].spark.classList.add('focused-chart');
+  setInterval(() => {
+    chartEls[focusIdx].focus.style.display = 'none';
+    chartEls[focusIdx].spark.classList.remove('focused-chart');
+    focusIdx++;
+    if (focusIdx > chartEls.length-1) {
+      focusIdx = 0;
+    }
+    chartEls[focusIdx].focus.style.display = 'block';
+    chartEls[focusIdx].spark.classList.add('focused-chart');
+  }, chartCycleSec * 1000);
 }
 
-function createChart(name, stats) {
+function createChart(name, stats, spark) {
   let chartEl = document.createElement('canvas');
   let chart = new Chart(chartEl, {
     type: 'line',
@@ -50,6 +96,7 @@ function createChart(name, stats) {
         duration: 0
       },
       legend: {
+        display: !spark,
         labels: {
           boxWidth: 2,
           fontSize: 13,
@@ -60,7 +107,8 @@ function createChart(name, stats) {
         yAxes: [{
           ticks: {
             min: 0
-          }
+          },
+          display: !spark
         }],
         xAxes: [{
           display: false
@@ -73,12 +121,15 @@ function createChart(name, stats) {
 
 function updateCharts(state) {
   Object.keys(charts).forEach((k) => {
-    let chart = charts[k];
-    chart.data.datasets.forEach((dataset) => {
-      dataset.data.push(state.stats[dataset.label]);
-      dataset.data = dataset.data.splice(Math.max(0, dataset.data.length - statHistoryLength))
+    let chs = charts[k];
+    ['spark', 'focus'].forEach((t) => {
+      let chart = chs[t];
+      chart.data.datasets.forEach((dataset) => {
+        dataset.data.push(state.stats[dataset.label]);
+        dataset.data = dataset.data.splice(Math.max(0, dataset.data.length - statHistoryLength))
+      });
+      chart.update();
     });
-    chart.update();
   });
 }
 

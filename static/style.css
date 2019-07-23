@@ -22,40 +22,57 @@ ul, li {
   list-style-type: none;
 }
 
-#charts {
+#chart {
   position: fixed;
   padding: 2em;
-  top: 0;
-  left: 0;
   right: 0;
-  bottom: 0;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: center;
+  top: 0;
   pointer-events: none;
 }
-#charts .chart {
-  width: 30%;
-  display: inline-block;
-  background: rgba(242, 153, 153, 0.2);
-  padding: 1em;
+#chart .chart {
+  width: 340px;
+  height: 280px;
+  display: none;
 }
-#time {
-  position: fixed;
-  bottom: 0;
-  right: 0;
-  padding: 0.5em;
-  background: #4c4cf5;
-  color: #fff;
-}
-#players {
+#bar {
   position: fixed;
   bottom: 0;
   left: 0;
-  padding: 0.5em;
+  right: 0;
   background: #4c4cf5;
   color: #fff;
+  display: flex;
+  justify-content: space-between;
+}
+#time {
+  padding: 0.5em;
+  border-left: 1px solid #ffc2c2;
+}
+#players {
+  padding: 0.5em;
+  border-right: 1px solid #ffc2c2;
+}
+#sparks {
+  display: flex;
+  justify-content: space-between;
+  flex: 1;
+}
+#sparks .chart {
+  width: 100px;
+  height: 24px;
+  display: inline-block;
+  padding: 2px;
+  vertical-align: middle;
+}
+#sparks .chart-group {
+  flex: 1;
+  padding: 0 0.5em;
+}
+#sparks .chart-group.focused-chart {
+  background: #FF4040;
+}
+#sparks .chart-title {
+  margin-right: 2px;
 }
 #city-status-overlay {
   position: fixed;
