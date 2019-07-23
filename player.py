@@ -50,7 +50,6 @@ def play():
 @bp.route('/join', methods=['POST'])
 def player_join():
     """Player joined"""
-    print('PLAYER JOINED')
     id = request.get_json()['id']
     redis.lpush('active_players', id)
     redis.set('player:{}:ping'.format(id), round(datetime.utcnow().timestamp()))
@@ -87,6 +86,12 @@ def player_leave():
 @bp.route('/ping/<id>', methods=['POST'])
 def player_ping(id):
     """Player check-ins, for timeouts"""
+    player_ids = active_players()
+
+    # Stale player
+    if id not in player_ids:
+        return jsonify(success=False)
+
     redis.set('player:{}:ping'.format(id), round(datetime.utcnow().timestamp()))
     return jsonify(success=True)
 

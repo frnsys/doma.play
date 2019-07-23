@@ -62,9 +62,15 @@ class Engine {
       'title': scene.title
     });
 
+    this.setActions(scene.actions, location);
+    this.stage.loadModel(scene.model);
+    this.stage.render();
+  }
+
+  setActions(actions, location) {
     let actionsEl = document.getElementById('scene--actions');
     actionsEl.innerHTML = '';
-    scene.actions.forEach((a) => {
+    actions.forEach((a) => {
       let actionEl = document.createElement('div');
       actionEl.innerText = a.name;
       actionEl.className = 'scene--action';
@@ -93,13 +99,16 @@ class Engine {
       });
       actionsEl.appendChild(actionEl);
     });
-
-    this.stage.loadModel(scene.model);
-    this.stage.render();
   }
 
   endTurn(nextSceneId) {
     api.post(`/play/ready/${this.id}`);
+
+    this.setActions([]);
+    populateEl('scene', {
+      'desc': 'Waiting for other players...',
+      'title': 'Nighttime'
+    });
 
     // Wait for next turn
     let update = setInterval(() => {
@@ -140,14 +149,19 @@ class Engine {
   }
 
   ping() {
-    api.post(`/play/ping/${this.id}`);
+    api.post(`/play/ping/${this.id}`, {}, (data) => {
+      if (!data.success) {
+        alert('Your game session has expired. Starting a new one.');
+        window.location.reload();
+      }
+    });
   }
 
   start() {
     // Joining/leaving
     api.post('/play/join', {id: this.id}, (data) => {
       this.player.tenant = data.tenant;
-      this.stage = new Stage('scene');
+      this.stage = new Stage('scene--stage');
       this.loadAct(this.act);
     });
     window.addEventListener('unload', () => {
@@ -178,19 +192,38 @@ class Engine {
   }
 
   searchApartments(nextSceneId) {
-    let sceneEl = document.getElementById('scene');
-    let el = document.createElement('div');
-    el.style.background = '#000000';
-    sceneEl.appendChild(el);
-    displayListings(el, this.player.tenant, (unit) => {
+    let sceneEl = document.getElementById('scene--stage');
+    sceneEl.querySelector('canvas:first-child').style.display = 'none';
+
+    this.setActions([]);
+    populateEl('scene', {
+      'title': 'Listings',
+      'desc': 'Loading listings...'
+    });
+
+    let remove = () => {
+      let el = sceneEl.querySelector('canvas:last-child');
+      el.parentElement.removeChild(el);
+    }
+
+    let detailsEl = document.getElementById('scene--desc');
+    displayListings(sceneEl, detailsEl, this.player.tenant, (unit) => {
       api.post(`/play/move/${this.id}`, {id: unit.id}, (data) => {
-        sceneEl.removeChild(el);
-        document.querySelector('.tooltip').style.display = 'none';
+        sceneEl.querySelector('canvas:first-child').style.display = 'block';
+        remove();
         this.loadScene(nextSceneId(true));
       });
-    }, (msg) => {
-      sceneEl.removeChild(el);
-      this.loadScene(nextSceneId(false));
+    }, () => {
+      this.setActions([{
+        name: "Crash on a friend's couch",
+        outcomes: [{
+          id: 'couch',
+          cb: () => {
+            this.player.couch = true;
+            remove();
+          }
+        }]
+      }], Script.locations['home']);
     });
   }
 }

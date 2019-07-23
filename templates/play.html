@@ -18,12 +18,14 @@
         top: 0;
         left: 0;
         right: 0;
-        bottom: 0;
         display: flex;
         flex-direction: column;
+        min-height: 100vh;
     }
-    #scene--body {
-        flex: 1;
+    #scene--stage {
+        height: 200px;
+        width: 100%;
+        overflow: hidden;
     }
     #act {
         z-index: 1;
@@ -42,6 +44,7 @@
         line-height: 1.5;
     }
     #scene--body {
+        flex: 1;
         padding: 1em;
         display: flex;
         flex-direction: column;
@@ -60,6 +63,25 @@
         border-radius: 0.2em;
         margin-bottom: 0.5em;
     }
+
+    .listing {
+        text-align: left;
+        margin-bottom: 1.5em;
+    }
+    .listing--title {
+        font-weight: bold;
+        text-decoration: underline;
+    }
+    .listing-unaffordable {
+        opacity: 0.5;
+    }
+    .listing--select {
+        padding: 0.75em;
+        text-align: center;
+        background: #FF8B8B;
+        color: #fff;
+        margin-top: 0.5em;
+    }
 </style>
 <main>
     <div id="status"></div>
@@ -71,6 +93,7 @@
     </div>
 
     <div id="scene">
+        <div id="scene--stage"></div>
         <div id="scene--body">
             <h3 id="scene--title"></h3>
             <p id="scene--desc"></p>

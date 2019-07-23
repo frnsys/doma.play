@@ -34,6 +34,7 @@ function createMap(state, tenant, detailsEl, cb, onSelect) {
   let allVacantUnits = [];
   let {cols, rows, parcels} = state.map;
   const grid = new Grid(cols, rows, cellSize);
+  let defaultText = 'Use the map to navigate the city. Click on a tile to view listings there.';
 
   let loader = new THREE.FontLoader();
   loader.load('/static/helvetiker_bold.typeface.json', function (font) {
@@ -108,24 +109,24 @@ function createMap(state, tenant, detailsEl, cb, onSelect) {
         cell.mesh.obj = {
           data: {
             onClick: (ev) => {
-              detailsEl.innerHTML = '';
-              if (vacancies) {
+              detailsEl.innerHTML = defaultText;
+              if (vacancies && vacancies.length > 0) {
+                detailsEl.innerHTML = '';
                 vacancies.map((id) => {
                     let u = state.units[id];
                     let rentPerTenant = Math.round(u.rent/(u.tenants + 1));
                     let affordable = rentPerTenant <= tenant.income/12;
                     let el = document.createElement('li');
-                    if (!affordable) el.style.opacity = 0.5;
-                    el.className = 'listing';
+                    if (!affordable) el.classList.add('listing-unaffordable');
+                    el.classList.add('listing');
                     el.innerHTML = `
-                      ${u.doma ? '<b>📌 DOMA-owned apartment</b><br />': ''}
-                      ${u.occupancy} bedroom (${u.occupancy - u.tenants} available)<br />
-                      Rent: $${numberWithCommas(rentPerTenant)}/month<br />
-                      Total Rent: $${numberWithCommas(Math.round(u.rent))}/month<br />
-                      On the market for ${u.monthsVacant} months<br />`;
+                      <div class="listing--title">${u.occupancy} bedroom, looking for ${u.occupancy - u.tenants} tenants</div>
+                      ${u.doma ? '<div class="listing--doma">📌 DOMA-owned apartment</div>': ''}
+                      <div class="listing--rent">Rent: $${numberWithCommas(rentPerTenant)}/month per tenant</div>
+                      <div class="listing--elapsed">Listed ${u.monthsVacant} months ago</div>`;
 
                     let select = document.createElement('div');
-                    select.className = 'select-listing';
+                    select.className = 'listing--select';
                     if (affordable) {
                       select.innerText = 'Select';
                       select.addEventListener('click', () => {
@@ -140,8 +141,7 @@ function createMap(state, tenant, detailsEl, cb, onSelect) {
                   detailsEl.appendChild(el);
                 });
               }
-            },
-            tooltip: p.type != 'Residential' || !neighb ? p.type : neighb.name
+            }
           },
           focus: (ev) => {
             cell.focus();
@@ -152,29 +152,38 @@ function createMap(state, tenant, detailsEl, cb, onSelect) {
         }
       });
     });
-    cb(grid, allVacantUnits);
+
+
+    let affordableUnits = allVacantUnits.filter((u) => Math.round(u.rent/(u.tenants + 1)) <= (tenant.income/12))
+    let vacancies = true;
+    if (allVacantUnits.length === 0) {
+      vacancies = false;
+      defaultText = `${defaultText}<br /><br /><b>There are no vacancies right now.</b>`;
+    } else if (affordableUnits.length === 0) {
+      vacancies = false;
+      defaultText = `${defaultText}<br /><br /><b>There are no vacancies that you can afford right now.</b>`;
+    }
+
+    detailsEl.innerHTML = defaultText;
+    cb(grid, vacancies);
   });
 }
 
-function displayListings(el, tenant, onSelect, noVacancies) {
+function displayListings(el, listingDetailsEl, tenant, onSelect, noVacancies) {
   // Setup scene
   const scene = new Scene({
     width: el.clientWidth,
-    height: 400,
+    height: 200,
     brightness: 0.9
   });
-  scene.renderer.domElement.style.border = '1px solid #00000022';
   el.appendChild(scene.renderer.domElement);
   scene.camera.position.z = 10;
   scene.camera.position.y = 0;
   scene.camera.position.x = 0;
-  scene.camera.zoom = 0.002;
+  scene.camera.zoom = 0.005;
   scene.camera.lookAt(scene.scene.position);
   scene.camera.updateProjectionMatrix();
   scene.controls.enableRotate = false;
-
-  let listingDetailsEl = document.createElement('div');
-  el.appendChild(listingDetailsEl);
 
   function render() {
     scene.render();
@@ -182,21 +191,16 @@ function displayListings(el, tenant, onSelect, noVacancies) {
   }
 
   api.get('/state', (state) => {
-    createMap(state, tenant, listingDetailsEl, (grid, vacantUnits) => {
-      if (vacantUnits.length === 0) {
-        noVacancies('No vacancies');
-      } else {
-        let affordableUnits = vacantUnits.filter((u) => Math.round(u.rent/(u.tenants + 1)) <= (tenant.income/12))
-        if (false && affordableUnits.length === 0) { // TODO TEMPORARY FALSE
-          noVacancies('No affordable vacancies');
-        } else {
-          // Setup interactable objects
-          let selectables = grid.cells.filter(c => c !== null).map(c => c.mesh);
-          let ixn = new InteractionLayer(scene, selectables);
-          scene.add(grid.group);
-          render();
-        }
+    createMap(state, tenant, listingDetailsEl, (grid, vacancies) => {
+      if (!vacancies) {
+        noVacancies();
       }
+
+      // Setup interactable objects
+      let selectables = grid.cells.filter(c => c !== null).map(c => c.mesh);
+      let ixn = new InteractionLayer(scene, selectables);
+      scene.add(grid.group);
+      render();
     }, onSelect);
   });
 }
