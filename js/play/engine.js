@@ -88,6 +88,7 @@ class Engine {
           // - unspecified, defaulting to 1.
           let pWeights = a.outcomes.map((o) => typeof o.p === 'function' ? o.p() : (o.p || 1.));
           let choice = util.randomWeightedChoice(a.outcomes, pWeights);
+          if (choice.cb) choice.cb();
           if (choice.id === 'END_TURN') {
             this.endTurn(choice.nextSceneId);
           } else if (choice.id === 'SEARCH_APARTMENTS') {
@@ -124,6 +125,10 @@ class Engine {
                 api.get('/state/game', ({state}) => {
                   if (state == 'finished') {
                     clearInterval(interval);
+                    alert('fast forward done TODO');
+                  } else if (state == 'inprogress') {
+                    clearInterval(interval);
+                    this.loadScene(nextSceneId);
                   } else {
                     api.get('/state/progress', ({step, progress}) => {
                       populateEl('scene', {
@@ -136,9 +141,9 @@ class Engine {
                 });
               }, 500);
 
-            } else if (state == 'ready') {
+            } else if (state == 'inprogress') {
               api.get(`/play/tenant/${this.id}`, (data) => {
-                this.player.turnTimer = data.timer.split('-').map((t) => parseFloat(t));
+                // this.player.turnTimer = data.timer.split('-').map((t) => parseFloat(t));
                 this.loadScene(nextSceneId);
               });
             }
@@ -204,6 +209,7 @@ class Engine {
     let remove = () => {
       let el = sceneEl.querySelector('canvas:last-child');
       el.parentElement.removeChild(el);
+      sceneEl.querySelector('canvas:first-child').style.display = 'block';
     }
 
     let detailsEl = document.getElementById('scene--desc');

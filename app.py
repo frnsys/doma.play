@@ -82,7 +82,7 @@ if __name__ == '__main__':
 
     # Prune inactive players regularly
     scheduler = BackgroundScheduler()
-    scheduler.add_job(func=prune_players, trigger='interval', seconds=60)
+    scheduler.add_job(func=prune_players, trigger='interval', seconds=10)
     scheduler.start()
     atexit.register(lambda: scheduler.shutdown())
 

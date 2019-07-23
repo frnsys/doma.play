@@ -27,6 +27,7 @@ def remove_player(id):
 
 
 def prune_players():
+    print('Pruning players...')
     now = round(datetime.utcnow().timestamp())
     for id in active_players():
         last_ping = redis.get('player:{}:ping'.format(id))
