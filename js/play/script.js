@@ -121,7 +121,7 @@ const scenes = {
     title: "Couch crashing",
     model: "placeholder",
     location: "home",
-    description: (state) => `You looked, but there weren't any affordable vacancies. For now, you're crashing on a friend's couch in ${state.neighborhood}. You decide to explore the area bit.`,
+    description: (state) => `You looked, but there weren't any affordable vacancies. For now, you're crashing on a friend's couch in ${state.couch.neighborhood.name}. You decide to explore the area bit.`,
     actions: [{
       name: "Walk around the block",
       outcomes: [{

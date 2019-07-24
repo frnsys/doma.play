@@ -73,7 +73,7 @@ def player_join():
     # Get current state
     state = json.loads(redis.get('state'))
     timer = redis.get('turn_timer').decode('utf8')
-    return jsonify(success=True, time=state['time'], timer=timer, tenant=tenant)
+    return jsonify(success=True, time=state['time'], timer=timer, tenant=tenant, state=state)
 
 
 @bp.route('/leave', methods=['POST'])

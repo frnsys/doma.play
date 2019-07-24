@@ -165,6 +165,7 @@ class Engine {
   start() {
     // Joining/leaving
     api.post('/play/join', {id: this.id}, (data) => {
+      this.neighborhoods = data.state.neighborhoods;
       this.player.tenant = data.tenant;
       this.stage = new Stage('scene--stage');
       this.loadAct(this.act);
@@ -225,7 +226,9 @@ class Engine {
         outcomes: [{
           id: 'couch',
           cb: () => {
-            this.player.couch = true;
+            this.player.couch = {
+              neighborhood: util.randomChoice(Object.values(this.neighborhoods))
+            };
             remove();
           }
         }]
