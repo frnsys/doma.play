@@ -68,7 +68,6 @@ let lastState;
 function update() {
   api.get('/play/players', (data) => {
     players.innerHTML = Object.keys(data.players).length;
-    console.log(data.players);
     loader.load('/static/helvetiker_bold.typeface.json', (font) => {
       Object.keys(data.players).forEach((id) => {
         let tenant = data.players[id];
@@ -168,9 +167,9 @@ function render(time) {
     scene.hemiLight.intensity = scene.hemiLight.baseIntensity * p;
     scene.ambiLight.intensity = scene.ambiLight.baseIntensity * p;
 
-    if (p < 0.2) {
-      city.lights.forEach((l) => l.visible = true);
-    }
+    // if (p < 0.2) {
+    //   city.lights.forEach((l) => l.visible = true);
+    // }
   } else if (progress >= 0 && progress < endSunrise){
     let p = progress/endSunrise;
     document.body.style.background = `#${shadeColor(0xffc2c2, p-1).toString(16).substr(1)}`;
@@ -178,15 +177,15 @@ function render(time) {
     scene.hemiLight.intensity = scene.hemiLight.baseIntensity * p;
     scene.ambiLight.intensity = scene.ambiLight.baseIntensity * p;
     city.clouds.forEach((c) => c.material.emissiveIntensity = p);
-    if (p > 0.2) {
-      city.lights.forEach((l) => l.visible = false);
-    }
+    // if (p > 0.2) {
+    //   city.lights.forEach((l) => l.visible = false);
+    // }
   }
-  if (isNight) {
-    scene.sun.visible = false;
-  } else {
-    scene.sun.visible = true;
-  }
+  // if (isNight) {
+  //   scene.sun.visible = false;
+  // } else {
+  //   scene.sun.visible = true;
+  // }
   scene.sun.position.y = sunRadius*Math.sin(angle);
   scene.sun.position.x = sunRadius*Math.cos(angle);
   scene.render();
