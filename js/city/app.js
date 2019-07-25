@@ -199,9 +199,8 @@ const statusEl = document.getElementById('city-status');
 
 let loadWait = setInterval(() => {
   api.get('/state/game', ({state}) => {
-    if (state == 'ready' || state == 'fastforward') {
-
-      if (state == 'ready') {
+    if (state == 'ready' || state == 'fastforward' || state == 'inprogress') {
+      if (state == 'ready' || state == 'inprogress') {
         statusEl.style.display = 'none';
       } else {
         statusEl.innerHTML = 'Going to the future...';

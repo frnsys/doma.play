@@ -27,9 +27,11 @@ class City {
     this.bubbles = [];
 
     let {map, buildings, units, neighborhoods} = state;
-    this.grid = new Grid(map.cols, map.rows, config.cellSize);
-    this.width = map.cols * this.grid.cellWidth;
-    this.height = map.rows * this.grid.cellHeight;
+    let colShift = map.offset.col ? 1 : 0;
+    let rowShift = map.offset.row ? 1 : 0;
+    this.grid = new Grid(map.cols+colShift, map.rows+rowShift, config.cellSize);
+    this.width = (map.cols+colShift) * this.grid.cellWidth;
+    this.height = (map.rows+rowShift) * this.grid.cellHeight;
 
     Object.keys(map.parcels).forEach((row) => {
       Object.keys(map.parcels[row]).forEach((col) => {
@@ -41,7 +43,7 @@ class City {
             parcel.color = parseInt(neighb.color.substr(1), 16);
             parcel.tooltip = `
               <div>Type ${parcel.type}</div>
-              <div>Neighborhood ${parcel.neighb}</div>
+              <div>${neighb.name}</div>
               <div>Desirability: ${parcel.desirability.toFixed(2)}</div>
             `;
           }
@@ -52,7 +54,7 @@ class City {
           parcel.color = parcel.type == 'Park' ? parkColor : riverColor;
         }
 
-        let cell = this.grid.setCellAt(col, row, parcel.color, parcel);
+        let cell = this.grid.setCellAt(parseInt(row) + rowShift, parseInt(col) + colShift, parcel.color, parcel);
 
         if (parcel.type == 'Residential') {
           let b = buildings[`${row}_${col}`];
