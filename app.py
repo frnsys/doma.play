@@ -81,8 +81,11 @@ if __name__ == '__main__':
     from apscheduler.schedulers.background import BackgroundScheduler
 
     # Prune inactive players regularly
+    def prune_players_app():
+        with app.app_context():
+            prune_players()
     scheduler = BackgroundScheduler()
-    scheduler.add_job(func=prune_players, trigger='interval', seconds=10)
+    scheduler.add_job(func=prune_players_app, trigger='interval', seconds=10)
     scheduler.start()
     atexit.register(lambda: scheduler.shutdown())
 

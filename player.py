@@ -3,7 +3,7 @@ import redis
 import config
 import random
 from datetime import datetime
-from flask import Blueprint, render_template, request, jsonify
+from flask import Blueprint, render_template, request, jsonify, current_app
 
 bp = Blueprint('player', __name__, url_prefix='/play')
 redis = redis.Redis(**config.REDIS)
@@ -27,7 +27,7 @@ def remove_player(id):
 
 
 def prune_players():
-    print('Pruning players...')
+    current_app.logger.info('Pruning players...')
     now = round(datetime.utcnow().timestamp())
     for id in active_players():
         last_ping = redis.get('player:{}:ping'.format(id))
