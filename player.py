@@ -7,6 +7,27 @@ from flask import Blueprint, render_template, request, jsonify, current_app
 
 bp = Blueprint('player', __name__, url_prefix='/play')
 redis = redis.Redis(**config.REDIS)
+names = json.load(open('static/names.json'))
+
+
+def weighted_choice(choices):
+    """Random selects a key from a dictionary,
+    where each key's value is its probability weight."""
+    # Randomly select a value between 0 and
+    # the sum of all the weights.
+    rand = random.uniform(0, sum(choices.values()))
+
+    # Seek through the dict until a key is found
+    # resulting in the random value.
+    summ = 0.0
+    for key, value in choices.items():
+        summ += value
+        if rand < summ: return key
+
+    # If this returns False,
+    # it's likely because the knowledge is empty.
+    return False
+
 
 def send_command(cmd, data):
     redis.lpush('cmds', json.dumps({
@@ -17,6 +38,7 @@ def send_command(cmd, data):
 def active_players():
     return [r.decode('utf8') for r
             in redis.lrange('active_players', 0, -1)]
+
 
 def remove_player(id):
     redis.lrem('active_players', 0, id)
@@ -69,6 +91,7 @@ def player_join():
     active_tenants[id] = tenant_id
     redis.set('active_tenants', json.dumps(active_tenants))
     send_command('SelectTenant', [id, tenant_id])
+    tenant['name'] = weighted_choice(names)
 
     # Get current state
     state = json.loads(redis.get('state'))
