@@ -1,67 +1,9 @@
-import json
-import redis
-import config
-import random
 from datetime import datetime
-from flask import Blueprint, render_template, request, jsonify, current_app
+from manager import Manager
+from flask import Blueprint, render_template, request, jsonify
 
+mgr = Manager()
 bp = Blueprint('player', __name__, url_prefix='/play')
-redis = redis.Redis(**config.REDIS)
-names = json.load(open('static/names.json'))
-
-
-def weighted_choice(choices):
-    """Random selects a key from a dictionary,
-    where each key's value is its probability weight."""
-    # Randomly select a value between 0 and
-    # the sum of all the weights.
-    rand = random.uniform(0, sum(choices.values()))
-
-    # Seek through the dict until a key is found
-    # resulting in the random value.
-    summ = 0.0
-    for key, value in choices.items():
-        summ += value
-        if rand < summ: return key
-
-    # If this returns False,
-    # it's likely because the knowledge is empty.
-    return False
-
-
-def send_command(cmd, data):
-    redis.lpush('cmds', json.dumps({
-        cmd: data
-    }))
-
-
-def active_players():
-    return [r.decode('utf8') for r
-            in redis.lrange('active_players', 0, -1)]
-
-
-def remove_player(id):
-    redis.lrem('active_players', 0, id)
-    send_command('ReleaseTenant', id)
-    active_tenants = json.loads(redis.get('active_tenants') or '{}')
-    del active_tenants[id]
-    redis.set('active_tenants', json.dumps(active_tenants))
-
-
-def prune_players():
-    current_app.logger.info('Pruning players...')
-    now = round(datetime.utcnow().timestamp())
-    for id in active_players():
-        last_ping = redis.get('player:{}:ping'.format(id))
-
-        if last_ping is None:
-            remove_player(id)
-            continue
-
-        last_ping = int(last_ping)
-        if now - last_ping > config.PLAYER_TIMEOUT:
-            remove_player(id)
-            continue
 
 
 @bp.route('/')
@@ -69,61 +11,44 @@ def play():
     """Player view"""
     return render_template('play.html')
 
+@bp.route('/ready')
+def game_ready():
+    return jsonify(success=mgr.game_ready())
 
 @bp.route('/join', methods=['POST'])
 def player_join():
     """Player joined"""
     id = request.get_json()['id']
-    redis.lpush('active_players', id)
-    redis.set('player:{}:ping'.format(id), round(datetime.utcnow().timestamp()))
-
-    # Get tenants
-    tenants = [json.loads(r.decode('utf8')) for r
-               in redis.lrange('tenants', 0, -1)]
-
-    # Get tenants not claimed by players
-    active_tenants = json.loads(redis.get('active_tenants') or '{}')
-    available_tenants = [t for t in tenants if t['id'] not in active_tenants.values() and t['unit'] is not None]
-
-    # Choose random tenant
-    tenant = random.choice(available_tenants)
-    tenant_id = tenant['id']
-    active_tenants[id] = tenant_id
-    redis.set('active_tenants', json.dumps(active_tenants))
-    send_command('SelectTenant', [id, tenant_id])
-    tenant['name'] = weighted_choice(names)
+    mgr.add_player(id)
+    tenant = mgr.get_unclaimed_tenant(id)
 
     # Get current state
-    state = json.loads(redis.get('state'))
-    timer = redis.get('turn_timer').decode('utf8')
-    return jsonify(success=True, time=state['time'], timer=timer, tenant=tenant, state=state)
+    state = mgr.sim_state()
+    scene = mgr.start_scene()
+    return jsonify(success=True, time=state['time'],
+                   tenant=tenant, state=state, scene=scene)
 
 
 @bp.route('/leave', methods=['POST'])
 def player_leave():
     """Player left"""
     id = request.get_json()['id']
-    remove_player(id)
+    mgr.remove_player(id)
+    if not mgr.active_players():
+        mgr.reset()
     return jsonify(success=True)
 
 
 @bp.route('/ping/<id>', methods=['POST'])
 def player_ping(id):
     """Player check-ins, for timeouts"""
-    player_ids = active_players()
+    player_ids = mgr.active_players()
 
     # Stale player
     if id not in player_ids:
         return jsonify(success=False)
 
-    redis.set('player:{}:ping'.format(id), round(datetime.utcnow().timestamp()))
-    return jsonify(success=True)
-
-
-@bp.route('/ready/<id>', methods=['POST'])
-def player_ready(id):
-    """Player ready for next turn"""
-    redis.lpush('ready_players', id)
+    mgr.set_player_val(id, 'ping', round(datetime.utcnow().timestamp()))
     return jsonify(success=True)
 
 
@@ -134,7 +59,7 @@ def player_move(id):
 
     # TODO what if two players choose the same unit?
     # May need to stagger turns
-    send_command('MoveTenant', [id, unit_id])
+    mgr.send_command('MoveTenant', [id, unit_id])
     return jsonify(success=True)
 
 
@@ -142,34 +67,35 @@ def player_move(id):
 def player_doma(id):
     """Player contribute to DOMA"""
     amount = request.get_json()['amount']
-    send_command('DOMAAdd', [id, amount])
+    mgr.send_command('DOMAAdd', [id, amount])
     return jsonify(success=True)
 
 
 @bp.route('/tenant/<id>')
 def player_tenant(id):
     """Player tenant data"""
-    res = redis.get('player:{}:tenant'.format(id))
-    if res is None:
+    tenant = mgr.get_tenant(id)
+    if tenant is None:
         return jsonify(success=False)
 
     # Get current state
-    state = json.loads(redis.get('state'))
-
-    # Get turn timer
-    timer = redis.get('turn_timer').decode('utf8')
-    return jsonify(success=True, tenant=json.loads(res.decode('utf8')), time=state['time'], timer=timer)
+    state = mgr.sim_state()
+    return jsonify(success=True, tenant=tenant,
+                   time=state['time'])
 
 
 @bp.route('/players')
 def players():
-    player_ids = active_players()
-    players = {}
-    for id in player_ids:
-        res = redis.get('player:{}:tenant'.format(id))
-        if res is not None:
-            res = json.loads(res.decode('utf8'))
-        else:
-            res = {}
-        players[id] = res
+    players = mgr.get_tenants()
     return jsonify(players=players)
+
+
+@bp.route('/next_scene', methods=['POST'])
+def next_scene():
+    data = request.get_json()
+    player_id = data['id']
+    scene_id = data['scene_id']
+    action_id = data['action_id']
+    next_scene = mgr.next_scene(player_id, scene_id, action_id)
+    ok = next_scene is not None
+    return jsonify(scene=next_scene, ok=ok)

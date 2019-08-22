@@ -1,0 +1,47 @@
+scenes:
+  START:
+    title: "Another day in the city"
+    description: "You roll out of bed, get ready for work, and make your way to the subway."
+    actions:
+      - name: "Commute to work"
+        next: "commute"
+      - name: "Commute to work alt"
+        next: "commute"
+    act:
+      title: "The Market"
+      description: "In which the player grapples with the city's housing market."
+      colors: ["#F06C8F", "#2972EC"]
+      startScene: "intro"
+      number: 1
+  commute:
+    title: "Commute test"
+    description: "test should wait for other players"
+    actions:
+      - name: "Check point test"
+        next: "testing"
+  testing:
+    title: "Post checkpoint"
+    description: "test test test"
+    checkpoint: "test_checkpoint"
+    actions:
+      - name: "Check point test"
+        next: "testing2"
+  testing2:
+    title: "second checkpoint test"
+    description: "test test test"
+    actions:
+      - name: "Check point test"
+        next: "testing3"
+  testing3:
+    title: "post second checkpoint test"
+    checkpoint: "test_checkpoint2"
+    description: "test test test"
+    actions:
+      - name: "start ending"
+        next: null
+
+checkpoints:
+  test_checkpoint:
+    n_steps: 10
+  test_checkpoint2:
+    n_steps: 40

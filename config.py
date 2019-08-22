@@ -1,3 +1,4 @@
+DEBUG = True
 PLAYER_TIMEOUT = 60
 REDIS = {
     'host': 'localhost',

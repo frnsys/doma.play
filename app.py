@@ -2,12 +2,13 @@ import json
 import uuid
 import redis
 import config
-from player import bp, prune_players
+from player import bp
 from flask import Flask, jsonify, request, redirect, url_for, render_template
 
 app = Flask(__name__)
 app.register_blueprint(bp)
 redis = redis.Redis(**config.REDIS)
+
 
 @app.route('/')
 def city():
@@ -51,7 +52,7 @@ def game_state():
 
 @app.route('/state/progress')
 def game_progress():
-    """Query current game state"""
+    """Query current game progress"""
     step = redis.get('game_step')
     progress = float(redis.get('game_progress').decode('utf8'))
     if step:
@@ -79,13 +80,14 @@ def state_key():
 if __name__ == '__main__':
     import atexit
     from apscheduler.schedulers.background import BackgroundScheduler
+    from manager import Manager
+
+    mgr = Manager()
 
     # Prune inactive players regularly
-    def prune_players_app():
-        with app.app_context():
-            prune_players()
     scheduler = BackgroundScheduler()
-    scheduler.add_job(func=prune_players_app, trigger='interval', seconds=10)
+    scheduler.add_job(func=mgr.prune_players, trigger='interval', seconds=10)
+    scheduler.add_job(func=mgr.check_checkpoint, trigger='interval', seconds=1)
     scheduler.start()
     atexit.register(lambda: scheduler.shutdown())
 

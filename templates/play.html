@@ -13,6 +13,7 @@
         height: 100vh;
     }
     #status {
+        z-index: 10;
         position: fixed;
         top: 0;
         left: 0;
@@ -33,6 +34,7 @@
         display: flex;
         flex-direction: column;
         min-height: 100vh;
+        background: #E6E6E6;
     }
     #scene--stage {
         height: 200px;
@@ -74,6 +76,11 @@
         padding: 0.5em 1em;
         border-radius: 0.2em;
         margin-bottom: 0.5em;
+        background: #B287B5;
+        border: 2px solid #A27CBD;
+    }
+    #scene--actions.disabled .scene--action {
+        opacity: 0.5;
     }
 
     .listing {

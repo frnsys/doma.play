@@ -79,3 +79,11 @@ Each step represents one month.
 - We assume landlords have access to limitless capital
 - There is a point-to-point transit system for commutes
 - We don't include developers
+
+---
+
+## Script notes
+
+- The script structure must be such that players hit the same checkpoints in the same order. This is because to proceed through a checkpoint, the server checks that all players have reached that checkpoint. If some players hit checkpoint A and others hit checkpoint B, the game can't progress further.
+- The scene id `START` is special; the scene with this id is sent as the first scene
+- If the `next` scene id is absent or `null`, then that is considered the end of the script, and the game will restart. The best way to setup an ending scene is to set a checkpoint, so that all players must arrive at the ending at the same time--that way, the game won't restart while other players are still finishing up.
