@@ -43,15 +43,6 @@ const View = (tmpl, handlers, defaultState) => {
   }
 }
 
-const viewize = (...templates) => {
-  return Object.entries({ ...templates })
-    .reduce((acc, [k, v]) => {
-      acc[k] = View(v);
-      return acc;
-    }, {});
-}
-
-// Template functions
 const Bar = (p) => `
   <div class="bar">
     <div class="bar--fill" style="width:${p*100}%"></div>
