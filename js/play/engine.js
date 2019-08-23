@@ -48,15 +48,34 @@ class Engine {
       if (data.ok) {
         if (data.scene.id == 'apartment_search') {
           this.searchApartments(data.scene);
+        } else if (data.scene.id.startsWith('act_summary')) {
+          this.summarizeAct(data.scene);
         } else {
           this.loadScene(data.scene);
         }
       } else {
         // TODO waiting message
         setTimeout(() => {
-          this.waitForNextScene(scene.id, action_id);
+          this.waitForNextScene(scene, action_id);
         }, 2000);
       }
+    });
+  }
+
+  summarizeAct(scene) {
+    api.get('/state', (state) => {
+      let summary = this.summarize(state);
+      summary.delta = this.deltaize(summary, this.summary);
+      this.summary = summary;
+      api.get('/play/players', (data) => {
+        let me = data.players[this.id];
+        delete data.players[this.id];
+        let players = Object.values(data.players);
+        console.log(data);
+        Views.ActSummary(sceneEl, summary, me, players, () => {
+          this.waitForNextScene(scene.id, 0);
+        });
+      });
     });
   }
 
@@ -67,6 +86,16 @@ class Engine {
         window.location.reload();
       }
     });
+  }
+
+  deltaize(summary, prevSummary) {
+    return {
+      avg: {
+        rent: Math.round(util.percentChange(summary.avg.rent, prevSummary.avg.rent)),
+        value: Math.round(util.percentChange(summary.avg.value, prevSummary.avg.value)),
+        income: Math.round(util.percentChange(summary.avg.income, prevSummary.avg.income))
+      }
+    }
   }
 
   summarize(state) {
@@ -95,9 +124,9 @@ class Engine {
       this.player.tenant = data.tenant;
       console.log(data.state);
       console.log(this.player);
-      let summary = this.summarize(data.state)
-      Views.CitySummary(sceneEl, summary, () => {
-        Views.PlayerSummary(sceneEl, summary, this.player.tenant, () => {
+      this.summary = this.summarize(data.state);
+      Views.CitySummary(sceneEl, this.summary, () => {
+        Views.PlayerIntro(sceneEl, this.player.tenant, this.summary, () => {
           this.loadScene(data.scene);
         });
       });
@@ -127,7 +156,7 @@ class Engine {
       showApartments(stageEl, state.map, parcels, (p) => {
         Views.ApartmentListings(listingsEl, p.units, (u) => {
           // TODO disable interactions?
-          api.post(`/play/move/${this.id}`, {id: unit.id}, (data) => {
+          api.post(`/play/move/${this.id}`, {id: u.id}, (data) => {
             this.waitForNextScene(scene, 0);
           });
         });

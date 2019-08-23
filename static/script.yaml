@@ -30,8 +30,8 @@ scenes:
     description: "ok"
     actions:
       - name: "testing"
-        next: "testing"
-  testing:
+        next: "act_summary_1"
+  act_summary_1:
     title: "Post checkpoint"
     description: "test test test"
     checkpoint: "test_checkpoint"
@@ -54,6 +54,6 @@ scenes:
 
 checkpoints:
   test_checkpoint:
-    n_steps: 10
+    n_steps: 25
   test_checkpoint2:
     n_steps: 40

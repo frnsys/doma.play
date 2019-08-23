@@ -52,6 +52,10 @@ const View = (tmpl, handlers, defaultState) => {
   }
 }
 
+function signed(number) {
+  return `${number < 0 ? '' : '+'}${number}`;
+}
+
 const Bar = (p) => `
   <div class="bar">
     <div class="bar--fill" style="width:${Math.min(1, p)*100}%"></div>
@@ -174,27 +178,31 @@ const CitySummary = View((state, summary, onClick) => {
   }
 });
 
-const PlayerSummary = View((state, summary, tenant, onClick) => {
+const PlayerSummary = (tenant, summary) => `
+  <ul>
+    <li>
+      ${tenant.unit && tenant.unit.neighborhood ?
+          `Lives in ${tenant.unit.neighborhood}` : 'Without home'}
+    </li>
+    <li>Works in ${tenant.work.neighborhood ? tenant.work.neighborhood : "None"}</li>
+  </ul>
+  ${AnnotatedBar(tenant.rent/tenant.income,
+    [`Rent/month`, `${Math.round(tenant.rent).toLocaleString()}`],
+    [`Income/month`, `${Math.round(tenant.income).toLocaleString()}`]
+  )}
+  ${AnnotatedBar(tenant.savings/summary.avg.value,
+    [`Savings`, `${Math.round(tenant.savings).toLocaleString()}`],
+    [`Avg home value`, `${Math.round(summary.avg.value).toLocaleString()}`]
+  )}
+`
+
+const PlayerIntro = View((state, tenant, summary, onClick) => {
   state.onClick = onClick;
   return `<div class="summary">
     <div class="scene--body">
       <p>You are</p>
       <h1>${tenant.name}</h1>
-      <ul>
-        <li>
-          ${tenant.unit.neighborhood ?
-              `Lives in ${tenant.unit.neighborhood}` : 'Without home'}
-        </li>
-        <li>Works in ${tenant.work.neighborhood ? tenant.work.neighborhood : "None"}</li>
-      </ul>
-      ${AnnotatedBar(tenant.rent/tenant.income,
-        [`Rent/month`, `${Math.round(tenant.rent).toLocaleString()}`],
-        [`Income/month`, `${Math.round(tenant.income).toLocaleString()}`]
-      )}
-      ${AnnotatedBar(tenant.savings/summary.avg.value,
-        [`Savings`, `${Math.round(tenant.savings).toLocaleString()}`],
-        [`Avg home value`, `${Math.round(summary.avg.value).toLocaleString()}`]
-      )}
+      ${PlayerSummary(tenant, summary)}
       <p>Together we will try to change the city of ${summary.city} for the better.</p>
       <div class="button">Next</div>
     </div>
@@ -236,7 +244,7 @@ const ApartmentListings = View((state, units, onSelect) => {
   state.onSelect = onSelect;
   if (units && units.length > 0) {
     return `<div>${units.map((u, i) => `
-      <div class="listing ${u.affordable ? 'listing-unaffordable' : ''}">
+      <div class="listing ${u.affordable ? '' : 'listing-unaffordable'}">
         <div class="listing--title">${u.occupancy} bedroom, looking for ${u.occupancy - u.tenants} tenants</div>
         ${u.doma ? '<div class="listing--doma">📌 DOMA-owned apartment</div>': ''}
         <div class="listing--rent">Rent: $${u.rentPerTenant.toLocaleString()}/month per tenant</div>
@@ -262,4 +270,50 @@ const ApartmentListings = View((state, units, onSelect) => {
   }
 });
 
-export default {BasicScene, Act, Splash, CitySummary, PlayerSummary, ApartmentSearch, ApartmentListings};
+const ActSummary = View((state, summary, me, players, onClick) => {
+  state.onClick = onClick;
+  return `<div class="summary act-summary">
+    <div class="scene--body">
+      <h1>${summary.city}</h1>
+      <ul>
+        <li>Average Rent = ${summary.avg.rent.toLocaleString()} (${signed(summary.delta.avg.rent)}%)</li>
+        <li>Average Home Value = ${summary.avg.value.toLocaleString()} (${signed(summary.delta.avg.value)}%)</li>
+        <li>Average Monthly Income = ${summary.avg.income.toLocaleString()} (${signed(summary.delta.avg.income)}%)</li>
+        <li>Population = ${summary.population.toLocaleString()}</li>
+      </ul>
+      ${AnnotatedBar(summary.p.commons,
+        [`  ${(summary.p.commons*100).toFixed(1)}%`, 'Common'],
+        [`🎩${(summary.p.landlords*100).toFixed(1)}%`, 'Landlords']
+      )}
+      ${AnnotatedBar(summary.p.affordable,
+        [`${(summary.p.affordable*100).toFixed(1)}%`, 'Affordable'],
+        [`${(summary.p.unaffordable*100).toFixed(1)}%`, 'Unaffordable']
+      )}
+
+      <div class="player-summary">
+        <h1>${me.name} (you)</h1>
+        ${PlayerSummary(me, summary)}
+      </div>
+
+      ${players.map((p) => {
+        return `
+          <div class="player-summary">
+            <h1>${p.name}</h1>
+            ${PlayerSummary(p, summary)}
+          </div>
+        `
+      }).join('')}
+      <div class="button">Next</div>
+    </div>
+  </div>`
+}, {
+  '.button': {
+    'click': ({state}) => {
+      if (state.onClick) state.onClick();
+    }
+  }
+});
+
+
+
+export default {BasicScene, Act, Splash, CitySummary, ActSummary, PlayerIntro, ApartmentSearch, ApartmentListings};

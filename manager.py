@@ -143,7 +143,12 @@ class Manager:
         if res is None:
             return None
         else:
-            return json.loads(res.decode('utf8'))
+            tenant = json.loads(res)
+            res = self.get_player_val(id, 'tenant_meta')
+            if res is not None:
+                for k, v in json.loads(res).items():
+                    tenant[k] = v
+            return tenant
 
     def get_tenants(self):
         player_ids = self.active_players()
@@ -177,6 +182,12 @@ class Manager:
 
         # This is totally arbitrary atm
         tenant['savings'] = random.random() * 0.25 * tenant['income'] * 12 * 5;
+
+        self.set_player_val(id, 'tenant_meta', json.dumps({
+            'savings': tenant['savings'],
+            'name': tenant['name']
+        }))
+
         return tenant
 
     def next_scene(self, player_id, scene_id, action_id):
