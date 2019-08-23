@@ -36,7 +36,7 @@
         min-height: 100vh;
         background: #E6E6E6;
     }
-    #scene--stage {
+    .scene--stage {
         height: 200px;
         width: 100%;
         overflow: hidden;
@@ -53,11 +53,11 @@
         font-weight: normal;
         text-transform: uppercase;
     }
-    #act--desc {
+    .act--desc {
         margin-top: 1em;
         line-height: 1.5;
     }
-    #scene--body {
+    .scene--body {
         flex: 1;
         padding: 1em;
         display: flex;
@@ -66,7 +66,7 @@
     #scene h3 {
         font-weight: normal;
     }
-    #scene--desc {
+    .scene--desc {
         flex: 1;
         font-size: 0.8em;
         margin: 1em 0 2em 0;
@@ -79,7 +79,7 @@
         background: #B287B5;
         border: 2px solid #A27CBD;
     }
-    #scene--actions.disabled .scene--action {
+    .scene--actions.disabled .scene--action {
         opacity: 0.5;
     }
 
@@ -104,21 +104,8 @@
 </style>
 <main>
     <div id="status"></div>
-
-    <div id="act">
-        <h2 id="act--number"></h2>
-        <h1 id="act--title"></h1>
-        <div id="act--desc"></div>
-    </div>
-
-    <div id="scene">
-        <div id="scene--stage"></div>
-        <div id="scene--body">
-            <h3 id="scene--title"></h3>
-            <p id="scene--desc"></p>
-            <div id="scene--actions"></div>
-        </div>
-    </div>
+    <div id="act"></div>
+    <div id="scene"></div>
 </main>
 <script src="{{ url_for('static', filename='js/play.js') }}"></script>
 {% endblock %}

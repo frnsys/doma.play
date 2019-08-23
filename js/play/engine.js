@@ -2,14 +2,8 @@ import api from '../api';
 import util from './util';
 import uuid from 'uuid/v4';
 import Stage from './view/stage';
+import Views from './components';
 import displayListings from './view/listings';
-
-function populateEl(name, data) {
-  Object.keys(data).forEach((k) => {
-    let el = document.getElementById(`${name}--${k}`);
-    el.innerText = data[k];
-  });
-}
 
 class Engine {
   constructor() {
@@ -22,11 +16,7 @@ class Engine {
     actEl.style.opacity = 1;
     actEl.style.display = 'flex';
     actEl.style.background = `linear-gradient(to bottom, ${act.colors[0]} 0%, ${act.colors[1]} 100%)`;
-    populateEl('act', {
-      'desc': act.description,
-      'title': `"${act.title}"`,
-      'number': `ACT ${act.number}`
-    });
+    Views.Act(actEl, act);
 
     // Fade out act interstitial
     setTimeout(() => {
@@ -45,46 +35,17 @@ class Engine {
       this.loadAct(scene.act);
     }
     let sceneEl = document.getElementById('scene');
-    let sceneBodyEl = document.getElementById('scene--body');
-
-    let desc = scene.description;
-    populateEl('scene', {
-      'desc': desc, // TODO dynamic descriptions/templating
-      'title': scene.title
-    });
-
-    this.setActions(scene);
+    Views.BasicScene(sceneEl, this.waitForNextScene.bind(this), scene);
 
     // TODO replace with static images?
     // this.stage.loadModel(scene.model);
     // this.stage.render();
   }
 
-  setActions(scene) {
-    let actionsEl = document.getElementById('scene--actions');
-    let disabled = false;
-    actionsEl.innerHTML = '';
-    actionsEl.classList.remove('disabled');
-    scene.actions.forEach((a, i) => {
-      let actionEl = document.createElement('div');
-      actionEl.innerText = a.name;
-      actionEl.className = 'scene--action';
-      actionEl.addEventListener('click', () => {
-        if (!disabled) {
-          // Prevent multiple clicking
-          disabled = true;
-          actionsEl.classList.add('disabled');
-          this.waitForNextScene(scene.id, i);
-        }
-      });
-      actionsEl.appendChild(actionEl);
-    });
-  }
-
-  waitForNextScene(scene_id, action_id) {
+  waitForNextScene(scene, action_id) {
     api.post(`/play/next_scene`, {
       id: this.id,
-      scene_id: scene_id,
+      scene_id: scene.id,
       action_id: action_id
     }, (data) => {
       console.log(data);
@@ -164,7 +125,7 @@ class Engine {
     api.post('/play/join', {id: this.id}, (data) => {
       this.neighborhoods = data.state.neighborhoods;
       this.player.tenant = data.tenant;
-      this.stage = new Stage('scene--stage');
+      // this.stage = new Stage('scene--stage');
       this.loadScene(data.scene);
     });
     window.addEventListener('unload', () => {
