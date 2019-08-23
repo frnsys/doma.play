@@ -1,9 +1,10 @@
 import api from '../api';
 import util from './util';
 import uuid from 'uuid/v4';
-import Stage from './view/stage';
 import Views from './components';
-import displayListings from './view/listings';
+import showApartments from './view/listings';
+
+const sceneEl = document.getElementById('scene');
 
 class Engine {
   constructor() {
@@ -34,12 +35,7 @@ class Engine {
     if (scene.act) {
       this.loadAct(scene.act);
     }
-    let sceneEl = document.getElementById('scene');
     Views.BasicScene(sceneEl, this.waitForNextScene.bind(this), scene);
-
-    // TODO replace with static images?
-    // this.stage.loadModel(scene.model);
-    // this.stage.render();
   }
 
   waitForNextScene(scene, action_id) {
@@ -50,66 +46,19 @@ class Engine {
     }, (data) => {
       console.log(data);
       if (data.ok) {
-        this.loadScene(data.scene);
+        if (data.scene.id == 'apartment_search') {
+          this.searchApartments(data.scene);
+        } else {
+          this.loadScene(data.scene);
+        }
       } else {
         // TODO waiting message
         setTimeout(() => {
-          this.waitForNextScene(scene_id, action_id);
+          this.waitForNextScene(scene.id, action_id);
         }, 2000);
       }
     });
   }
-
-  // endTurn(nextSceneId) {
-  //   api.post(`/play/ready/${this.id}`);
-
-  //   this.setActions([]);
-  //   populateEl('scene', {
-  //     'desc': 'Waiting for other players...',
-  //     'title': 'Nighttime'
-  //   });
-
-  //   // Wait for next turn
-  //   let update = setInterval(() => {
-  //     api.get('/state/key', (data) => {
-  //       if (data.key !== this.stateKey) {
-  //         this.stateKey = data.key;
-  //         clearInterval(update);
-
-  //         api.get('/state/game', ({state}) => {
-  //           if (state == 'fastforward') {
-  //             let latestStep;
-  //             let interval = setInterval(() => {
-  //               api.get('/state/game', ({state}) => {
-  //                 if (state == 'finished') {
-  //                   clearInterval(interval);
-  //                   alert('fast forward done TODO');
-  //                 } else if (state == 'inprogress') {
-  //                   clearInterval(interval);
-  //                   this.loadScene(nextSceneId);
-  //                 } else {
-  //                   api.get('/state/progress', ({step, progress}) => {
-  //                     populateEl('scene', {
-  //                       'desc': `${util.dateFromTime(step)}...`,
-  //                       'title': 'Time passes...'
-  //                     });
-  //                     latestStep = step;
-  //                   });
-  //                 }
-  //               });
-  //             }, 500);
-
-  //           } else if (state == 'inprogress') {
-  //             api.get(`/play/tenant/${this.id}`, (data) => {
-  //               // this.player.turnTimer = data.timer.split('-').map((t) => parseFloat(t));
-  //               this.loadScene(nextSceneId);
-  //             });
-  //           }
-  //         });
-  //       }
-  //     });
-  //   }, 200);
-  // }
 
   ping() {
     api.post(`/play/ping/${this.id}`, {}, (data) => {
@@ -120,13 +69,38 @@ class Engine {
     });
   }
 
+  summarize(state) {
+    let p_landlords = Object.values(state.stats.landlords).reduce((acc, ll) => acc + ll.p_units, 0);
+    return {
+      city: state.name,
+      p: {
+        landlords: p_landlords,
+        commons: 1 - p_landlords,
+        affordable: state.stats.percent_affordable,
+        unaffordable: 1 -state.stats.percent_affordable,
+      },
+      avg: {
+        rent: Math.round(state.stats.mean_rent_per_tenant),
+        value: Math.round(state.stats.mean_value),
+        income: Math.round(state.stats.mean_income)
+      },
+      population: state.stats.population
+    }
+  }
+
   start() {
     // Joining/leaving
     api.post('/play/join', {id: this.id}, (data) => {
       this.neighborhoods = data.state.neighborhoods;
       this.player.tenant = data.tenant;
-      // this.stage = new Stage('scene--stage');
-      this.loadScene(data.scene);
+      console.log(data.state);
+      console.log(this.player);
+      let summary = this.summarize(data.state)
+      Views.CitySummary(sceneEl, summary, () => {
+        Views.PlayerSummary(sceneEl, summary, this.player.tenant, () => {
+          this.loadScene(data.scene);
+        });
+      });
     });
     window.addEventListener('unload', () => {
       api.post('/play/leave', {id: this.id});
@@ -136,56 +110,63 @@ class Engine {
     setInterval(() => {
       this.ping();
     }, 5000)
-
-    // Turn timer
-    // setInterval(() => {
-    //   if (this.player.turnTimer) {
-    //     let time = Date.now() / 1000;
-    //     let [start, end] = this.player.turnTimer;
-    //     end -= start;
-    //     let width = Math.min(100, (time - start)/end * 100);
-    //     // timerEl.style.width = `${width}%`; // TODO
-    //   }
-    // }, 100);
   }
 
-  searchApartments(nextSceneId) {
-    let sceneEl = document.getElementById('scene--stage');
-    sceneEl.querySelector('canvas:first-child').style.display = 'none';
-
-    this.setActions([]);
-    populateEl('scene', {
-      'title': 'Listings',
-      'desc': 'Loading listings...'
-    });
-
-    let remove = () => {
-      let el = sceneEl.querySelector('canvas:last-child');
-      el.parentElement.removeChild(el);
-      sceneEl.querySelector('canvas:first-child').style.display = 'block';
-    }
-
-    let detailsEl = document.getElementById('scene--desc');
-    displayListings(sceneEl, detailsEl, this.player.tenant, (unit) => {
-      api.post(`/play/move/${this.id}`, {id: unit.id}, (data) => {
-        sceneEl.querySelector('canvas:first-child').style.display = 'block';
-        remove();
-        this.loadScene(nextSceneId(true));
+  searchApartments(scene) {
+    api.get('/state', (state) => {
+      let {parcels, vacancies, affordable} = this.parseParcels(state);
+      let el = Views.ApartmentSearch(sceneEl, vacancies, affordable, () => {
+        console.log('SKIPPING');
+        this.player.couch = {
+          neighborhood: util.randomChoice(Object.values(this.neighborhoods))
+        };
+        this.waitForNextScene(scene, 1);
       });
-    }, () => {
-      this.setActions([{
-        name: "Crash on a friend's couch",
-        outcomes: [{
-          id: 'couch',
-          cb: () => {
-            this.player.couch = {
-              neighborhood: util.randomChoice(Object.values(this.neighborhoods))
-            };
-            remove();
-          }
-        }]
-      }], Script.locations['home']);
+      let stageEl = el.querySelector('#stage');
+      let listingsEl = el.querySelector('#listings');
+      showApartments(stageEl, state.map, parcels, (p) => {
+        Views.ApartmentListings(listingsEl, p.units, (u) => {
+          // TODO disable interactions?
+          api.post(`/play/move/${this.id}`, {id: unit.id}, (data) => {
+            this.waitForNextScene(scene, 0);
+          });
+        });
+      });
     });
+  }
+
+  parseParcels(state) {
+    let allVacantUnits = [];
+    let tenant = this.player.tenant;
+    let parcels = state.map.parcels;
+    Object.keys(parcels).forEach((r) => {
+      Object.keys(parcels[r]).forEach((c) => {
+        let p = parcels[r][c];
+        if (p.type == 'Residential' && p.neighb !== null) {
+          p.hasUnits = true;
+          p.neighb = state.neighborhoods[parseInt(p.neighb)];
+          if (p.neighb) {
+            p.vacancies = state.buildings[`${r}_${c}`].units
+              .filter((uId) => state.units[uId].occupancy > state.units[uId].tenants);
+            let vacantUnits = p.vacancies.map((id) => state.units[id]);
+            allVacantUnits = allVacantUnits.concat(vacantUnits);
+            p.affordable = vacantUnits.filter((u) => {
+              u.rentPerTenant = Math.round(u.rent/(u.tenants + 1));
+              u.affordable = u.rentPerTenant <= tenant.income/12;
+              return u.affordable;
+            });
+            p.anyDOMA = vacantUnits.some((u) => u.doma);
+            p.units = vacantUnits;
+          }
+        }
+        p.tenantWork = tenant.work[0] == parseInt(r) && tenant.work[1] == parseInt(c);
+      });
+    });
+
+    let affordableUnits = allVacantUnits.filter((u) => Math.round(u.rent/(u.tenants + 1)) <= (tenant.income/12))
+    let vacancies = allVacantUnits.length > 0;
+    let affordable = affordableUnits.length > 0;
+    return {parcels, vacancies, affordable};
   }
 }
 

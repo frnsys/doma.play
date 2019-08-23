@@ -6,8 +6,10 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>doma.play</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  {% if request.endpoint == 'player.play' %}
+      <link rel="stylesheet" href="{{ url_for('static', filename='play.css') }}">
+  {% endif %}
 </head>
-
 <body>
     {% block content %}
     {% endblock %}

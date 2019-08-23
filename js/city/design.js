@@ -267,6 +267,7 @@ gui.add(control, 'source');
 
 
 const citygui = gui.addFolder('City');
+citygui.add(design.city, 'name');
 citygui.add(design.city, 'pricePerSqm').min(0).step(1);
 citygui.add(design.city, 'priceToRentRatio').min(1).step(1);
 citygui.add(design.city, 'population').min(0).step(100);

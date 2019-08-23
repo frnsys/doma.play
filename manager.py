@@ -174,6 +174,9 @@ class Manager:
         self.r.set('active_tenants', json.dumps(active_tenants))
         self.send_command('SelectTenant', [id, tenant_id])
         tenant['name'] = weighted_choice(names)
+
+        # This is totally arbitrary atm
+        tenant['savings'] = random.random() * 0.25 * tenant['income'] * 12 * 5;
         return tenant
 
     def next_scene(self, player_id, scene_id, action_id):

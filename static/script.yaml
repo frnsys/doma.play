@@ -15,9 +15,21 @@ scenes:
       number: 1
   commute:
     title: "Commute test"
-    description: "test should wait for other players"
+    description: "going to apartment"
     actions:
-      - name: "Check point test"
+      - name: "apartment test"
+        next: "apartment_search"
+  apartment_search:
+    actions:
+      - name: "found place"
+        next: "post_search"
+      - name: "no found place"
+        next: "post_search"
+  post_search:
+    title: "done seraching"
+    description: "ok"
+    actions:
+      - name: "testing"
         next: "testing"
   testing:
     title: "Post checkpoint"
