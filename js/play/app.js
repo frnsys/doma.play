@@ -6,13 +6,17 @@ const engine = new Engine();
 const statusEl = document.getElementById('status');
 const sceneEl = document.getElementById('scene');
 
+let _success;
 function checkReady() {
   api.get('/play/ready', ({success}) => {
-    if (success) {
-      clearInterval(interval);
-      Views.Splash(sceneEl, success, () => engine.start());
-    } else {
-      Views.Splash(sceneEl, success);
+    if (success !== _success) {
+      _success = success;
+      if (success) {
+        clearInterval(interval);
+        Views.Splash(sceneEl, success, () => engine.start());
+      } else {
+        Views.Splash(sceneEl, success);
+      }
     }
   });
 }

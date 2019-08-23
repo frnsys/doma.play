@@ -66,8 +66,9 @@ def player_move(id):
 @bp.route('/doma/<id>', methods=['POST'])
 def player_doma(id):
     """Player contribute to DOMA"""
-    amount = request.get_json()['amount']
-    mgr.send_command('DOMAAdd', [id, amount])
+    data = request.get_json()
+    mgr.send_command('DOMAAdd', [id, data['amount']])
+    mgr.send_command('DOMAPreach', [id, data['influence']])
     return jsonify(success=True)
 
 

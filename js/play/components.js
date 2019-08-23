@@ -314,6 +314,69 @@ const ActSummary = View((state, summary, me, players, onClick) => {
   }
 });
 
+const EquityPurchase = View((state, scene, tenant, onClick) => {
+  state.shares = 0;
+  state.onClick = onClick;
+  return `<div>
+      <div class="scene--stage"></div>
+      <div class="scene--body">
+        <h3 class="scene--title">${scene.title}</h3>
+        <p class="scene--desc">${scene.description}</p>
+        <div class="bar-annotated--labels">
+          <div class="bar--label bar--label-left">
+            <div>💵0</div>
+          </div>
+          <div class="bar--label bar--label-right">
+            <div>💵${Math.round(tenant.savings).toLocaleString()}</div>
+          </div>
+        </div>
+        <input type="range" min="0" max="${Math.round(tenant.savings)}" value="${state.shares}" class="slider">
+        <div class="scene--actions">
+          <div class="button scene--action">Buy 🧱${state.shares.toLocaleString()} shares</div>
+        </div>
+      </div>
+    </div>`
+}, {
+  '.slider': {
+    'input': ({state, el, ev}) => {
+      state.shares = ev.target.value;
+      el.querySelector('.button').innerText = `Buy 🧱${state.shares.toLocaleString()} shares`;
+    }
+  },
+  '.button': {
+    'click': ({state}) => {
+      state.onClick(parseInt(state.shares));
+    }
+  }
+});
 
 
-export default {BasicScene, Act, Splash, CitySummary, ActSummary, PlayerIntro, ApartmentSearch, ApartmentListings};
+const EquityResults = View((state, results, onClick) => {
+  state.onClick = onClick;
+  return `
+    <div class="equity-results">
+      <h1>DOMA Crowdbuying Results</h1>
+      <h2>💵${results.delta.raised.amount.toLocaleString()} raised</h2>
+      <h2>${results.delta.units.amount} unit${results.delta.units.amount == 1 ? '' : 's'} purchased</h2>
+      <h2>${results.delta.members.amount} new member${results.delta.members.amount == 1 ? '' : 's'}</h2>
+      ${results.delta.units.amount > 0 ? `
+        <ul>
+          ${Object.keys(results.delta.neighbs).map((n) => {
+            return `<li>${results.delta.neighbs[n]} units in ${n}</li>`;
+          }).join('')}
+        </ul>
+      ` : ''}
+      <div class="button">Next</div>
+    </div>
+  `
+}, {
+  '.button': {
+    'click': ({state}) => {
+      state.onClick();
+    }
+  }
+});
+
+
+export default {BasicScene, Act, Splash, CitySummary, ActSummary, PlayerIntro,
+  ApartmentSearch, ApartmentListings, EquityPurchase, EquityResults};

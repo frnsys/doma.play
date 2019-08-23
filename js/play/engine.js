@@ -48,8 +48,63 @@ class Engine {
       if (data.ok) {
         if (data.scene.id == 'apartment_search') {
           this.searchApartments(data.scene);
+
+        } else if (data.scene.id == 'equity_purchase') {
+          api.get('/state', (state) => {
+            this.state = state;
+          });
+          Views.EquityPurchase(sceneEl, data.scene, this.player.tenant, (shares) => {
+            console.log('PURCHASING SHARES');
+            let influence = (shares/this.player.tenant.savings)/10;
+            console.log(influence);
+            api.post(`/play/doma/${this.id}`, {amount: shares, influence: influence}, () => {
+              this.waitForNextScene(data.scene, 0);
+            });
+          });
+
+        } else if (data.scene.id == 'equity_results') {
+          api.get('/state', (state) => {
+            let stats = state.stats;
+            let prevStats = this.state.stats;
+            let results = {
+              members: stats.doma_members,
+              raised: stats.doma_raised - prevStats.doma_raised,
+              units: stats.landlords[-1].n_units,
+              delta: {
+                members: {
+                  amount: stats.doma_members - prevStats.doma_members,
+                  percent: Math.round(util.percentChange(stats.doma_members, prevStats.doma_members))
+                },
+                raised: {
+                  amount: Math.round(stats.doma_raised - prevStats.doma_raised),
+                  percent: Math.round(util.percentChange(stats.doma_raised, prevStats.doma_raised))
+                },
+                units: {
+                  amount: stats.landlords[-1].n_units - prevStats.landlords[-1].n_units,
+                  percent: Math.round(util.percentChange(stats.landlords[-1].n_units, prevStats.landlords[-1].n_units))
+                }
+              }
+            };
+            results.delta.neighbs = Object.keys(prevStats.neighborhoods).reduce((acc, id) => {
+              let prev = prevStats.neighborhoods[id].doma_units;
+              let curr = stats.neighborhoods[id].doma_units;
+              let delta = curr - prev;
+              if (delta > 0) {
+                let neighb = this.neighborhoods[id].name;
+                acc[neighb] = delta;
+              }
+              return acc;
+            }, {});
+            this.state = state;
+
+            Views.EquityResults(sceneEl, results, () => {
+              this.waitForNextScene(data.scene, 0);
+            });
+          });
+
         } else if (data.scene.id.startsWith('act_summary')) {
           this.summarizeAct(data.scene);
+
         } else {
           this.loadScene(data.scene);
         }

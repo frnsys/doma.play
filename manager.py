@@ -40,20 +40,20 @@ class Manager:
         s = self.play_state()
         state_key = self.r.get('state_key').decode('utf8')
         ckpt_id = s['curr_ckpt']
-        print('CHECKING CHECKPOINT')
-        print(s['last_ckpt'], ckpt_id)
+        # print('CHECKING CHECKPOINT')
+        # print(s['last_ckpt'], ckpt_id)
         if s['last_ckpt'] != ckpt_id and self.all_players_at_ckpt(ckpt_id):
-            print('All at ckpt')
-            print(s)
+            # print('All at ckpt')
+            # print(s)
             s['started'] = True
             if not s['run_cmd_sent']:
-                print('===================')
-                print('===================')
-                print('===================')
-                print('SENDING RUN COMMAND')
-                print('===================')
-                print('===================')
-                print('===================')
+                # print('===================')
+                # print('===================')
+                # print('===================')
+                # print('SENDING RUN COMMAND')
+                # print('===================')
+                # print('===================')
+                # print('===================')
                 ckpt = self.checkpoints[ckpt_id]
                 self.send_command('Run', ckpt['n_steps'])
                 s['state_key'] = state_key

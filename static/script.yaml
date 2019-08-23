@@ -15,10 +15,29 @@ scenes:
       number: 1
   commute:
     title: "Commute test"
+    description: "going to equity"
+    actions:
+      - name: "equity test"
+        next: "equity_purchase"
+  commute2:
+    title: "Commute test"
     description: "going to apartment"
     actions:
       - name: "apartment test"
         next: "apartment_search"
+  equity_purchase:
+    title: "Equity shares sale"
+    description: "equity desc"
+    actions:
+      - name: "next"
+        next: "equity_results"
+  equity_results:
+    title: "Equity shares results"
+    description: "equity desc"
+    checkpoint: "equity_results"
+    actions:
+      - name: "next"
+        next: "commute2"
   apartment_search:
     actions:
       - name: "found place"
@@ -57,3 +76,5 @@ checkpoints:
     n_steps: 25
   test_checkpoint2:
     n_steps: 40
+  equity_results:
+    n_steps: 2
