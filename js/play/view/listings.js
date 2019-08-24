@@ -88,7 +88,6 @@ function showApartments(el, map, parcels, onCellSelect) {
         cell.mesh.obj = {
           data: {
             onClick: (ev) => {
-              console.log('yoyoyo');
               onCellSelect(p);
             }
           },

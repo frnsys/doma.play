@@ -37,6 +37,11 @@ main {
   height: 200px;
   width: 100%;
   overflow: hidden;
+  padding: 40px 20px 20px 20px;
+}
+.scene--stage img {
+  max-width: 100%;
+  max-height: 100%;
 }
 #act {
   z-index: 1;
@@ -68,6 +73,7 @@ main {
   flex: 1;
   font-size: 0.8em;
   margin: 1em 0 2em 0;
+  text-align: left;
 }
 .scene--action {
   background: #B287B5;
@@ -91,26 +97,46 @@ main {
 
 .listing {
   text-align: left;
-  margin-bottom: 1.5em;
+  font-size: 0.9em;
+  padding: 1em 1em 0.5em 1em;
+  border-bottom: 1px solid black;
+  line-height: 1.5;
 }
 .listing--title {
   font-weight: bold;
   text-decoration: underline;
 }
 .listing-unaffordable {
-  opacity: 0.5;
+  opacity: 0.35;
 }
 .listing--select {
   padding: 0.75em;
   text-align: center;
-  background: #FF8B8B;
+  background: #222;
   color: #fff;
   margin-top: 0.5em;
 }
+.listing--elapsed {
+  color: #777;
+  font-style: italic;
+  font-size: 0.9em;
+}
+.listings--skip,
+.listings p {
+  margin: 0 1em !important;
+}
 .listings--help {
-  margin: 2em 0;
+  margin: 1em 0;
   font-style: italic;
   color: #555;
+  padding: 1em;
+}
+.apartment-search #stage {
+  padding: 0;
+  border-bottom: 1px solid black;
+}
+.apartment-search .button {
+  margin: 1em 0;
 }
 
 .splash h1 {
@@ -130,13 +156,41 @@ main {
   width: 100%;
 }
 
+.summary {
+  background: rgb(165,150,255);
+  background: linear-gradient(180deg, rgba(165,150,255,1) 0%, rgba(254,197,169,1) 100%);
+  min-height: 100vh;
+}
+
+.equity-results {
+  background: #FED07E;
+  background: linear-gradient(180deg, #FED07E 0%, #D6FE76 100%);
+  min-height: 100vh;
+}
+.equity-results ul {
+  text-align: left;
+  margin: 1em 0;
+}
+.equity-results--units {
+  margin: 0.5em 0 2.5em 0;
+}
+.equity-results h4 {
+  text-align: left;
+  margin-bottom: 0;
+}
+
 .summary .bar-annotated {
   margin: 0.5em 0;
 }
-.summary ul {
-  font-size: 0.9em;
-  margin: 0.5em 0 2.5em 0;
+.summary ul,
+table {
+  font-size: 0.85em;
   text-align: left;
+  margin: 1em 0 2em 0;
+  width: 100%;
+}
+table td:last-child {
+  text-align: right;
 }
 .summary h1 {
   margin: 0.25em 0;
@@ -145,4 +199,49 @@ main {
 }
 .summary p {
   font-size: 0.8em;
+}
+.summary .button {
+  background: #8851B3;
+  margin-top: 2em;
+}
+.player-summary {
+  margin-top: 1em;
+}
+
+.bar {
+  flex: 1;
+  width: 100%;
+  height: 12px;
+  background: #F52D3F;
+}
+.bar-labeled {
+  display: flex;
+  align-items: end;
+}
+.bar--label {
+  font-size: 0.8em;
+  line-height: 1;
+}
+.bar-labeled .bar--label {
+  width: 20%;
+  padding-right: 0.5em;
+}
+.bar-annotated--labels {
+  display: flex;
+}
+.bar--label-left {
+  text-align: left;
+  width: 50%;
+}
+.bar--label-right {
+  text-align: right;
+  width: 50%;
+}
+.bar--fill {
+  height: 100%;
+  background: #834EB8;
+}
+
+input[type=range] {
+  margin-bottom: 2em;
 }

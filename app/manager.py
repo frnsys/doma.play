@@ -87,12 +87,12 @@ class PlayerManager:
             last_ping = self[id, 'ping']
 
             if last_ping is None:
-                self.remove_player(id)
+                self.remove(id)
                 continue
 
             last_ping = int(last_ping)
             if now - last_ping > config.PLAYER_TIMEOUT:
-                self.remove_player(id)
+                self.remove(id)
                 continue
 
     def all_at_ckpt(self, ckpt):
@@ -120,7 +120,7 @@ class Manager:
     def sim_state(self):
         return json.loads(self.r.get('state'))
 
-    def send_command(self, cmd, data):
+    def send_command(self, cmd, data=None):
         self.r.lpush('cmds', json.dumps({
             cmd: data
         }))
@@ -145,8 +145,7 @@ class Manager:
             if self.session['run_cmd_sent'] == FALSE:
                 ckpt = self.checkpoints[ckpt_id]
 
-                # TODO clean this up
-                if ckpt_id == 'doma_param_vote':
+                if ckpt_id == 'param_results':
                     # Tally votes as means
                     votes = [json.loads(v) for v in self.players.vals('ckpt:vote').values()]
                     tally = {k: [v] for k, v in ckpt['defaults'].items()}
@@ -162,7 +161,7 @@ class Manager:
                     ])
                     self.session['vote:results'] = results
 
-                elif ckpt_id == 'policy_vote':
+                elif ckpt_id == 'policy_results':
                     votes = self.players.vals('ckpt:policy')
                     tally = defaultdict(int)
                     for v in votes.values():
@@ -177,7 +176,11 @@ class Manager:
                         results[p] = result
                     self.session['policy:results'] = results
 
+                elif ckpt_id == 'final':
+                    self.send_command('ReleaseTenants')
+
                 # Send the run command to the simulation
+                print('SENDING RUN COMMAND:', ckpt['n_steps'])
                 self.send_command('Run', ckpt['n_steps'])
 
                 # Track the state key so we can see when it changes,
@@ -206,7 +209,7 @@ class Manager:
     def reset(self):
         self.session.reset()
         self.players.reset()
-        self.send_command('Reset', None)
+        self.send_command('Reset')
 
     def add_player(self, id):
         self.players.add(id)
@@ -227,6 +230,7 @@ class Manager:
         print('Pruning players...')
         self.players.prune()
         if not self.players.active():
+            print('NO ACTIVE PLAYERS', self.session['started'] == TRUE)
             if self.session['started'] == TRUE: self.reset()
 
     def tenant(self, id):

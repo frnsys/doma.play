@@ -80,9 +80,7 @@ def player_vote(id):
 @bp.route('/vote/results')
 def player_vote_results():
     """Player DOMA parameter vote results"""
-    res = mgr.session['vote:results']
-    if res is None:
-        return jsonify(success=False)
+    res = mgr.session['vote:results'] or '{}'
     res = json.loads(res)
     return jsonify(success=True, results=res)
 
@@ -98,9 +96,7 @@ def player_policy(id):
 @bp.route('/policy/results')
 def player_policy_results():
     """Player DOMA policy vote results"""
-    res = mgr.session['policy:results']
-    if res is None:
-        return jsonify(success=False)
+    res = mgr.session['policy:results'] or '{}'
     res = json.loads(res)
     return jsonify(success=True, results=res)
 

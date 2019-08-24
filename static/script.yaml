@@ -1,118 +1,272 @@
 scenes:
   START:
-    title: "Another day in the city"
-    description: "You roll out of bed, get ready for work, and make your way to the subway."
+    image: tophat.png
+    title: "There were no signs of trouble..."
+    description: "...until you learned that you were being evicted. Your landlord is somehow always both intensely overbearing and conspicuously absent--so this hostility is not unexpected. Now what?"
     actions:
-      - name: "Commute to work"
-        next: "commute"
-      - name: "Commute to work alt"
-        next: "commute"
+      - name: "Look for a new place"
+        next: "apartment_search_intro"
     act:
       title: "The Market"
       description: "In which the player grapples with the city's housing market."
       colors: ["#F06C8F", "#2972EC"]
-      startScene: "intro"
       number: 1
-  commute:
-    title: "Commute test"
-    description: "going to equity"
+  apartment_search_intro:
+    image: house.png
+    title: "Finding a new place"
+    description: "You're reminded of that sympathetic anxiety felt when friends mention they're looking for a new place. It's overwhelming now. Ideally you can find a place close to work, not too expensive, maybe in a nice neighborhood..."
     actions:
-      - name: "param test"
-        next: "doma_param_vote_equity"
-      # - name: "policy test"
-      #   next: "protest"
-      # - name: "equity test"
-      #   next: "equity_purchase"
-  protest:
-    title: "Protest"
-    description: "going to result in rent freeze"
-    actions:
-      - name: "PROTEST"
-        next: "policy_results"
-  commute2:
-    title: "Commute test"
-    description: "going to apartment"
-    actions:
-      - name: "apartment test"
+      - name: "Start the search"
         next: "apartment_search"
+  apartment_search:
+    actions:
+      - name: "Success"
+        next: "apartment_search_success"
+      - name: "No Luck"
+        next: "apartment_search_failure"
+  apartment_search_success:
+    image: house.png
+    title: "Success"
+    description: "After an exhausting hunt you were finally able to find a place. It might not be ideal, but it's better than nothing."
+    actions:
+      - name: "Unwind at the bar"
+        next: "bar"
+  apartment_search_failure:
+    image: prohibited.png
+    title: "No Luck"
+    description: "The rental market is unforgiving...you weren't able to find a new place. Fortunately a friend has a comfortable couch available for you. This is too common an outcome¸ but maybe things can change."
+    actions:
+      - name: "Unwind at the bar"
+        next: "bar"
+  bar:
+    image: beer.png
+    title: "The Social Bar"
+    description: "You recall your search to your friend Linda, who's working behind the bar. Why is it so difficult to find an affordable place? Linda describes her own experience, which is hauntingly similar."
+    actions:
+      - name: "Have another drink"
+        next: "bar_friends"
+  bar_friends:
+    image: bar.png
+    title: "New Friends"
+    description: "Some people nearby overhear your conversation and join in. They recently had a similarly difficult time finding a new place...in fact, you might have taken one of the places they were looking at. But they don't blame you. This rental market turns renters against each other, misdirecting their frustrations."
+    actions:
+      - name: "Have another drink"
+        next: "bar_friends_2"
+  bar_friends_2:
+    image: moon.png
+    title: "Closing Time"
+    description: "It's getting late. Linda chips in as she closes down the bar. More and more people have had similar complaints, she says. Many have left the city altogether. As you head home, you wonder: will that be your only choice too?"
+    actions:
+      - name: "Head home"
+        next: "pack_up"
+  pack_up:
+    image: luggage.png
+    title: "Moving Out"
+    description: "The next day you pack up your things. You have a feeling that it won't be long before you need to pack up and move all over again. But for now, you're relieved to have somewhere to stay."
+    actions:
+      - name: "Time flies"
+        next: "act_summary_1"
+  act_summary_1:
+    title: "Act 1 Summary"
+    checkpoint: "act_1_end"
+    actions:
+      - name: "Start Act 2"
+        next: "act_2"
+  act_2:
+    image: city.png
+    title: "An Epidemic"
+    description: "A year later and the housing problems of the city have only worsened. You consider some kind of action, but what's the best way forward?"
+    actions:
+      - name: "Get a stake in the city"
+        next: "doma_intro"
+      - name: "Rent strike"
+        next: "strike_intro"
+      - name: "Petitioning"
+        next: "petition_intro"
+    act:
+      title: "A Right to the City"
+      description: "Why doesn't the city belong to its residents?"
+      colors: ["#FEA74A", "#45535E"]
+      number: 2
+  doma_intro:
+    image: pin.png
+    title: "A Stake in the City"
+    description: "You remember Linda describing a plan to organize a collective buyout of local apartments, so they can be managed by the community. Maybe this is what you should help with."
+    actions:
+      - name: "Let's do it"
+        next: "equity_purchase"
+      - name: "Nevermind, striking seems better"
+        next: "strike_intro"
+      - name: "Nevermind, petitioning seems better"
+        next: "petition_intro"
+  strike_intro:
+    image: black_flag.png
+    title: "Direct Action Gets the Goods"
+    description: "You recall seeing a call for a city-wide rent strike. Cutting landlords off from their income sounds like an effective strategy."
+    actions:
+      - name: "Let's do it"
+        next: "strike"
+      - name: "Nevermind, a stake in the city seems better"
+        next: "doma_intro"
+      - name: "Nevermind, petitioning seems better"
+        next: "petition_intro"
+  petition_intro:
+    image: clipboard.png
+    title: "Petition for Change"
+    description: "There are some sympathetic politicians and policies that, if implemented, could have a large impact on the city's housing. Perhaps this is how you should spend your time."
+    actions:
+      - name: "Let's do it"
+        next: "petition"
+      - name: "Nevermind, a stake in the city seems better"
+        next: "doma_intro"
+      - name: "Nevermind, striking seems better"
+        next: "strike_intro"
+  strike:
+    image: black_flag.png
+    title: "City-wide Rent Strike"
+    description: "There's good participation in the rent strike. It goes on for some time, but the pressure seems to be taking its toll on the landlords."
+    actions:
+      - name: "Next"
+        next: "policy_results_strike"
+  petition:
+    image: clipboard.png
+    title: "Out Petitioning"
+    description: "For the next several weeks you are on the street collecting signatures and raising support for policy to get the housing market under control. Public and legislator support seem to be growing."
+    actions:
+      - name: "Next"
+        next: "policy_results_petition"
   equity_purchase:
+    image: cart.png
     title: "Equity shares sale"
-    description: "equity desc"
+    actions:
+      - name: "next"
+        next: "policy_results"
+  policy_results:
+    title: "Breaking News"
+    image: newspaper.png
+    news: true
+    checkpoint: "policy_results"
+    actions:
+      - name: "next"
+        next: "equity_results"
+  policy_results_strike:
+    title: "Strike Outcome"
+    strike: true
+    image: newspaper.png
+    checkpoint: "policy_results"
+    actions:
+      - name: "next"
+        next: "equity_purchase_later"
+  policy_results_petition:
+    title: "Petition Outcome"
+    petition: true
+    image: newspaper.png
+    checkpoint: "policy_results"
+    actions:
+      - name: "next"
+        next: "equity_purchase_later"
+  equity_purchase_later:
+    image: cart.png
+    title: "Equity shares sale"
     actions:
       - name: "next"
         next: "equity_results"
   equity_results:
-    title: "Equity shares results"
-    description: "equity desc"
+    image: confetti.png
+    title: "Crowdfunding Results"
     checkpoint: "equity_results"
     actions:
       - name: "next"
-        next: "commute2"
-  apartment_search:
+        next: "act_summary_2"
+  act_summary_2:
+    title: "Act 2 Summary"
+    checkpoint: "act_2_end"
     actions:
-      - name: "found place"
-        next: "post_search"
-      - name: "no found place"
-        next: "post_search"
-  post_search:
-    title: "done seraching"
-    description: "ok"
+      - name: "Start Act 3"
+        next: "act_3"
+  act_3:
+    image: city.png
+    title: "TODO"
+    description: "The community housing platform continues to grow, but some crucial decisions need to be made about how it will continue to work. Members are to submit proposals for how housing funds are collected and distributed. You can focus on one of two aspects: distributing ownership of the housing, or implementing stricter controls on rent."
     actions:
-      - name: "testing"
-        next: "act_summary_1"
-  policy_results:
-    title: "Policy Checkpoint"
-    description: "test test test"
-    checkpoint: "policy_vote"
+      - name: "Search for a place"
+        next: "apartment_search_post"
+  apartment_search_post:
     actions:
-      - name: "okok"
-        next: "testing2"
+      - name: "Success"
+        next: "apartment_search_success_post"
+      - name: "No Luck"
+        next: "apartment_search_failure_post"
+  apartment_search_success_post:
+    image: house.png
+    title: "Success"
+    description: "You found a place. The experience was different this time...all the housing action had its impact."
+    actions:
+      - name: "Continue"
+        next: "doma_param_vote_intro"
+  apartment_search_failure_post:
+    image: prohibited.png
+    title: "No Luck"
+    description: "Even after all these years, the rental market is still unforgiving...you weren't able to find a new place. Fortunately a friend has a comfortable couch available for you. Perhaps soon in the future things will be different."
+    actions:
+      - name: "Continue"
+        next: "doma_param_vote_intro"
+  doma_param_vote_intro:
+    image: city.png
+    title: "Deciding Together"
+    description: "The community housing platform continues to grow, but some crucial decisions need to be made about how it will continue to work. Members are to submit proposals for how housing funds are collected and distributed. You can focus on one of two aspects: distributing ownership of the housing, or implementing stricter controls on rent."
+    actions:
+      - name: "Ownership distribution"
+        next: "doma_param_vote_equity"
+      - name: "Rent control"
+        next: "doma_param_vote_rent"
   doma_param_vote_equity:
     title: "Equity Generation"
-    description: "test test test"
+    image: vote.png
     actions:
-      - name: "okok"
+      - name: "next"
+        next: "vote_results"
+  doma_param_vote_rent:
+    title: "Rent Control"
+    image: vote.png
+    actions:
+      - name: "next"
         next: "vote_results"
   vote_results:
-    title: "Param Vote Checkpoint"
-    description: "test test test"
-    checkpoint: "doma_param_vote"
+    title: "Voting Results"
+    image: scroll.png
+    checkpoint: "param_results"
     actions:
-      - name: "okok"
-        next: "testing2"
-  act_summary_1:
-    title: "Post checkpoint"
-    description: "test test test"
-    checkpoint: "test_checkpoint"
+      - name: "next"
+        next: "outro"
+  outro:
+    image: sunset.png
+    title: "What Next?"
+    description: "The community's decision around the collective have been implemented. Many years will pass--and the housing market will continue to change. But because of what happened here, it could be for the better."
     actions:
-      - name: "Check point test"
-        next: "testing2"
-  testing2:
-    title: "second checkpoint test"
-    description: "test test test"
+      - name: "Let's see what happens"
+        next: "act_summary_3"
+  act_summary_3:
+    title: "Act 3 Summary"
+    checkpoint: "final"
     actions:
-      - name: "Check point test"
-        next: "testing3"
-  testing3:
-    title: "post second checkpoint test"
-    checkpoint: "test_checkpoint2"
-    description: "test test test"
-    actions:
-      - name: "start ending"
+      - name: "The End"
         next: null
 
 checkpoints:
-  test_checkpoint:
-    n_steps: 25
-  test_checkpoint2:
-    n_steps: 40
+  act_1_end:
+    n_steps: 24
+  policy_results:
+    n_steps: 1
   equity_results:
-    n_steps: 2
-  doma_param_vote:
+    n_steps: 1
+  act_2_end:
+    n_steps: 12
+  param_results:
     n_steps: 1
     defaults:
         p_dividend: 0.75
         p_rent_share: 0.1
         rent_income_limit: 0.5
-  policy_vote:
-    n_steps: 1
+  final:
+    n_steps: 360

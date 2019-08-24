@@ -1,5 +1,5 @@
 DEBUG = True
-PLAYER_TIMEOUT = 60
+PLAYER_TIMEOUT = 30
 REDIS = {
     'host': 'localhost',
     'port': 6379,

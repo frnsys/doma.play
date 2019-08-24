@@ -94,7 +94,9 @@ const Act = View(({act}) => `
 
 const BasicScene = View(({scene}) => `
   <div>
-    <div class="scene--stage"></div>
+    <div class="scene--stage">
+      <img src="/static/scenes/${scene.image}">
+    </div>
     <div class="scene--body">
       <h3 class="scene--title">${scene.title}</h3>
       <p class="scene--desc">${scene.description}</p>
@@ -147,20 +149,32 @@ const CitySummary = View(({summary}) => `
       <p>A small group of landlords are expanding their ownership of the city. More and more people are facing a lifetime of rent as the city becomes increasingly unaffordable.</p>
       ${AnnotatedBar({
         p: summary.p.commons,
-        left: [`  ${(summary.p.commons*100).toFixed(1)}%`, 'Common'],
-        right: [`🎩${(summary.p.landlords*100).toFixed(1)}%`, 'Landlords']
+        left: [`👥${(summary.p.commons*100).toFixed(1)}%`, 'Commons'],
+        right: [`${(summary.p.landlords*100).toFixed(1)}%🎩`, 'Landlords']
       })}
       ${AnnotatedBar({
         p: summary.p.affordable,
         left: [`${(summary.p.affordable*100).toFixed(1)}%`, 'Affordable'],
         right: [`${(summary.p.unaffordable*100).toFixed(1)}%`, 'Unaffordable']
       })}
-      <ul>
-        <li>Average Rent = ${summary.avg.rent.toLocaleString()}</li>
-        <li>Average Home Value = ${summary.avg.value.toLocaleString()}</li>
-        <li>Average Monthly Income = ${summary.avg.income.toLocaleString()}</li>
-        <li>Population = ${summary.population.toLocaleString()}</li>
-      </ul>
+      <table>
+        <tr>
+          <td>💸Avg Rent</td>
+          <td>${summary.avg.rent.toLocaleString()}</td>
+        </tr>
+        <tr>
+          <td>🏠Avg Home Value</td>
+          <td>${summary.avg.value.toLocaleString()}</td>
+        </tr>
+        <tr>
+          <td>💵Avg Monthly Income</td>
+          <td>${summary.avg.income.toLocaleString()}</td>
+        </tr>
+        <tr>
+          <td>👥Population</td>
+          <td>${summary.population.toLocaleString()}</td>
+        </tr>
+      </table>
       <div class="button">Next</div>
     </div>
   </div>
@@ -174,19 +188,20 @@ const PlayerSummary = ({tenant, summary}) => `
   <ul>
     <li>
       ${tenant.unit && tenant.unit.neighborhood ?
-          `Lives in ${tenant.unit.neighborhood}` : 'Without home'}
+          `🏠 Lives in ${tenant.unit.neighborhood}` : '🏠 Without home'}
     </li>
-    <li>Works in ${tenant.work.neighborhood ? tenant.work.neighborhood : "None"}</li>
+    <li>${tenant.work ?
+        `⚒️ Works in ${tenant.work.neighborhood ? tenant.work.neighborhood : "None"}` : "⚒️ Not working"}</li>
   </ul>
   ${AnnotatedBar({
     p: tenant.rent/tenant.income,
-    left: [`Rent/month`, `${Math.round(tenant.rent).toLocaleString()}`],
-    right: [`Income/month`, `${Math.round(tenant.income).toLocaleString()}`]
+    left: [`💸Rent/month`, `${Math.round(tenant.rent).toLocaleString()}`],
+    right: [`Income/month💵`, `${Math.round(tenant.income).toLocaleString()}`]
   })}
   ${AnnotatedBar({
     p: tenant.savings/summary.avg.value,
-    left: [`Savings`, `${Math.round(tenant.savings).toLocaleString()}`],
-    right: [`Avg home value`, `${Math.round(summary.avg.value).toLocaleString()}`]
+    left: [`💰Savings`, `${Math.round(tenant.savings).toLocaleString()}`],
+    right: [`Avg home value🏠`, `${Math.round(summary.avg.value).toLocaleString()}`]
   })}
 `;
 
@@ -209,13 +224,13 @@ const PlayerIntro = View(({tenant, summary}) => {
 const ApartmentSearch = View(({vacancies, affordable}) => {
   let msg = '';
   if (!vacancies) {
-    msg = 'There are no vacancies right now.';
+    msg = '<p>There are no vacancies right now.</p>';
   } else if (!affordable) {
-    msg = 'There are no vacancies that you can afford right now.';
+    msg = '<p>There are no vacancies that you can afford right now.</p>';
   }
-  return `<div>
+  return `<div class="apartment-search">
     <div id="stage" class="scene--stage"></div>
-    <div id="details" class="scene--body">
+    <div id="details">
       ${msg}
       <div id="listings"></div>
       ${!vacancies || !affordable ? `<div class="listings--skip button">Stay with friend</div>`: ''}
@@ -231,10 +246,10 @@ const ApartmentListings = View(({units}) => {
   if (units && units.length > 0) {
     return `<div>${units.map((u, i) => `
       <div class="listing ${u.affordable ? '' : 'listing-unaffordable'}">
-        <div class="listing--title">${u.occupancy} bedroom, looking for ${u.occupancy - u.tenants} tenants</div>
+        <div class="listing--title">${u.occupancy} bedroom, looking for ${u.occupancy - u.tenants} tenant${u.occupancy - u.tenants == 1 ? '' : 's'}</div>
         ${u.doma ? '<div class="listing--doma">📌 DOMA-owned apartment</div>': ''}
-        <div class="listing--rent">Rent: $${u.rentPerTenant.toLocaleString()}/month per tenant</div>
-        <div class="listing--elapsed">Listed ${u.monthsVacant} months ago</div>
+        <div class="listing--rent">💵${u.rentPerTenant.toLocaleString()}/month</div>
+        <div class="listing--elapsed">Listed ${u.monthsVacant} month${u.monthsVacant == 1 ? '' : 's'} ago</div>
         <div data-id="${i}" class="listing--select button ${u.affordable ? '' : 'disabled'}">
           ${u.affordable ? 'Select' : 'Too Expensive'}
         </div>
@@ -260,21 +275,33 @@ const ActSummary = View(({summary, me, players}) => `
   <div class="summary act-summary">
     <div class="scene--body">
       <h1>${summary.city}</h1>
-      <ul>
-        <li>Average Rent = ${summary.avg.rent.toLocaleString()} (${signed(summary.delta.avg.rent)}%)</li>
-        <li>Average Home Value = ${summary.avg.value.toLocaleString()} (${signed(summary.delta.avg.value)}%)</li>
-        <li>Average Monthly Income = ${summary.avg.income.toLocaleString()} (${signed(summary.delta.avg.income)}%)</li>
-        <li>Population = ${summary.population.toLocaleString()}</li>
-      </ul>
+      <table>
+        <tr>
+          <td>💸Avg Rent</td>
+          <td>${summary.avg.rent.toLocaleString()} (${signed(summary.delta.avg.rent)}%)</td>
+        </tr>
+        <tr>
+          <td>🏠Avg Home Value</td>
+          <td>${summary.avg.value.toLocaleString()} (${signed(summary.delta.avg.value)}%)</td>
+        </tr>
+        <tr>
+          <td>💵Avg Monthly Income</td>
+          <td>${summary.avg.income.toLocaleString()} (${signed(summary.delta.avg.income)}%)</td>
+        </tr>
+        <tr>
+          <td>👥Population</td>
+          <td>${summary.population.toLocaleString()}</td>
+        </tr>
+      </table>
       ${AnnotatedBar({
         p: summary.p.commons,
-        left: [`  ${(summary.p.commons*100).toFixed(1)}%`, 'Common'],
-        right: [`🎩${(summary.p.landlords*100).toFixed(1)}%`, 'Landlords']
+        left: [`👥${(summary.p.commons*100).toFixed(1)}% (${signed(Math.round(summary.delta.p.commons*100))}%)`, 'Commons'],
+        right: [`(${signed(Math.round(summary.delta.p.landlords*100))}%) ${(summary.p.landlords*100).toFixed(1)}%🎩`, 'Landlords']
       })}
       ${AnnotatedBar({
         p: summary.p.affordable,
-        left: [`${(summary.p.affordable*100).toFixed(1)}%`, 'Affordable'],
-        right: [`${(summary.p.unaffordable*100).toFixed(1)}%`, 'Unaffordable']
+        left: [`${(summary.p.affordable*100).toFixed(1)}% (${signed(Math.round(summary.delta.p.affordable*100))}%)`, 'Affordable'],
+        right: [`(${signed(Math.round(summary.delta.p.unaffordable*100))}%) ${(summary.p.unaffordable*100).toFixed(1)}%`, 'Unaffordable']
       })}
       <div class="player-summary">
         <h1>${me.name} (you)</h1>
@@ -297,12 +324,14 @@ const ActSummary = View(({summary, me, players}) => `
   }
 });
 
-const EquityPurchase = View(({scene, tenant}) => `
+const EquityPurchase = View(({scene, tenant, shares}) => `
   <div>
-    <div class="scene--stage"></div>
+    <div class="scene--stage">
+      <img src="/static/scenes/${scene.image}">
+    </div>
     <div class="scene--body">
       <h3 class="scene--title">${scene.title}</h3>
-      <p class="scene--desc">${scene.description}</p>
+      <p class="scene--desc">The collective is raising funds by selling 🧱equity in the collective's properties. Each 🧱equity share entitles you to 5% of rental 💵dividends. You have 💵${Math.round(tenant.savings).toLocaleString()} in savings, how many 🧱equity shares do you want to buy?</p>
       <div class="bar-annotated--labels">
         <div class="bar--label bar--label-left">
           <div>💵0</div>
@@ -311,9 +340,9 @@ const EquityPurchase = View(({scene, tenant}) => `
           <div>💵${Math.round(tenant.savings).toLocaleString()}</div>
         </div>
       </div>
-      <input type="range" min="0" max="${Math.round(tenant.savings)}" value="${state.shares}" class="slider">
+      <input type="range" min="0" max="${Math.round(tenant.savings)}" value="${shares}" class="slider">
       <div class="scene--actions">
-        <div class="button scene--action">Buy 🧱${state.shares.toLocaleString()} shares</div>
+        <div class="button scene--action">Buy 🧱${shares.toLocaleString()} shares</div>
       </div>
     </div>
   </div>
@@ -332,20 +361,30 @@ const EquityPurchase = View(({scene, tenant}) => `
 });
 
 
-const EquityResults = View(({results}) => `
+const EquityResults = View(({scene, results}) => `
   <div class="equity-results">
-    <h1>DOMA Crowdbuying Results</h1>
-    <h2>💵${results.delta.raised.amount.toLocaleString()} raised</h2>
-    <h2>${results.delta.units.amount} unit${results.delta.units.amount == 1 ? '' : 's'} purchased</h2>
-    <h2>${results.delta.members.amount} new member${results.delta.members.amount == 1 ? '' : 's'}</h2>
-    ${results.delta.units.amount > 0 ? `
-      <ul>
-        ${Object.keys(results.delta.neighbs).map((n) => {
-          return `<li>${results.delta.neighbs[n]} units in ${n}</li>`;
-        }).join('')}
+    <div class="scene--stage">
+      <img src="/static/scenes/${scene.image}">
+    </div>
+    <div class="scene--body">
+      <h3 class="scene--title">${scene.title}</h3>
+      <ul class="equity-results--stats">
+        <li>💵${results.delta.raised.amount.toLocaleString()} raised</li>
+        <li>${results.delta.units.amount} unit${results.delta.units.amount == 1 ? '' : 's'} purchased</li>
+        <li>${results.delta.members.amount} new member${results.delta.members.amount == 1 ? '' : 's'}</li>
       </ul>
-    ` : ''}
-    <div class="button">Next</div>
+      ${results.delta.units.amount > 0 ? `
+        <h4>Purchased units</h4>
+        <ul class="equity-results--units">
+          ${Object.keys(results.delta.neighbs).map((n) => {
+            return `<li>${results.delta.neighbs[n]} units in ${n}</li>`;
+          }).join('')}
+        </ul>
+      ` : ''}
+      <div class="scene--actions">
+        <div class="button">Next</div>
+      </div>
+    </div>
   </div>
 `, {
   '.button': {
@@ -353,10 +392,22 @@ const EquityResults = View(({results}) => `
   }
 });
 
-const PolicyResults = View(({results}) => `
+const PolicyResults = View(({scene, results}) => `
   <div>
-    ${results['RentFreeze'] ? `<p>Protesters were successful in pressuring policymakers into implementing a ${results['RentFreeze']}-month rent freeze. Hopefully this will relieve some pressure.</p>` : ''}
-    ${results['MarketTax'] ? `<p>Petitioners managed to push through a housing market tax, in effect for ${results['MarketTax']} months, which is expected to slow down rising prices.</p>` : ''}
+    <div class="scene--stage">
+      <img src="/static/scenes/${scene.image}">
+    </div>
+    <div class="scene--body">
+      <h3 class="scene--title">${scene.title}</h3>
+      <div class="scene--desc">
+        ${scene.news ? '<p>While you were preparing the housing collective, other housing action took place.</p>' : ''}
+        <p>${results['RentFreeze'] ? `<p>${scene.strike ? 'You and the other rent strikers' : 'Rent strikes across the city' } were successful in pushing landlords into effecting a ${results['RentFreeze']}-month rent freeze. Hopefully this will relieve some pressure.</p>` : ''}</p>
+        <p>${results['MarketTax'] ? `<p>${scene.petition ? 'You and other petitioners' : 'A coalition of housing activists'} managed to push through a housing market tax, in effect for ${results['MarketTax']} months, which is expected to slow down rising prices.</p>` : ''}</p>
+      </div>
+      <div class="scene--actions">
+        <div class="button">Next</div>
+      </div>
+    </div>
   </div>
 `, {
   '.button': {
@@ -364,36 +415,43 @@ const PolicyResults = View(({results}) => `
   }
 });
 
-const EquityVote = View(() => `
-  <div>
-    <div>
-      <div>Rent to Equity</div>
-      <div class="bar-annotated--labels">
-        <div class="bar--label bar--label-left">
-          <div>0%</div>
-        </div>
-        <div class="bar--label bar--label-right">
-          <div>30%</div>
-        </div>
-      </div>
-      <input type="range" min="0" max="30" value="5" class="equity-slider">
+const EquityVote = View(({scene}) => `
+  <div class="param-vote">
+    <div class="scene--stage">
+      <img src="/static/scenes/${scene.image}">
     </div>
-
-    <div>
-      <div>Rent to Dividends</div>
-      <div class="bar-annotated--labels">
-        <div class="bar--label bar--label-left">
-          <div>0%</div>
-        </div>
-        <div class="bar--label bar--label-right">
-          <div>90%</div>
-        </div>
+    <div class="scene--body">
+      <h3 class="scene--title">${scene.title}</h3>
+      <div class="scene--desc">
+        <p>Your focus is on where rent goes when it is collected. Focusing on 🧱equity generation favors renters becoming owners over time. Increasing 💵dividends focuses on lowering rent in the short term, but lowers the amount of funds for purchasing new properties to add to the community pool.</p>
       </div>
-      <input type="range" min="0" max="90" value="5" class="dividend-slider">
-    </div>
-
-    <div class="scene--actions">
-      <div class="button scene--action">Vote</div>
+      <div class="param-vote--param">
+        <h4>Rent to Equity</h4>
+        <div class="bar-annotated--labels">
+          <div class="bar--label bar--label-left">
+            <div>0%</div>
+          </div>
+          <div class="bar--label bar--label-right">
+            <div>30%</div>
+          </div>
+        </div>
+        <input type="range" min="0" max="30" value="5" class="equity-slider">
+      </div>
+      <div class="param-vote--param">
+        <h4>Rent to Dividends</h4>
+        <div class="bar-annotated--labels">
+          <div class="bar--label bar--label-left">
+            <div>0%</div>
+          </div>
+          <div class="bar--label bar--label-right">
+            <div>90%</div>
+          </div>
+        </div>
+        <input type="range" min="0" max="90" value="5" class="dividend-slider">
+      </div>
+      <div class="scene--actions">
+        <div class="button scene--action">Vote</div>
+      </div>
     </div>
   </div>
 `, {
@@ -417,36 +475,44 @@ const EquityVote = View(() => `
   }
 });
 
-const RentVote = View(() => `
-  <div>
-    <div>
-      <div>Rent Limit</div>
-      <div class="bar-annotated--labels">
-        <div class="bar--label bar--label-left">
-          <div>0%</div>
-        </div>
-        <div class="bar--label bar--label-right">
-          <div>100% avg income</div>
-        </div>
-      </div>
-      <input type="range" min="0" max="100" value="35" class="rent-slider">
+const RentVote = View(({scene}) => `
+  <div class="param-vote">
+    <div class="scene--stage">
+      <img src="/static/scenes/${scene.image}">
     </div>
-
-    <div>
-      <div>Rent to Dividends</div>
-      <div class="bar-annotated--labels">
-        <div class="bar--label bar--label-left">
-          <div>0%</div>
-        </div>
-        <div class="bar--label bar--label-right">
-          <div>90%</div>
-        </div>
+    <div class="scene--body">
+      <h3 class="scene--title">${scene.title}</h3>
+      <div class="scene--desc">
+        <p>Your focus is on how much rent is collected. Setting strong limits to rent helps housing affordability in the short term, but reduces the size of the property purchasing fund. Increasing 💵dividends also lowers rent in the short term, but also reduces the size of the property purchasing fund.</p>
       </div>
-      <input type="range" min="0" max="90" value="5" class="dividend-slider">
-    </div>
+      <div class="param-vote--param">
+        <h4>Rent Limit</h4>
+        <div class="bar-annotated--labels">
+          <div class="bar--label bar--label-left">
+            <div>0%</div>
+          </div>
+          <div class="bar--label bar--label-right">
+            <div>100% avg income</div>
+          </div>
+        </div>
+        <input type="range" min="0" max="100" value="35" class="rent-slider">
+      </div>
 
-    <div class="scene--actions">
-      <div class="button scene--action">Vote</div>
+      <div class="param-vote--param">
+        <h4>Rent to Dividends</h4>
+        <div class="bar-annotated--labels">
+          <div class="bar--label bar--label-left">
+            <div>0%</div>
+          </div>
+          <div class="bar--label bar--label-right">
+            <div>90%</div>
+          </div>
+        </div>
+        <input type="range" min="0" max="90" value="5" class="dividend-slider">
+      </div>
+      <div class="scene--actions">
+        <div class="button scene--action">Vote</div>
+      </div>
     </div>
   </div>
 `, {
@@ -471,16 +537,30 @@ const RentVote = View(() => `
 });
 
 
-const VoteResults = View(({results}) => `
-  <div>
-    <h1>DOMA parameters</h1>
-    <ul>
-      <li>Rent to Equity: ${Math.round(results.p_rent_share*100)}%</li>
-      <li>Rent to Dividend: ${Math.round(results.p_dividend*100)}%</li>
-      <li>Rent Limit: ${Math.round(results.rent_income_limit*100)}% of average income</li>
-    </ul>
-    <div class="scene--actions">
-      <div class="button scene--action">Next</div>
+const VoteResults = View(({scene, results}) => `
+  <div class="param-vote">
+    <div class="scene--stage">
+      <img src="/static/scenes/${scene.image}">
+    </div>
+    <div class="scene--body">
+      <h3 class="scene--title">${scene.title}</h3>
+      <table>
+        <tr>
+          <td>Rent to Equity</td>
+          <td>${Math.round(results.p_rent_share*100)}%</td>
+        </tr>
+        <tr>
+          <td>Rent to Dividend</td>
+          <td>${Math.round(results.p_dividend*100)}%</td>
+        </tr>
+        <tr>
+          <td>Rent Limit</td>
+          <td>${Math.round(results.rent_income_limit*100)}% of avg income</td>
+        </tr>
+      </table>
+      <div class="scene--actions">
+        <div class="button scene--action">Next</div>
+      </div>
     </div>
   </div>
 `, {
