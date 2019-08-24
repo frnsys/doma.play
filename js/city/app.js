@@ -198,10 +198,9 @@ let city;
 const statusEl = document.getElementById('city-status');
 
 let loadWait = setInterval(() => {
-  api.get('/status', ({state}) => {
-    // TODO update
-    if (state == 'ready' || state == 'fastforward' || state == 'inprogress') {
-      if (state == 'ready' || state == 'inprogress') {
+  api.get('/status', ({status}) => {
+    if (status == 'ready' || status == 'running') {
+      if (status == 'ready') {
         statusEl.style.display = 'none';
       } else {
         statusEl.innerHTML = 'Going to the future...';
@@ -229,7 +228,7 @@ let loadWait = setInterval(() => {
 
         render();
       });
-    } else if (state == 'finished') {
+    } else if (status == 'loading') {
       statusEl.innerHTML = 'Waiting for the next session to start...';
     }
   });

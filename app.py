@@ -50,6 +50,14 @@ def status():
     return jsonify(status=status)
 
 
+@app.route('/state')
+def state():
+    """Query current state"""
+    state = json.loads(redis.get('state'))
+    state['key'] = redis.get('state_key').decode('utf8')
+    return jsonify(state)
+
+
 @app.route('/state/key')
 def state_key():
     """Query current state key"""

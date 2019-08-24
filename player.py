@@ -108,7 +108,7 @@ def player_policy_results():
 @bp.route('/tenant/<id>')
 def player_tenant(id):
     """Player tenant data"""
-    tenant = mgr.players.tenant(id)
+    tenant = mgr.tenant(id)
     if tenant is None:
         return jsonify(success=False)
     return jsonify(success=True, tenant=tenant)
@@ -116,7 +116,7 @@ def player_tenant(id):
 
 @bp.route('/players')
 def players():
-    players = mgr.player.tenants()
+    players = mgr.tenants()
     return jsonify(players=players)
 
 
