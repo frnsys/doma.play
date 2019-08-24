@@ -1,4 +1,3 @@
-import math
 import json
 import yaml
 import redis
@@ -6,9 +5,12 @@ import random
 import config
 from datetime import datetime
 from collections import defaultdict
+from .util import weighted_choice, force_vote
 
 names = json.load(open('static/names.json'))['frequency']
 script = yaml.load(open('static/script.yaml'))
+policies = ['RentFreeze', 'MarketTax']
+policy_months = [6, 12, 24, 48]
 
 TRUE = '1'
 FALSE = '0'
@@ -145,26 +147,13 @@ class Manager:
 
                 # TODO clean this up
                 if ckpt_id == 'doma_param_vote':
-                    votes = self.players.vals('ckpt:vote')
-                    defaults = ckpt['defaults']
-                    params = {
-                        'p_dividend': [],
-                        'p_rent_share': [],
-                        'rent_income_limit': []
-                    }
-                    for k in params.keys():
-                        params[k].append(defaults[k])
-
-                    for v in votes.values():
-                        v = json.loads(v)
-                        for k in params.keys():
-                            if k in v:
-                                params[k].append(v[k])
-
                     # Tally votes as means
-                    results = {}
-                    for k in params.keys():
-                        results[k] = sum(params[k])/len(params[k])
+                    votes = [json.loads(v) for v in self.players.vals('ckpt:vote').values()]
+                    tally = {k: [v] for k, v in ckpt['defaults'].items()}
+                    for v in votes:
+                        for k, val in v.items():
+                            if k in tally: tally[k].append(val)
+                    results = {k: sum(v)/len(v) for k, v in tally.items()}
 
                     self.send_command('DOMAConfigure', [
                         results['p_dividend'],
@@ -175,31 +164,18 @@ class Manager:
 
                 elif ckpt_id == 'policy_vote':
                     votes = self.players.vals('ckpt:policy')
-                    results = defaultdict(int)
+                    tally = defaultdict(int)
                     for v in votes.values():
-                        results[v] += 1
+                        tally[v] += 1
 
-                    months = [6, 12, 24, 48]
-                    all_outcomes = {}
-                    for p in ['RentFreeze', 'MarketTax']:
-                        votes = results.get(p, 0)
+                    results = {}
+                    for p in policies:
+                        votes = tally.get(p, 0)
                         if not votes: continue
-                        wts = [
-                            math.pow(votes, 1),
-                            math.pow(votes/3, 2),
-                            math.pow(votes/4, 3),
-                            math.pow(votes/5, 4),
-                        ]
-
-                        choices = {}
-                        total = sum(wts)
-                        for r, wt in zip(months, wts):
-                            choices[r] = wt/total
-                        outcome = weighted_choice(choices)
-                        print('POLICY VOTE:', p, outcome)
-                        all_outcomes[p] = outcome
-                        self.send_command(p, outcome)
-                    self.session['policy:results'] = all_outcomes
+                        result = force_vote(votes, policy_months)
+                        self.send_command(p, result)
+                        results[p] = result
+                    self.session['policy:results'] = results
 
                 # Send the run command to the simulation
                 self.send_command('Run', ckpt['n_steps'])
@@ -329,22 +305,3 @@ class Manager:
             else:
                 return None
         return next_scene
-
-
-def weighted_choice(choices):
-    """Random selects a key from a dictionary,
-    where each key's value is its probability weight."""
-    # Randomly select a value between 0 and
-    # the sum of all the weights.
-    rand = random.uniform(0, sum(choices.values()))
-
-    # Seek through the dict until a key is found
-    # resulting in the random value.
-    summ = 0.0
-    for key, value in choices.items():
-        summ += value
-        if rand < summ: return key
-
-    # If this returns False,
-    # it's likely because the knowledge is empty.
-    return False

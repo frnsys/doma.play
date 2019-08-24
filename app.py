@@ -2,7 +2,7 @@ import json
 import uuid
 import redis
 import config
-from player import bp
+from app.player import bp
 from flask import Flask, jsonify, request, redirect, url_for, render_template
 
 app = Flask(__name__)
@@ -68,7 +68,7 @@ def state_key():
 if __name__ == '__main__':
     import atexit
     from apscheduler.schedulers.background import BackgroundScheduler
-    from manager import Manager
+    from app.manager import Manager
 
     mgr = Manager()
 

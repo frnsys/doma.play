@@ -1,5 +1,5 @@
 import json
-from manager import Manager
+from .manager import Manager
 from datetime import datetime
 from flask import Blueprint, render_template, request, jsonify
 
