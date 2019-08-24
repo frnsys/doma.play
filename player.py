@@ -13,15 +13,15 @@ def play():
     return render_template('play.html')
 
 @bp.route('/ready')
-def game_ready():
-    return jsonify(success=mgr.game_ready())
+def session_ready():
+    return jsonify(success=mgr.is_ready())
+
 
 @bp.route('/join', methods=['POST'])
 def player_join():
     """Player joined"""
     id = request.get_json()['id']
-    mgr.add_player(id)
-    tenant = mgr.get_unclaimed_tenant(id)
+    tenant = mgr.add_player(id)
 
     # Get current state
     state = mgr.sim_state()
@@ -35,21 +35,17 @@ def player_leave():
     """Player left"""
     id = request.get_json()['id']
     mgr.remove_player(id)
-    if not mgr.active_players():
-        mgr.reset()
     return jsonify(success=True)
 
 
 @bp.route('/ping/<id>', methods=['POST'])
 def player_ping(id):
     """Player check-ins, for timeouts"""
-    player_ids = mgr.active_players()
-
     # Stale player
-    if id not in player_ids:
+    if not mgr.players.is_active(id):
         return jsonify(success=False)
 
-    mgr.set_player_val(id, 'ping', round(datetime.utcnow().timestamp()))
+    mgr.players[id, 'ping'] = round(datetime.utcnow().timestamp())
     return jsonify(success=True)
 
 
@@ -77,14 +73,14 @@ def player_doma(id):
 def player_vote(id):
     """Player DOMA parameter vote"""
     data = request.get_json()
-    mgr.set_player_val(id, 'ckpt:vote', data)
+    mgr.players[id, 'ckpt:vote'] = data
     return jsonify(success=True)
 
 
 @bp.route('/vote/results')
 def player_vote_results():
     """Player DOMA parameter vote results"""
-    res = mgr.r.get('play:vote_outcomes')
+    res = mgr.session['vote:results']
     if res is None:
         return jsonify(success=False)
     res = json.loads(res)
@@ -95,14 +91,14 @@ def player_vote_results():
 def player_policy(id):
     """Player DOMA policy vote"""
     data = request.get_json()
-    mgr.set_player_val(id, 'ckpt:policy', data['policy'])
+    mgr.players[id, 'ckpt:policy'] = data['policy']
     return jsonify(success=True)
 
 
 @bp.route('/policy/results')
 def player_policy_results():
     """Player DOMA policy vote results"""
-    res = mgr.r.get('play:policy_outcomes')
+    res = mgr.session['policy:results']
     if res is None:
         return jsonify(success=False)
     res = json.loads(res)
@@ -112,19 +108,15 @@ def player_policy_results():
 @bp.route('/tenant/<id>')
 def player_tenant(id):
     """Player tenant data"""
-    tenant = mgr.get_tenant(id)
+    tenant = mgr.players.tenant(id)
     if tenant is None:
         return jsonify(success=False)
-
-    # Get current state
-    state = mgr.sim_state()
-    return jsonify(success=True, tenant=tenant,
-                   time=state['time'])
+    return jsonify(success=True, tenant=tenant)
 
 
 @bp.route('/players')
 def players():
-    players = mgr.get_tenants()
+    players = mgr.player.tenants()
     return jsonify(players=players)
 
 

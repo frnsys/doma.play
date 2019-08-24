@@ -42,38 +42,18 @@ def design(id):
     return render_template('design.html', data=json.loads(data))
 
 
-@app.route('/state/game')
-def game_state():
-    """Query current game state"""
-    state = redis.get('game_state')
-    if state: state = state.decode('utf8')
-    return jsonify(state=state)
-
-
-@app.route('/state/progress')
-def game_progress():
-    """Query current game progress"""
-    step = redis.get('game_step')
-    progress = float(redis.get('game_progress').decode('utf8'))
-    if step:
-        step = int(step.decode('utf8'))
-    else:
-        step = 0
-    return jsonify(progress=progress, step=step)
-
-
-@app.route('/state')
-def state():
-    """Query current state"""
-    state = json.loads(redis.get('state'))
-    state['key'] = redis.get('state_key').decode('utf8')
-    return jsonify(state)
+@app.route('/status')
+def status():
+    """Query current sim status"""
+    status = redis.get('status')
+    if status: status = status.decode('utf8')
+    return jsonify(status=status)
 
 
 @app.route('/state/key')
 def state_key():
     """Query current state key"""
-    return jsonify(key=redis.get('state_key').decode('utf8'))
+    return jsonify(key=redis.get('state:key').decode('utf8'))
 
 
 

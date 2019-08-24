@@ -10,64 +10,142 @@ from collections import defaultdict
 names = json.load(open('static/names.json'))['frequency']
 script = yaml.load(open('static/script.yaml'))
 
+TRUE = '1'
+FALSE = '0'
+
+class Session:
+    def __init__(self, redis):
+        self.r = redis
+
+    def __getitem__(self, key):
+        val = self.r.get('session:{}'.format(key))
+        if val is not None:
+            return val.decode('utf8')
+        return val
+
+    def __setitem__(self, key, val):
+        if isinstance(val, dict):
+            val = json.dumps(val)
+        self.r.set('session:{}'.format(key), val)
+
+    def reset(self):
+        default = {
+            'last_ckpt': '',
+            'curr_ckpt': '',
+            'state_key': '',
+            'started': FALSE,
+            'run_cmd_sent': FALSE,
+            'next_step': FALSE,
+            'tenants:active': {}
+        }
+        for k, v in default.items():
+            self[k] = v
+
+
+class PlayerManager:
+    def __init__(self, redis):
+        self.r = redis
+
+    def __getitem__(self, key):
+        id, key = key
+        val = self.r.get('player:{}:{}'.format(id, key))
+        if val is not None:
+            return val.decode('utf8')
+        return val
+
+    def __setitem__(self, key, val):
+        id, key = key
+        if isinstance(val, dict):
+            val = json.dumps(val)
+        self.r.set('player:{}:{}'.format(id, key), val)
+
+    def vals(self, key):
+        return {id: self[id, key] for id in self.active()}
+
+    def reset(self):
+        self.r.delete('players:active')
+
+    def add(self, id):
+        self.r.lpush('players:active', id)
+        self[id, 'ping'] = round(datetime.utcnow().timestamp())
+
+    def remove(self, id):
+        self.r.lrem('players:active', 0, id)
+
+    def active(self):
+        return [r.decode('utf8') for r
+                in self.r.lrange('players:active', 0, -1)]
+
+    def is_active(self, id):
+        return id in self.active()
+
+    def prune(self):
+        now = round(datetime.utcnow().timestamp())
+        for id in self.active():
+            last_ping = self[id, 'ping']
+
+            if last_ping is None:
+                self.remove_player(id)
+                continue
+
+            last_ping = int(last_ping)
+            if now - last_ping > config.PLAYER_TIMEOUT:
+                self.remove_player(id)
+                continue
+
+    def all_at_ckpt(self, ckpt):
+        # for id in self.active():
+        #     print(id, self[id, 'ckpt'])
+        return all(self[id, 'ckpt'] == ckpt for id in self.active())
+
+
 
 class Manager:
     def __init__(self):
         self.scenes = script['scenes']
         for id, scene in self.scenes.items():
             scene['id'] = id
-
         self.checkpoints = script['checkpoints']
+
         self.r = redis.Redis(**config.REDIS)
+        self.players = PlayerManager(self.r)
+        self.session = Session(self.r)
         self.reset()
 
     def start_scene(self):
         return self.scenes['START']
+
+    def sim_state(self):
+        return json.loads(self.r.get('state'))
 
     def send_command(self, cmd, data):
         self.r.lpush('cmds', json.dumps({
             cmd: data
         }))
 
-    def set_player_val(self, id, key, val):
-        if isinstance(val, dict):
-            val = json.dumps(val)
-        self.r.set('player:{}:{}'.format(id, key), val)
-
-    def get_player_val(self, id, key):
-        val = self.r.get('player:{}:{}'.format(id, key))
-        if val is not None:
-            return val.decode('utf8')
-        return val
-
-    def get_player_vals(self, key):
-        return {
-            id: self.get_player_val(id, key)
-            for id in self.active_players()
-        }
+    def queued_commands(self):
+        return [r.decode('utf8') for r
+                in self.r.lrange('cmds', 0, -1)]
 
     def check_checkpoint(self):
-        s = self.play_state()
-        state_key = self.r.get('state_key').decode('utf8')
-        ckpt_id = s['curr_ckpt']
-        # print('CHECKING CHECKPOINT')
-        # print(s['last_ckpt'], ckpt_id)
-        if s['last_ckpt'] != ckpt_id and self.all_players_at_ckpt(ckpt_id):
-            # print('All at ckpt')
-            # print(s)
-            s['started'] = True
-            if not s['run_cmd_sent']:
-                # print('===================')
-                # print('===================')
-                # print('===================')
-                # print('SENDING RUN COMMAND')
-                # print('===================')
-                # print('===================')
-                # print('===================')
+        state_key = self.r.get('state:key').decode('utf8')
+
+        # Check that current checkpoint now differs from the last one,
+        # and wait for all players to reach it
+        ckpt_id = self.session['curr_ckpt']
+        if self.session['last_ckpt'] != ckpt_id and self.players.all_at_ckpt(ckpt_id):
+            # First checkpoint indicates that the session is
+            # now closed to new players
+            self.session['started'] = TRUE
+
+            # Ensure we haven't already submitted the run command
+            # to the simulation
+            if self.session['run_cmd_sent'] == FALSE:
                 ckpt = self.checkpoints[ckpt_id]
 
+                # TODO clean this up
                 if ckpt_id == 'doma_param_vote':
-                    votes = self.get_player_vals('ckpt:vote')
+                    votes = self.players.vals('ckpt:vote')
                     defaults = ckpt['defaults']
                     params = {
                         'p_dividend': [],
@@ -93,10 +171,10 @@ class Manager:
                         results['p_rent_share'],
                         results['rent_income_limit']
                     ])
-                    self.r.set('play:vote_outcomes', json.dumps(results))
+                    self.session['vote:results'] = results
 
                 elif ckpt_id == 'policy_vote':
-                    votes = self.get_player_vals('ckpt:policy')
+                    votes = self.players.vals('ckpt:policy')
                     results = defaultdict(int)
                     for v in votes.values():
                         results[v] += 1
@@ -121,145 +199,105 @@ class Manager:
                         print('POLICY VOTE:', p, outcome)
                         all_outcomes[p] = outcome
                         self.send_command(p, outcome)
-                    self.r.set('play:policy_outcomes', json.dumps(all_outcomes))
+                    self.session['policy:results'] = all_outcomes
 
+                # Send the run command to the simulation
                 self.send_command('Run', ckpt['n_steps'])
-                s['state_key'] = state_key
-                s['run_cmd_sent'] = True
+
+                # Track the state key so we can see when it changes,
+                # letting us know that the run command has been executed
+                self.session['state_key'] = state_key
+
+                # Avoid sending multiple run commands at once
+                self.session['run_cmd_sent'] = TRUE
+
                 print(self.queued_commands())
 
             # Check if sim done running
-            elif s['state_key'] != state_key:
+            elif self.session['state_key'] != state_key:
                 # print('DONE RUNNING')
-                s['last_ckpt'] = s['curr_ckpt']
-                s['run_cmd_sent'] = False
-                self.r.set('play:next_step', 1)
-        self.r.set('play', json.dumps(s))
+                self.session['last_ckpt'] = self.session['curr_ckpt']
+                self.session['run_cmd_sent'] = FALSE
+                self.session['next_step'] = TRUE
 
-    def all_players_at_ckpt(self, ckpt):
-        for id in self.active_players():
-            print(id, self.get_player_val(id, 'ckpt'))
-        return all(self.get_player_val(id, 'ckpt') == ckpt for id in self.active_players())
+    def is_new_checkpoint(self, ckpt):
+        return self.session['curr_ckpt'] != ckpt
 
-    def new_checkpoint(self, ckpt):
-        s = self.play_state()
-        return s['curr_ckpt'] != ckpt
-
-    def next_step(self):
-        return int(self.r.get('play:next_step')) == 1
-
-    def game_ready(self):
-        state = self.r.get('game_state')
-        if state: state = state.decode('utf8')
-        s = self.play_state()
-        return state == 'ready' and not s['started']
-
-    def play_state(self):
-        return json.loads(self.r.get('play').decode('utf8'))
+    def is_ready(self):
+        status = self.r.get('status')
+        return status == b'ready' and self.session['started'] == FALSE
 
     def reset(self):
-        default = {
-            'last_ckpt': None,
-            'curr_ckpt': None,
-            'state_key': None,
-            'started': False,
-            'run_cmd_sent': False
-        }
-        self.r.set('play', json.dumps(default))
-        self.r.set('play:next_step', 1)
-
-        self.r.delete('active_players')
-        self.r.delete('ready_players')
-        self.r.delete('active_tenants')
+        self.session.reset()
+        self.players.reset()
         self.send_command('Reset', None)
 
-    def active_players(self):
-        return [r.decode('utf8') for r
-                in self.r.lrange('active_players', 0, -1)]
-
-    def queued_commands(self):
-        return [r.decode('utf8') for r
-                in self.r.lrange('cmds', 0, -1)]
+    def add_player(self, id):
+        self.players.add(id)
+        return self.assign_tenant(id)
 
     def remove_player(self, id):
-        self.r.lrem('active_players', 0, id)
-        self.send_command('ReleaseTenant', id)
-        active_tenants = json.loads(self.r.get('active_tenants') or '{}')
+        self.players.remove(id)
+        self.mgr.send_command('ReleaseTenant', id)
+        active_tenants = json.loads(self.session['tenants:active'] or '{}')
         if id in active_tenants:
             del active_tenants[id]
-        self.r.set('active_tenants', json.dumps(active_tenants))
+        self.session['tenants:active'] = active_tenants
+
+        if not self.players.active():
+            self.reset()
 
     def prune_players(self):
-        now = round(datetime.utcnow().timestamp())
-        for id in self.active_players():
-            last_ping = self.get_player_val(id, 'ping')
+        print('Pruning players...')
+        self.players.prune()
+        if not self.players.active():
+            if self.session['started'] == TRUE: self.reset()
 
-            if last_ping is None:
-                self.remove_player(id)
-                continue
-
-            last_ping = int(last_ping)
-            if now - last_ping > config.PLAYER_TIMEOUT:
-                self.remove_player(id)
-                continue
-
-        if not self.active_players():
-            s = json.loads(self.r.get('play').decode('utf8'))
-            if s['started']: self.reset()
-
-    def sim_state(self):
-        return json.loads(self.r.get('state'))
-
-    def get_tenant(self, id):
-        res = self.get_player_val(id, 'tenant')
+    def tenant(self, id):
+        res = self.players[id, 'tenant']
         if res is None:
             return None
         else:
             tenant = json.loads(res)
-            res = self.get_player_val(id, 'tenant_meta')
+            res = self.players[id, 'tenant:meta']
             if res is not None:
-                for k, v in json.loads(res).items():
-                    tenant[k] = v
+                meta = json.loads(res)
+                tenant.update(meta)
             return tenant
 
-    def get_tenants(self):
-        player_ids = self.active_players()
-        players = {}
-        for id in player_ids:
-            tenant = self.get_tenant(id)
-            if tenant is None:
-                tenant = {}
-            players[id] = tenant
-        return players
+    def tenants(self):
+        return {
+            id: self.tenant(id) or {}
+            for id in self.players.active()
+        }
 
-    def add_player(self, id):
-        self.r.lpush('active_players', id)
-        self.set_player_val(id, 'ping', round(datetime.utcnow().timestamp()))
-
-    def get_unclaimed_tenant(self, id):
+    def assign_tenant(self, id):
         # Get tenants
         tenants = [json.loads(r.decode('utf8')) for r
                    in self.r.lrange('tenants', 0, -1)]
 
         # Get tenants not claimed by players
-        active_tenants = json.loads(self.r.get('active_tenants') or '{}')
-        available_tenants = [t for t in tenants if t['id'] not in active_tenants.values() and t['unit'] is not None]
+        active_tenants = json.loads(self.session['tenants:active'] or '{}')
+        available_tenants = [t for t in tenants
+                             if t['id'] not in active_tenants.values()
+                             and t['unit']['id'] is not None]
 
         tenant = random.choice(available_tenants)
-        tenant_id = tenant['id']
-        active_tenants[id] = tenant_id
-        self.r.set('active_tenants', json.dumps(active_tenants))
-        self.send_command('SelectTenant', [id, tenant_id])
-        tenant['name'] = weighted_choice(names)
+        active_tenants[id] = tenant['id']
+        self.session['tenants:active'] = active_tenants
+
+        self.send_command('SelectTenant', [id, tenant['id']])
 
         # This is totally arbitrary atm
-        tenant['savings'] = random.random() * 0.25 * tenant['income'] * 12 * 5;
-
-        self.set_player_val(id, 'tenant_meta', {
-            'savings': tenant['savings'],
-            'name': tenant['name']
+        tenant.update({
+            'name': weighted_choice(names),
+            'savings': random.random() * 0.25 * tenant['income'] * 12 * 5
         })
 
+        self.players[id, 'tenant:meta'] = {
+            'savings': tenant['savings'],
+            'name': tenant['name']
+        }
         return tenant
 
     def next_scene(self, player_id, scene_id, action_id):
@@ -268,22 +306,25 @@ class Manager:
         scene = self.scenes[scene_id]
         outcome = scene['actions'][action_id]
         next_scene_id = outcome.get('next')
+
+        # Ending
         if not next_scene_id:
             self.reset()
             return None
-        next_scene = self.scenes[next_scene_id]
 
         # Check if the next scene has a checkpoint id
+        next_scene = self.scenes[next_scene_id]
         ckpt = next_scene.get('checkpoint')
         if ckpt:
-            self.set_player_val(player_id, 'ckpt', ckpt)
-            if self.new_checkpoint(ckpt):
-                s = json.loads(self.r.get('play').decode('utf8'))
-                s['curr_ckpt'] = ckpt
-                self.r.set('play:next_step', 0)
-                self.r.set('play', json.dumps(s))
+            self.players[player_id, 'ckpt'] = ckpt
+
+            # Reached new checkpoint
+            if self.is_new_checkpoint(ckpt):
+                self.session['curr_ckpt'] = ckpt
+                self.session['next_step'] = FALSE
                 return None
-            elif self.next_step():
+
+            elif self.session['next_step'] == TRUE:
                 return next_scene
             else:
                 return None

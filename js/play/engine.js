@@ -10,6 +10,126 @@ class Engine {
   constructor() {
     this.id = uuid();
     this.player = {};
+
+    this.scenes = {
+      'apartment_search': (scene) => this.searchApartments(scene),
+      'equity_purchase': (scene) => {
+        api.get('/state', (state) => {
+          this.state = state;
+          Views.EquityPurchase(sceneEl, {
+            scene,
+            tenant: this.player.tenant,
+            next: (shares) => {
+              let influence = (shares/this.player.tenant.savings)/10;
+              api.post(`/play/doma/${this.id}`, {amount: shares, influence: influence}, () => {
+                this.waitForNextScene(scene, 0);
+              });
+            }
+          });
+        });
+      },
+      'equity_results': (scene) => {
+        api.get('/state', (state) => {
+          let stats = state.stats;
+          let prevStats = this.state.stats;
+          let results = {
+            members: stats.doma_members,
+            raised: stats.doma_raised - prevStats.doma_raised,
+            units: stats.landlords[-1].n_units,
+            delta: {
+              members: {
+                amount: stats.doma_members - prevStats.doma_members,
+                percent: util.percentChange(stats.doma_members, prevStats.doma_members)
+              },
+              raised: {
+                amount: Math.round(stats.doma_raised - prevStats.doma_raised),
+                percent: util.percentChange(stats.doma_raised, prevStats.doma_raised)
+              },
+              units: {
+                amount: stats.landlords[-1].n_units - prevStats.landlords[-1].n_units,
+                percent: util.percentChange(stats.landlords[-1].n_units, prevStats.landlords[-1].n_units)
+              }
+            }
+          };
+          results.delta.neighbs = Object.keys(prevStats.neighborhoods).reduce((acc, id) => {
+            let prev = prevStats.neighborhoods[id].doma_units;
+            let curr = stats.neighborhoods[id].doma_units;
+            let delta = curr - prev;
+            if (delta > 0) {
+              let neighb = this.neighborhoods[id].name;
+              acc[neighb] = delta;
+            }
+            return acc;
+          }, {});
+          this.state = state;
+
+          Views.EquityResults(sceneEl, {
+            results,
+            next: () => {
+              this.waitForNextScene(scene, 0);
+            }
+          });
+        });
+      },
+      'protest': (scene) => {
+        Views.BasicScene(sceneEl, {
+          scene,
+          onAction: () => {
+            api.post(`/play/policy/${this.id}`, {policy: 'RentFreeze'}, () => {
+              this.waitForNextScene(scene, 0);
+            });
+          }
+        });
+      },
+      'petition': (scene) => {
+        Views.BasicScene(sceneEl, {
+          scene,
+          onAction: () => {
+            api.post(`/play/policy/${this.id}`, {policy: 'MarketTax'}, () => {
+              this.waitForNextScene(scene, 0);
+            });
+          }
+        });
+      },
+      'policy_results': (scene) => {
+        api.get('/play/policy/results', ({results}) => {
+          Views.PolicyResults(sceneEl, {
+            results,
+            next: () => {
+              this.waitForNextScene(scene, 0);
+            }
+          });
+        });
+      },
+      'doma_param_vote_equity': (scene) => {
+        Views.EquityVote(sceneEl, {
+          next: (params) => {
+            api.post(`/play/vote/${this.id}`, params, () => {
+              this.waitForNextScene(scene, 0);
+            });
+          }
+        });
+      },
+      'doma_param_vote_rent': (scene) => {
+        Views.RentVote(sceneEl, {
+          next: (params) => {
+            api.post(`/play/vote/${this.id}`, params, () => {
+              this.waitForNextScene(scene, 0);
+            });
+          }
+        });
+      },
+      'vote_results': (scene) => {
+        api.get('/play/vote/results', ({results}) => {
+          Views.VoteResults(sceneEl, {
+            results,
+            next: () => {
+              this.waitForNextScene(scene, 0);
+            }
+          });
+        });
+      }
+    };
   }
 
   loadAct(act) {
@@ -17,7 +137,7 @@ class Engine {
     actEl.style.opacity = 1;
     actEl.style.display = 'flex';
     actEl.style.background = `linear-gradient(to bottom, ${act.colors[0]} 0%, ${act.colors[1]} 100%)`;
-    Views.Act(actEl, act);
+    Views.Act(actEl, {act});
 
     // Fade out act interstitial
     setTimeout(() => {
@@ -35,7 +155,19 @@ class Engine {
     if (scene.act) {
       this.loadAct(scene.act);
     }
-    Views.BasicScene(sceneEl, this.waitForNextScene.bind(this), scene);
+
+    if (scene.id.startsWith('act_summary')) {
+      this.summarizeAct(scene);
+
+    } else if (scene.id in this.scenes) {
+      this.scenes[scene.id](scene);
+
+    } else {
+      Views.BasicScene(sceneEl, {
+        scene,
+        onAction: this.waitForNextScene.bind(this)
+      });
+    }
   }
 
   waitForNextScene(scene, action_id) {
@@ -44,114 +176,8 @@ class Engine {
       scene_id: scene.id,
       action_id: action_id
     }, (data) => {
-      console.log(data);
       if (data.ok) {
-        if (data.scene.id == 'apartment_search') {
-          this.searchApartments(data.scene);
-
-        } else if (data.scene.id == 'equity_purchase') {
-          api.get('/state', (state) => {
-            this.state = state;
-          });
-          Views.EquityPurchase(sceneEl, data.scene, this.player.tenant, (shares) => {
-            console.log('PURCHASING SHARES');
-            let influence = (shares/this.player.tenant.savings)/10;
-            console.log(influence);
-            api.post(`/play/doma/${this.id}`, {amount: shares, influence: influence}, () => {
-              this.waitForNextScene(data.scene, 0);
-            });
-          });
-
-        } else if (data.scene.id == 'equity_results') {
-          api.get('/state', (state) => {
-            let stats = state.stats;
-            let prevStats = this.state.stats;
-            let results = {
-              members: stats.doma_members,
-              raised: stats.doma_raised - prevStats.doma_raised,
-              units: stats.landlords[-1].n_units,
-              delta: {
-                members: {
-                  amount: stats.doma_members - prevStats.doma_members,
-                  percent: Math.round(util.percentChange(stats.doma_members, prevStats.doma_members))
-                },
-                raised: {
-                  amount: Math.round(stats.doma_raised - prevStats.doma_raised),
-                  percent: Math.round(util.percentChange(stats.doma_raised, prevStats.doma_raised))
-                },
-                units: {
-                  amount: stats.landlords[-1].n_units - prevStats.landlords[-1].n_units,
-                  percent: Math.round(util.percentChange(stats.landlords[-1].n_units, prevStats.landlords[-1].n_units))
-                }
-              }
-            };
-            results.delta.neighbs = Object.keys(prevStats.neighborhoods).reduce((acc, id) => {
-              let prev = prevStats.neighborhoods[id].doma_units;
-              let curr = stats.neighborhoods[id].doma_units;
-              let delta = curr - prev;
-              if (delta > 0) {
-                let neighb = this.neighborhoods[id].name;
-                acc[neighb] = delta;
-              }
-              return acc;
-            }, {});
-            this.state = state;
-
-            Views.EquityResults(sceneEl, results, () => {
-              this.waitForNextScene(data.scene, 0);
-            });
-          });
-
-
-        } else if (data.scene.id == 'protest') {
-          console.log('YOYO');
-          Views.BasicScene(sceneEl, () => {
-            api.post(`/play/policy/${this.id}`, {policy: 'RentFreeze'}, () => {
-              this.waitForNextScene(data.scene, 0);
-            });
-          }, data.scene);
-
-        } else if (data.scene.id == 'petition') {
-          Views.BasicScene(sceneEl, () => {
-            api.post(`/play/policy/${this.id}`, {policy: 'MarketTax'}, () => {
-              this.waitForNextScene(data.scene, 0);
-            });
-          }, scene);
-
-        } else if (data.scene.id == 'policy_results') {
-          api.get('/play/policy/results', ({results}) => {
-            Views.PolicyResults(sceneEl, results, () => {
-              this.waitForNextScene(data.scene, 0);
-            });
-          });
-
-        } else if (data.scene.id == 'doma_param_vote_equity') {
-          Views.EquityVote(sceneEl, (params) => {
-            api.post(`/play/vote/${this.id}`, params, () => {
-              this.waitForNextScene(data.scene, 0);
-            });
-          });
-
-        } else if (data.scene.id == 'doma_param_vote_rent') {
-          Views.RentVote(sceneEl, (params) => {
-            api.post(`/play/vote/${this.id}`, params, () => {
-              this.waitForNextScene(data.scene, 0);
-            });
-          });
-
-        } else if (data.scene.id == 'vote_results') {
-          api.get('/play/vote/results', ({results}) => {
-            Views.VoteResults(sceneEl, results, () => {
-              this.waitForNextScene(data.scene, 0);
-            });
-          });
-
-        } else if (data.scene.id.startsWith('act_summary')) {
-          this.summarizeAct(data.scene);
-
-        } else {
-          this.loadScene(data.scene);
-        }
+        this.loadScene(data.scene);
       } else {
         // TODO waiting message
         setTimeout(() => {
@@ -171,8 +197,11 @@ class Engine {
         delete data.players[this.id];
         let players = Object.values(data.players);
         console.log(data);
-        Views.ActSummary(sceneEl, summary, me, players, () => {
-          this.waitForNextScene(scene.id, 0);
+        Views.ActSummary(sceneEl, {
+          summary, me, players,
+          next: () => {
+            this.waitForNextScene(scene.id, 0);
+          }
         });
       });
     });
@@ -224,10 +253,17 @@ class Engine {
       console.log(data.state);
       console.log(this.player);
       this.summary = this.summarize(data.state);
-      Views.CitySummary(sceneEl, this.summary, () => {
-        Views.PlayerIntro(sceneEl, this.player.tenant, this.summary, () => {
-          this.loadScene(data.scene);
-        });
+      Views.CitySummary(sceneEl, {
+        summary: this.summary,
+        next: () => {
+          Views.PlayerIntro(sceneEl, {
+            tenant: this.player.tenant,
+            summary: this.summary,
+            next: () => {
+              this.loadScene(data.scene);
+            }
+          });
+        }
       });
     });
     window.addEventListener('unload', () => {
@@ -243,20 +279,27 @@ class Engine {
   searchApartments(scene) {
     api.get('/state', (state) => {
       let {parcels, vacancies, affordable} = this.parseParcels(state);
-      let el = Views.ApartmentSearch(sceneEl, vacancies, affordable, () => {
-        this.player.couch = {
-          neighborhood: util.randomChoice(Object.values(this.neighborhoods))
-        };
-        this.waitForNextScene(scene, 1);
+      let el = Views.ApartmentSearch(sceneEl, {
+        vacancies, affordable,
+        onSkip: () => {
+          this.player.couch = {
+            neighborhood: util.randomChoice(Object.values(this.neighborhoods))
+          };
+          this.waitForNextScene(scene, 1);
+        }
       });
+
       let stageEl = el.querySelector('#stage');
       let listingsEl = el.querySelector('#listings');
       showApartments(stageEl, state.map, parcels, (p) => {
-        Views.ApartmentListings(listingsEl, p.units, (u) => {
-          // TODO disable interactions?
-          api.post(`/play/move/${this.id}`, {id: u.id}, (data) => {
-            this.waitForNextScene(scene, 0);
-          });
+        Views.ApartmentListings(listingsEl, {
+          units: p.units,
+          onSelect: (u) => {
+            // TODO disable interactions?
+            api.post(`/play/move/${this.id}`, {id: u.id}, (data) => {
+              this.waitForNextScene(scene, 0);
+            });
+          }
         });
       });
     });

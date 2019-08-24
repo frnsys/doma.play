@@ -101,7 +101,7 @@ function update() {
     // Compare state keys to
     // see if state changed
     if (data.key !== stateKey) {
-      api.get('/state/game', ({state}) => {
+      api.get('/status', ({state}) => {
         if (state == 'fastforward') {
           statusEl.style.display = 'inline-block';
           statusEl.innerHTML = 'Going to the future...';
@@ -198,7 +198,8 @@ let city;
 const statusEl = document.getElementById('city-status');
 
 let loadWait = setInterval(() => {
-  api.get('/state/game', ({state}) => {
+  api.get('/status', ({state}) => {
+    // TODO update
     if (state == 'ready' || state == 'fastforward' || state == 'inprogress') {
       if (state == 'ready' || state == 'inprogress') {
         statusEl.style.display = 'none';

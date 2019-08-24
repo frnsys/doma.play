@@ -16,7 +16,7 @@ function randomChoice(choices) {
 
 function percentChange(newVal, oldVal) {
   let change = newVal - oldVal;
-  return (change / oldVal) * 100;
+  return Math.round((change / oldVal) * 100);
 }
 
 export default { distance, dateFromTime, randomChoice, percentChange };

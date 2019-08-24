@@ -13,9 +13,15 @@ function checkReady() {
       _success = success;
       if (success) {
         clearInterval(interval);
-        Views.Splash(sceneEl, success, () => engine.start());
+        Views.Splash(sceneEl, {
+          ready: success,
+          next: () => engine.start()
+        });
       } else {
-        Views.Splash(sceneEl, success);
+        Views.Splash(sceneEl, {
+          ready: success,
+          next: () => {}
+        });
       }
     }
   });
