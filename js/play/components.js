@@ -377,6 +377,153 @@ const EquityResults = View((state, results, onClick) => {
   }
 });
 
+const PolicyResults = View((state, results, onClick) => {
+  state.onClick = onClick;
+  return `<div>
+    ${results['RentFreeze'] ? `<p>Protesters were successful in pressuring policymakers into implementing a ${results['RentFreeze']}-month rent freeze. Hopefully this will relieve some pressure.</p>` : ''}
+    ${results['MarketTax'] ? `<p>Petitioners managed to push through a housing market tax, in effect for ${results['MarketTax']} months, which is expected to slow down rising prices.</p>` : ''}
+  </div>`;
+}, {
+  '.button': {
+    'click': ({state}) => {
+      state.onClick();
+    }
+  }
+});
+
+const EquityVote = View((state, onClick) => {
+  state.onClick = onClick;
+  state.params = {
+    p_dividend: 0.05,
+    p_rent_share: 0.05
+  };
+  return `<div>
+    <div>
+      <div>Rent to Equity</div>
+      <div class="bar-annotated--labels">
+        <div class="bar--label bar--label-left">
+          <div>0%</div>
+        </div>
+        <div class="bar--label bar--label-right">
+          <div>30%</div>
+        </div>
+      </div>
+      <input type="range" min="0" max="30" value="5" class="equity-slider">
+    </div>
+
+    <div>
+      <div>Rent to Dividends</div>
+      <div class="bar-annotated--labels">
+        <div class="bar--label bar--label-left">
+          <div>0%</div>
+        </div>
+        <div class="bar--label bar--label-right">
+          <div>90%</div>
+        </div>
+      </div>
+      <input type="range" min="0" max="90" value="5" class="dividend-slider">
+    </div>
+
+    <div class="scene--actions">
+      <div class="button scene--action">Vote</div>
+    </div>
+  </div>`;
+}, {
+  '.button': {
+    'click': ({state}) => {
+      state.onClick(state.params);
+    }
+  },
+  '.equity-slider': {
+    'input': ({state, el, ev}) => {
+      state.params.p_rent_share = parseFloat(ev.target.value)/100;
+    }
+  },
+  '.dividend-slider': {
+    'input': ({state, el, ev}) => {
+      state.params.p_dividend = parseFloat(ev.target.value)/100;
+    }
+  },
+});
+
+const RentVote = View((state, onClick) => {
+  state.onClick = onClick;
+  state.params = {
+    p_dividend: 0.05,
+    rent_income_limit: 0.35
+  };
+  return `<div>
+    <div>
+      <div>Rent Limit</div>
+      <div class="bar-annotated--labels">
+        <div class="bar--label bar--label-left">
+          <div>0%</div>
+        </div>
+        <div class="bar--label bar--label-right">
+          <div>100% avg income</div>
+        </div>
+      </div>
+      <input type="range" min="0" max="100" value="35" class="rent-slider">
+    </div>
+
+    <div>
+      <div>Rent to Dividends</div>
+      <div class="bar-annotated--labels">
+        <div class="bar--label bar--label-left">
+          <div>0%</div>
+        </div>
+        <div class="bar--label bar--label-right">
+          <div>90%</div>
+        </div>
+      </div>
+      <input type="range" min="0" max="90" value="5" class="dividend-slider">
+    </div>
+
+    <div class="scene--actions">
+      <div class="button scene--action">Vote</div>
+    </div>
+  </div>`;
+}, {
+  '.button': {
+    'click': ({state}) => {
+      state.onClick(state.params);
+    }
+  },
+  '.rent-slider': {
+    'input': ({state, el, ev}) => {
+      state.params.rent_income_limit = parseFloat(ev.target.value)/100;
+    }
+  },
+  '.dividend-slider': {
+    'input': ({state, el, ev}) => {
+      state.params.p_dividend = parseFloat(ev.target.value)/100;
+    }
+  },
+});
+
+
+const VoteResults = View((state, results, onClick) => {
+  state.onClick = onClick;
+  return `<div>
+    <h1>DOMA parameters</h1>
+    <ul>
+      <li>Rent to Equity: ${Math.round(results.p_rent_share*100)}%</li>
+      <li>Rent to Dividend: ${Math.round(results.p_dividend*100)}%</li>
+      <li>Rent Limit: ${Math.round(results.rent_income_limit*100)}% of average income</li>
+    </ul>
+    <div class="scene--actions">
+      <div class="button scene--action">Vote</div>
+    </div>
+  </div>`;
+}, {
+  '.button': {
+    'click': ({state}) => {
+      state.onClick();
+    }
+  }
+});
+
 
 export default {BasicScene, Act, Splash, CitySummary, ActSummary, PlayerIntro,
-  ApartmentSearch, ApartmentListings, EquityPurchase, EquityResults};
+  ApartmentSearch, ApartmentListings, EquityPurchase, EquityResults, PolicyResults,
+  EquityVote, RentVote, VoteResults};

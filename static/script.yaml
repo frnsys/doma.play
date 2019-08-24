@@ -17,8 +17,18 @@ scenes:
     title: "Commute test"
     description: "going to equity"
     actions:
-      - name: "equity test"
-        next: "equity_purchase"
+      - name: "param test"
+        next: "doma_param_vote_equity"
+      # - name: "policy test"
+      #   next: "protest"
+      # - name: "equity test"
+      #   next: "equity_purchase"
+  protest:
+    title: "Protest"
+    description: "going to result in rent freeze"
+    actions:
+      - name: "PROTEST"
+        next: "policy_results"
   commute2:
     title: "Commute test"
     description: "going to apartment"
@@ -50,6 +60,26 @@ scenes:
     actions:
       - name: "testing"
         next: "act_summary_1"
+  policy_results:
+    title: "Policy Checkpoint"
+    description: "test test test"
+    checkpoint: "policy_vote"
+    actions:
+      - name: "okok"
+        next: "testing2"
+  doma_param_vote_equity:
+    title: "Equity Generation"
+    description: "test test test"
+    actions:
+      - name: "okok"
+        next: "vote_results"
+  vote_results:
+    title: "Param Vote Checkpoint"
+    description: "test test test"
+    checkpoint: "doma_param_vote"
+    actions:
+      - name: "okok"
+        next: "testing2"
   act_summary_1:
     title: "Post checkpoint"
     description: "test test test"
@@ -78,3 +108,11 @@ checkpoints:
     n_steps: 40
   equity_results:
     n_steps: 2
+  doma_param_vote:
+    n_steps: 1
+    defaults:
+        p_dividend: 0.75
+        p_rent_share: 0.1
+        rent_income_limit: 0.5
+  policy_vote:
+    n_steps: 1

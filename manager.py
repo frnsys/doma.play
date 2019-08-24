@@ -1,9 +1,11 @@
+import math
 import json
 import yaml
 import redis
 import random
 import config
 from datetime import datetime
+from collections import defaultdict
 
 names = json.load(open('static/names.json'))['frequency']
 script = yaml.load(open('static/script.yaml'))
@@ -28,6 +30,8 @@ class Manager:
         }))
 
     def set_player_val(self, id, key, val):
+        if isinstance(val, dict):
+            val = json.dumps(val)
         self.r.set('player:{}:{}'.format(id, key), val)
 
     def get_player_val(self, id, key):
@@ -35,6 +39,12 @@ class Manager:
         if val is not None:
             return val.decode('utf8')
         return val
+
+    def get_player_vals(self, key):
+        return {
+            id: self.get_player_val(id, key)
+            for id in self.active_players()
+        }
 
     def check_checkpoint(self):
         s = self.play_state()
@@ -55,6 +65,64 @@ class Manager:
                 # print('===================')
                 # print('===================')
                 ckpt = self.checkpoints[ckpt_id]
+
+                if ckpt_id == 'doma_param_vote':
+                    votes = self.get_player_vals('ckpt:vote')
+                    defaults = ckpt['defaults']
+                    params = {
+                        'p_dividend': [],
+                        'p_rent_share': [],
+                        'rent_income_limit': []
+                    }
+                    for k in params.keys():
+                        params[k].append(defaults[k])
+
+                    for v in votes.values():
+                        v = json.loads(v)
+                        for k in params.keys():
+                            if k in v:
+                                params[k].append(v[k])
+
+                    # Tally votes as means
+                    results = {}
+                    for k in params.keys():
+                        results[k] = sum(params[k])/len(params[k])
+
+                    self.send_command('DOMAConfigure', [
+                        results['p_dividend'],
+                        results['p_rent_share'],
+                        results['rent_income_limit']
+                    ])
+                    self.r.set('play:vote_outcomes', json.dumps(results))
+
+                elif ckpt_id == 'policy_vote':
+                    votes = self.get_player_vals('ckpt:policy')
+                    results = defaultdict(int)
+                    for v in votes.values():
+                        results[v] += 1
+
+                    months = [6, 12, 24, 48]
+                    all_outcomes = {}
+                    for p in ['RentFreeze', 'MarketTax']:
+                        votes = results.get(p, 0)
+                        if not votes: continue
+                        wts = [
+                            math.pow(votes, 1),
+                            math.pow(votes/3, 2),
+                            math.pow(votes/4, 3),
+                            math.pow(votes/5, 4),
+                        ]
+
+                        choices = {}
+                        total = sum(wts)
+                        for r, wt in zip(months, wts):
+                            choices[r] = wt/total
+                        outcome = weighted_choice(choices)
+                        print('POLICY VOTE:', p, outcome)
+                        all_outcomes[p] = outcome
+                        self.send_command(p, outcome)
+                    self.r.set('play:policy_outcomes', json.dumps(all_outcomes))
+
                 self.send_command('Run', ckpt['n_steps'])
                 s['state_key'] = state_key
                 s['run_cmd_sent'] = True
@@ -62,7 +130,7 @@ class Manager:
 
             # Check if sim done running
             elif s['state_key'] != state_key:
-                print('DONE RUNNING')
+                # print('DONE RUNNING')
                 s['last_ckpt'] = s['curr_ckpt']
                 s['run_cmd_sent'] = False
                 self.r.set('play:next_step', 1)
@@ -135,6 +203,10 @@ class Manager:
                 self.remove_player(id)
                 continue
 
+        if not self.active_players():
+            s = json.loads(self.r.get('play').decode('utf8'))
+            if s['started']: self.reset()
+
     def sim_state(self):
         return json.loads(self.r.get('state'))
 
@@ -183,10 +255,10 @@ class Manager:
         # This is totally arbitrary atm
         tenant['savings'] = random.random() * 0.25 * tenant['income'] * 12 * 5;
 
-        self.set_player_val(id, 'tenant_meta', json.dumps({
+        self.set_player_val(id, 'tenant_meta', {
             'savings': tenant['savings'],
             'name': tenant['name']
-        }))
+        })
 
         return tenant
 

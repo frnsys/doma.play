@@ -1,5 +1,6 @@
-from datetime import datetime
+import json
 from manager import Manager
+from datetime import datetime
 from flask import Blueprint, render_template, request, jsonify
 
 mgr = Manager()
@@ -70,6 +71,42 @@ def player_doma(id):
     mgr.send_command('DOMAAdd', [id, data['amount']])
     mgr.send_command('DOMAPreach', [id, data['influence']])
     return jsonify(success=True)
+
+
+@bp.route('/vote/<id>', methods=['POST'])
+def player_vote(id):
+    """Player DOMA parameter vote"""
+    data = request.get_json()
+    mgr.set_player_val(id, 'ckpt:vote', data)
+    return jsonify(success=True)
+
+
+@bp.route('/vote/results')
+def player_vote_results():
+    """Player DOMA parameter vote results"""
+    res = mgr.r.get('play:vote_outcomes')
+    if res is None:
+        return jsonify(success=False)
+    res = json.loads(res)
+    return jsonify(success=True, results=res)
+
+
+@bp.route('/policy/<id>', methods=['POST'])
+def player_policy(id):
+    """Player DOMA policy vote"""
+    data = request.get_json()
+    mgr.set_player_val(id, 'ckpt:policy', data['policy'])
+    return jsonify(success=True)
+
+
+@bp.route('/policy/results')
+def player_policy_results():
+    """Player DOMA policy vote results"""
+    res = mgr.r.get('play:policy_outcomes')
+    if res is None:
+        return jsonify(success=False)
+    res = json.loads(res)
+    return jsonify(success=True, results=res)
 
 
 @bp.route('/tenant/<id>')

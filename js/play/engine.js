@@ -102,6 +102,50 @@ class Engine {
             });
           });
 
+
+        } else if (data.scene.id == 'protest') {
+          console.log('YOYO');
+          Views.BasicScene(sceneEl, () => {
+            api.post(`/play/policy/${this.id}`, {policy: 'RentFreeze'}, () => {
+              this.waitForNextScene(data.scene, 0);
+            });
+          }, data.scene);
+
+        } else if (data.scene.id == 'petition') {
+          Views.BasicScene(sceneEl, () => {
+            api.post(`/play/policy/${this.id}`, {policy: 'MarketTax'}, () => {
+              this.waitForNextScene(data.scene, 0);
+            });
+          }, scene);
+
+        } else if (data.scene.id == 'policy_results') {
+          api.get('/play/policy/results', ({results}) => {
+            Views.PolicyResults(sceneEl, results, () => {
+              this.waitForNextScene(data.scene, 0);
+            });
+          });
+
+        } else if (data.scene.id == 'doma_param_vote_equity') {
+          Views.EquityVote(sceneEl, (params) => {
+            api.post(`/play/vote/${this.id}`, params, () => {
+              this.waitForNextScene(data.scene, 0);
+            });
+          });
+
+        } else if (data.scene.id == 'doma_param_vote_rent') {
+          Views.RentVote(sceneEl, (params) => {
+            api.post(`/play/vote/${this.id}`, params, () => {
+              this.waitForNextScene(data.scene, 0);
+            });
+          });
+
+        } else if (data.scene.id == 'vote_results') {
+          api.get('/play/vote/results', ({results}) => {
+            Views.VoteResults(sceneEl, results, () => {
+              this.waitForNextScene(data.scene, 0);
+            });
+          });
+
         } else if (data.scene.id.startsWith('act_summary')) {
           this.summarizeAct(data.scene);
 
@@ -200,7 +244,6 @@ class Engine {
     api.get('/state', (state) => {
       let {parcels, vacancies, affordable} = this.parseParcels(state);
       let el = Views.ApartmentSearch(sceneEl, vacancies, affordable, () => {
-        console.log('SKIPPING');
         this.player.couch = {
           neighborhood: util.randomChoice(Object.values(this.neighborhoods))
         };
