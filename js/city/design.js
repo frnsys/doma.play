@@ -37,9 +37,9 @@ const defaultCellData = {
   type: parcelTypes[0]
 }
 const defaultCity = {
+  maxBedrooms: 4,
   pricePerSqm: 100,
   priceToRentRatio: 10,
-  population: 1000,
   landlords: 10,
   incomeMu: 9,
   incomeSigma: 1
@@ -268,9 +268,9 @@ gui.add(control, 'source');
 
 const citygui = gui.addFolder('City');
 citygui.add(design.city, 'name');
+citygui.add(design.city, 'maxBedrooms').min(1).step(1);
 citygui.add(design.city, 'pricePerSqm').min(0).step(1);
 citygui.add(design.city, 'priceToRentRatio').min(1).step(1);
-citygui.add(design.city, 'population').min(0).step(100);
 citygui.add(design.city, 'landlords').min(0).step(1);
 citygui.add(design.city, 'incomeMu').min(0);
 citygui.add(design.city, 'incomeSigma').min(0);
@@ -377,8 +377,8 @@ function updateCityLimits() {
       let neighb = design.neighborhoods[c.data.neighborhoodId];
       unitsMin += neighb.minUnits;
       unitsMax += neighb.maxUnits;
-      occupancyMin += Math.floor(neighb.minUnits * (neighb.minArea/neighb.sqmPerOccupant));
-      occupancyMax += Math.floor(neighb.maxUnits * (neighb.maxArea/neighb.sqmPerOccupant));
+      occupancyMin += Math.floor(neighb.minUnits);
+      occupancyMax += Math.floor(neighb.maxUnits * design.city.maxBedrooms);
     }
   });
   el.innerHTML = `Units: ${unitsMin}-${unitsMax}<br />Occupancy: ${occupancyMin}-${occupancyMax}`;
