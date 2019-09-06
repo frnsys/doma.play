@@ -235,15 +235,15 @@ class Manager:
 
     def tenant(self, id):
         res = self.players[id, 'tenant']
-        if res is None:
+        meta = self.players[id, 'tenant:meta']
+        data = {}
+        if res is not None:
+            data.update(json.loads(res))
+        if meta is not None:
+            data.update(json.loads(meta))
+        if not data:
             return None
-        else:
-            tenant = json.loads(res)
-            res = self.players[id, 'tenant:meta']
-            if res is not None:
-                meta = json.loads(res)
-                tenant.update(meta)
-            return tenant
+        return data
 
     def tenants(self):
         return {

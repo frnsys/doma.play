@@ -157,6 +157,46 @@ class Engine {
             }
           });
         });
+      },
+      'bar_friends': (scene) => {
+        api.get('/play/players', (data) => {
+          let n = Object.keys(data.players).length;
+          if (n <= 1) {
+            scene.description = 'The bar is pretty empty, but a couple bodies linger about. ' + scene.description;
+          } else {
+            scene.description = 'There are quite a few patrons tonight. ' + scene.description;
+          }
+          Views.BasicScene(sceneEl, {
+            scene,
+            onAction: (scene, actionId) => {
+              if (actionId == 0) {
+                // Improve social parameter
+                api.post(`/play/social/${this.id}`, {}, () => {});
+              }
+              this.waitForNextScene(scene, actionId);
+            }
+          });
+        });
+      },
+      'bar_friends_2': (scene) => {
+        api.get('/play/players', (data) => {
+          let others = Object.keys(data.players).filter((id) => id !== this.id).map((id) => data.players[id]);
+          if (others.length == 0) {
+            scene.description = scene.description;
+          } else if (others.length == 1) {
+            scene.description = `They introduce themselves as ${others[0].name}. ` + scene.description;
+          } else if (others.length == 2) {
+            scene.description = `The pair introduces themselves as ${others[0].name} and ${others[1].name}. ` + scene.description;
+          } else {
+            let names = others.slice(0, others.length-1).map((o) => o.name).join(', ');
+            names = `${names}, and ${others[others.length-1].name}`;
+            scene.description = `The group introduces themselves as ${names}. ` + scene.description;
+          }
+          Views.BasicScene(sceneEl, {
+            scene,
+            onAction: this.waitForNextScene.bind(this)
+          });
+        });
       }
     };
   }
@@ -176,7 +216,7 @@ class Engine {
           actEl.style.display = 'none';
           clearInterval(fadeOut);
         }
-      }, 100);
+      }, 80);
     }, 4000);
   }
 
@@ -340,6 +380,7 @@ class Engine {
         }
       });
 
+      let attempts = 0;
       let stageEl = el.querySelector('#stage');
       let listingsEl = el.querySelector('#listings');
       Views.ApartmentListings(listingsEl, {});
@@ -350,6 +391,8 @@ class Engine {
           maxSpaciousness: maxSpaciousness,
           units: p.units,
           onSelect: (u, ev) => {
+            attempts += 1;
+
             // DOMA units always accept players
             if (u.owner.type == 'DOMA') {
               // TODO disable interactions?
@@ -358,7 +401,7 @@ class Engine {
                 this.waitForNextScene(scene, 0);
               });
             } else {
-              if (Math.random() <= 0.2) {
+              if ((Math.random() <= 0.2 && attempts > 2) || attempts >= 8) {
                 this.player.tenant.rent = u.rentPerTenant;
                 api.post(`/play/move/${this.id}`, {id: u.id}, (data) => {
                   this.waitForNextScene(scene, 0);

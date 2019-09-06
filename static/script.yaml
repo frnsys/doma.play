@@ -46,16 +46,32 @@ scenes:
       - name: "Have another drink"
         next: "bar_friends"
   bar_friends:
+    image: waving.png
+    title: "Eavesdropping"
+    description: "Some people nearby overhear your conversation and walk over."
+    actions:
+      - name: "Stay awhile and listen"
+        next: "bar_friends_2"
+      - name: "I don't care"
+        next: "bar_friends_ignore"
+  bar_friends_2:
     image: bar.png
     title: "New Friends"
-    description: "Some people nearby overhear your conversation and join in. They recently had a similarly difficult time finding a new place...in fact, you might have taken one of the places they were looking at. But they don't blame you. This rental market turns renters against each other, misdirecting their frustrations."
+    description: "They recently had a similarly difficult time finding a new place...in fact, you might have taken one of the places they were looking at. But they don't blame you. This rental market turns renters against each other, misdirecting their frustrations."
     actions:
-      - name: "Have another drink"
-        next: "bar_friends_2"
-  bar_friends_2:
+      - name: "Comiserate"
+        next: "bar_friends_3"
+  bar_friends_3:
     image: moon.png
     title: "Closing Time"
     description: "It's getting late. Linda chips in as she closes down the bar. More and more people have had similar complaints, she says. Many have left the city altogether. As you head home, you wonder: will that be your only choice too?"
+    actions:
+      - name: "Head home"
+        next: "pack_up"
+  bar_friends_ignore:
+    image: uninterested.png
+    title: "No Thanks"
+    description: "You brush the strangers off and close out your tab. You're exhausted from your search. Sleep sounds better than idle chit-chat."
     actions:
       - name: "Head home"
         next: "pack_up"

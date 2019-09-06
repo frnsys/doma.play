@@ -65,7 +65,13 @@ def player_doma(id):
     """Player contribute to DOMA"""
     data = request.get_json()
     mgr.send_command('DOMAAdd', [id, data['amount']])
-    mgr.send_command('DOMAPreach', [id, data['influence']])
+    mgr.send_command('DOMAPreach', [id, data['influence'], True])
+    return jsonify(success=True)
+
+@bp.route('/social/<id>', methods=['POST'])
+def player_social(id):
+    """Player socialize"""
+    mgr.send_command('DOMAPreach', [id, 0.05, False])
     return jsonify(success=True)
 
 

@@ -123,7 +123,7 @@ const LabeledBar = ({p, labels}) => `
 const Act = View(({act}) => `
   <div>
     <h2 class="act--number">Act ${act.number}</h2>
-    <h1 class="act--title">"${act.title}"</h1>
+    <h1 class="act--title">${act.title}</h1>
     <div class="act--desc">${act.description}</div>
   </div>
 `);
