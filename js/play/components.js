@@ -1,3 +1,20 @@
+import util from './util';
+
+const LANDLORDS = [
+  'Brookminster Asset Management',
+  'Harbor Realty Corporation',
+  'Mercer Property Group',
+  'Hansen Capital Management',
+  'Milhauser Trust',
+  'Eastfield Property Management',
+  'Orion Equities',
+  'Blackwater Group',
+  'AXI Realty',
+  'Havelstein Properties',
+  'Silwood Management',
+  'Vonsoon Realty Trust'
+];
+
 // Wrapper/decorator to process HTML templates
 // into HTML elements
 const View = (tmpl, handlers, defaultState) => {
@@ -53,6 +70,25 @@ const View = (tmpl, handlers, defaultState) => {
 
 function signed(number) {
   return `${number < 0 ? '' : '+'}${number}`;
+}
+
+function hiSignP(number, good) {
+  let s = signed(number);
+  if (number < 0) {
+    if (good) {
+      return `<span class="signed-bad">${s}%</span>`
+    } else {
+      return `<span class="signed-good">${s}%</span>`
+    }
+  } else if (number > 0) {
+    if (good) {
+      return `<span class="signed-good">${s}%</span>`
+    } else {
+      return `<span class="signed-bad">${s}%</span>`
+    }
+  } else {
+      return `<span>${s}%</span>`
+  }
 }
 
 const Bar = ({p}) => `
@@ -242,19 +278,80 @@ const ApartmentSearch = View(({vacancies, affordable}) => {
   }
 });
 
-const ApartmentListings = View(({units}) => {
+const ApartmentListings = View(({tenant, units, maxSpaciousness}) => {
   if (units && units.length > 0) {
-    return `<div>${units.map((u, i) => `
-      <div class="listing ${u.affordable ? '' : 'listing-unaffordable'}">
-        <div class="listing--title">${u.occupancy} bedroom, looking for ${u.occupancy - u.tenants} tenant${u.occupancy - u.tenants == 1 ? '' : 's'}</div>
-        ${u.doma ? '<div class="listing--doma">📌 DOMA-owned apartment</div>': ''}
-        <div class="listing--rent">💵${u.rentPerTenant.toLocaleString()}/month</div>
-        <div class="listing--elapsed">Listed ${u.monthsVacant} month${u.monthsVacant == 1 ? '' : 's'} ago</div>
-        <div data-id="${i}" class="listing--select button ${u.affordable ? '' : 'disabled'}">
-          ${u.affordable ? 'Select' : 'Too Expensive'}
-        </div>
-      </div>
-    `).join('')}</div>`;
+    return `<div>${units.map((u, i) => {
+      let spac = u.spaciousness/maxSpaciousness;
+      let desc = '';
+      if (spac <= 0.3) {
+        desc += util.randomChoice([
+          'A cozy spot.',
+          'A little compact.',
+          'Spatially charming.',
+          'A space-efficient apartment.']);
+      } else if (spac < 0.7) {
+        desc += util.randomChoice([
+          'The apartment is quite spacious.',
+          'There\'s plenty of room.',
+          'The space is wide-open.',
+          'Very roomy.']);
+      } else {
+        desc += util.randomChoice([
+          'Absolutely cavernous space.',
+          'Extraordinarly vast rooms.',
+          'A tremendously expansive unit.',
+          'Unapologetically huge.',
+          'A chasmal apartment.']);
+      }
+      desc += ' ';
+      if (u.condition <= 0.3) {
+        desc += util.randomChoice([
+          'A fixer-upper.',
+          'Has old-school charm.',
+        ]);
+      } else if (u.condition <= 0.7) {
+        desc += util.randomChoice([
+          'Well-maintained.',
+          'Owner is responsive to tenant.',
+          'Repairs are timely.',
+          'In good condition.',
+        ]);
+      } else {
+        desc += util.randomChoice([
+          'Like new condition.',
+          'Absolutely pristine.',
+          'Recently renovated, with several upgrades.',
+          'Practically untouched, totally spotless.'
+        ]);
+      }
+      desc += ' ';
+      if (u.owner.type == 'Landlord') {
+        desc += `A ${util.randomChoice(LANDLORDS)} property.`
+      } else if (u.owner.type == 'DOMA') {
+        desc += `A DOMA property.`
+      } else {
+        desc += `Owned by a ${util.randomChoice(['small family', 'young couple', 'elderly couple', 'local resident'])}.`
+      }
+      return `
+        <div class="listing ${u.affordable ? '' : 'listing-unaffordable'}">
+          <div class="listing--title">1 bedroom in a ${u.occupancy}BR</div>
+          ${u.doma ? '<div class="listing--doma">📌 DOMA-owned apartment</div>': ''}
+          <div class="listing--elapsed">${u.monthsVacant > 0 ?
+            `Listed ${u.monthsVacant} month${u.monthsVacant == 1 ? '' : 's'} ago`
+            : `Just listed`
+          }</div>
+          <p>${desc}</p>
+          ${AnnotatedBar({
+            p: u.rentPerTenant/tenant.income,
+            left: [`💸Rent/month`, `${Math.round(u.rentPerTenant).toLocaleString()}`],
+            right: [`Income/month💵`, `${Math.round(tenant.income).toLocaleString()}`]
+          })}
+          ${u.rentPerTenant/tenant.income >= 0.3 ? '<div class="listing--warning">⚠️ Spending over 30% of your income on rent</div>' : ''}
+          <div data-id="${i}" class="listing--select button ${u.affordable ? '' : 'disabled'}">
+            ${u.affordable ? 'Select' : 'Too Expensive'}
+          </div>
+        </div>`;
+    }).join('')}</div>`;
   } else {
     return `<div class="listings--help">
       Use the map to navigate the city. Click on a tile to view listings there.
@@ -278,15 +375,15 @@ const ActSummary = View(({summary, me, players}) => `
       <table>
         <tr>
           <td>💸Avg Rent</td>
-          <td>${summary.avg.rent.toLocaleString()} (${signed(summary.delta.avg.rent)}%)</td>
+          <td>${summary.avg.rent.toLocaleString()} ${hiSignP(summary.delta.avg.rent, false)}</td>
         </tr>
         <tr>
           <td>🏠Avg Home Value</td>
-          <td>${summary.avg.value.toLocaleString()} (${signed(summary.delta.avg.value)}%)</td>
+          <td>${summary.avg.value.toLocaleString()} ${hiSignP(summary.delta.avg.value, false)}</td>
         </tr>
         <tr>
           <td>💵Avg Monthly Income</td>
-          <td>${summary.avg.income.toLocaleString()} (${signed(summary.delta.avg.income)}%)</td>
+          <td>${summary.avg.income.toLocaleString()} ${hiSignP(summary.delta.avg.income, true)}</td>
         </tr>
         <tr>
           <td>👥Population</td>
@@ -295,13 +392,13 @@ const ActSummary = View(({summary, me, players}) => `
       </table>
       ${AnnotatedBar({
         p: summary.p.commons,
-        left: [`👥${(summary.p.commons*100).toFixed(1)}% (${signed(Math.round(summary.delta.p.commons*100))}%)`, 'Commons'],
-        right: [`(${signed(Math.round(summary.delta.p.landlords*100))}%) ${(summary.p.landlords*100).toFixed(1)}%🎩`, 'Landlords']
+        left: [`👥${(summary.p.commons*100).toFixed(1)}% ${hiSignP(Math.round(summary.delta.p.commons*100), true)}`, 'Commons'],
+        right: [`${hiSignP(Math.round(summary.delta.p.landlords*100), false)} ${(summary.p.landlords*100).toFixed(1)}%🎩`, 'Landlords']
       })}
       ${AnnotatedBar({
         p: summary.p.affordable,
-        left: [`${(summary.p.affordable*100).toFixed(1)}% (${signed(Math.round(summary.delta.p.affordable*100))}%)`, 'Affordable'],
-        right: [`(${signed(Math.round(summary.delta.p.unaffordable*100))}%) ${(summary.p.unaffordable*100).toFixed(1)}%`, 'Unaffordable']
+        left: [`${(summary.p.affordable*100).toFixed(1)}% ${hiSignP(Math.round(summary.delta.p.affordable*100), true)}`, 'Affordable'],
+        right: [`${hiSignP(Math.round(summary.delta.p.unaffordable*100), false)} ${(summary.p.unaffordable*100).toFixed(1)}%`, 'Unaffordable']
       })}
       <div class="player-summary">
         <h1>${me.name} (you)</h1>
@@ -324,14 +421,14 @@ const ActSummary = View(({summary, me, players}) => `
   }
 });
 
-const EquityPurchase = View(({scene, tenant, shares}) => `
+const EquityPurchase = View(({scene, tenant, p_dividend, shares}) => `
   <div>
     <div class="scene--stage">
       <img src="/static/scenes/${scene.image}">
     </div>
     <div class="scene--body">
       <h3 class="scene--title">${scene.title}</h3>
-      <p class="scene--desc">The collective is raising funds by selling 🧱equity in the collective's properties. Each 🧱equity share entitles you to 5% of rental 💵dividends. You have 💵${Math.round(tenant.savings).toLocaleString()} in savings, how many 🧱equity shares do you want to buy?</p>
+      <p class="scene--desc">The collective is raising funds by selling 🧱equity in the collective's properties. Each 🧱equity share entitles you to ${Math.round(p_dividend * 100)}% of rental 💵dividends. You have 💵${Math.round(tenant.savings).toLocaleString()} in savings, how many 🧱equity shares do you want to buy?</p>
       <div class="bar-annotated--labels">
         <div class="bar--label bar--label-left">
           <div>💵0</div>

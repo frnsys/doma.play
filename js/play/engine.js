@@ -17,9 +17,10 @@ class Engine {
         this.state = state;
         Views.EquityPurchase(sceneEl, {
           scene,
+          p_dividend: state.stats.doma_p_dividend,
           tenant: this.player.tenant,
           next: (shares) => {
-            let influence = (shares/this.player.tenant.savings)/10;
+            let influence = (shares/this.player.tenant.savings)/5;
             api.post(`/play/doma/${this.id}`, {amount: shares, influence: influence}, () => {
               this.waitForNextScene(scene, 0);
             });
@@ -313,7 +314,7 @@ class Engine {
 
   searchApartments(scene) {
     api.get('/state', (state) => {
-      let {parcels, vacancies, affordable} = this.parseParcels(state);
+      let {parcels, vacancies, affordable, maxSpaciousness} = this.parseParcels(state);
       let el = Views.ApartmentSearch(sceneEl, {
         vacancies, affordable,
         onSkip: () => {
@@ -329,6 +330,8 @@ class Engine {
       Views.ApartmentListings(listingsEl, {});
       showApartments(stageEl, state.map, parcels, (p) => {
         Views.ApartmentListings(listingsEl, {
+          tenant: this.player.tenant,
+          maxSpaciousness: maxSpaciousness,
           units: p.units,
           onSelect: (u) => {
             // TODO disable interactions?
@@ -345,6 +348,7 @@ class Engine {
     let allVacantUnits = [];
     let tenant = this.player.tenant;
     let parcels = state.map.parcels;
+    let maxSpaciousness = 0;
     Object.keys(parcels).forEach((r) => {
       Object.keys(parcels[r]).forEach((c) => {
         let p = parcels[r][c];
@@ -352,6 +356,9 @@ class Engine {
           p.hasUnits = true;
           p.neighb = state.neighborhoods[parseInt(p.neighb)];
           if (p.neighb) {
+            state.buildings[`${r}_${c}`].units.forEach((uId) => {
+              maxSpaciousness = Math.max(maxSpaciousness, state.units[uId].spaciousness);
+            });
             p.vacancies = state.buildings[`${r}_${c}`].units
               .filter((uId) => state.units[uId].occupancy > state.units[uId].tenants);
             let vacantUnits = p.vacancies.map((id) => state.units[id]);
@@ -359,6 +366,7 @@ class Engine {
             p.affordable = vacantUnits.filter((u) => {
               u.rentPerTenant = Math.round(u.rent/(u.tenants + 1));
               u.affordable = u.rentPerTenant <= tenant.income;
+              u.neighbDesirability = p.desirability;
               return u.affordable;
             });
             p.anyDOMA = vacantUnits.some((u) => u.doma);
@@ -368,14 +376,14 @@ class Engine {
             });
           }
         }
-        p.tenantWork = tenant.work[0] == parseInt(r) && tenant.work[1] == parseInt(c);
+        p.tenantWork = tenant.work.pos[0] == parseInt(r) && tenant.work.pos[1] == parseInt(c);
       });
     });
 
     let affordableUnits = allVacantUnits.filter((u) => Math.round(u.rent/(u.tenants + 1)) <= (tenant.income))
     let vacancies = allVacantUnits.length > 0;
     let affordable = affordableUnits.length > 0;
-    return {parcels, vacancies, affordable};
+    return {parcels, vacancies, affordable, maxSpaciousness};
   }
 }
 
