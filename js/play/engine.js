@@ -314,9 +314,9 @@ class Engine {
 
   searchApartments(scene) {
     api.get('/state', (state) => {
-      let {parcels, vacancies, affordable, maxSpaciousness} = this.parseParcels(state);
+      let {parcels, vacancies, affordable, maxSpaciousness, allVacantUnits} = this.parseParcels(state);
       let el = Views.ApartmentSearch(sceneEl, {
-        vacancies, affordable,
+        vacancies, affordable, allVacantUnits,
         onSkip: () => {
           this.player.couch = {
             neighborhood: util.randomChoice(Object.values(this.neighborhoods))
@@ -333,11 +333,31 @@ class Engine {
           tenant: this.player.tenant,
           maxSpaciousness: maxSpaciousness,
           units: p.units,
-          onSelect: (u) => {
-            // TODO disable interactions?
-            api.post(`/play/move/${this.id}`, {id: u.id}, (data) => {
-              this.waitForNextScene(scene, 0);
-            });
+          onSelect: (u, ev) => {
+            // DOMA units always accept players
+            if (u.owner.type == 'DOMA') {
+              // TODO disable interactions?
+              api.post(`/play/move/${this.id}`, {id: u.id}, (data) => {
+                this.waitForNextScene(scene, 0);
+              });
+            } else {
+              if (Math.random() <= 0.0) {
+                api.post(`/play/move/${this.id}`, {id: u.id}, (data) => {
+                  this.waitForNextScene(scene, 0);
+                });
+              } else {
+                u.taken = true;
+                let button = ev.target;
+                button.classList.add('disabled');
+                button.innerText = 'No longer available';
+                let popup = document.getElementById('apartment-search--popup');
+                popup.querySelector('p').innerText = util.randomChoice([
+                  'You call the landlord, who informs you that the place has already been taken.',
+                  'You apply—the landlord ended up going with another applicant.'
+                ]);
+                popup.style.display = 'flex';
+              }
+            }
           }
         });
       });
@@ -383,7 +403,7 @@ class Engine {
     let affordableUnits = allVacantUnits.filter((u) => Math.round(u.rent/(u.tenants + 1)) <= (tenant.income))
     let vacancies = allVacantUnits.length > 0;
     let affordable = affordableUnits.length > 0;
-    return {parcels, vacancies, affordable, maxSpaciousness};
+    return {parcels, vacancies, affordable, maxSpaciousness, allVacantUnits};
   }
 }
 

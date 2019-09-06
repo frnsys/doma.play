@@ -265,6 +265,13 @@ const ApartmentSearch = View(({vacancies, affordable}) => {
     msg = '<p>There are no vacancies that you can afford right now.</p>';
   }
   return `<div class="apartment-search">
+    <div id="apartment-search--popup" class="popup">
+      <div class="popup--content">
+        <img src="/static/scenes/phone.png">
+        <p></p>
+        <div class="hide-popup button">Ok</div>
+      </div>
+    </div>
     <div id="stage" class="scene--stage"></div>
     <div id="details">
       ${msg}
@@ -275,6 +282,18 @@ const ApartmentSearch = View(({vacancies, affordable}) => {
 `}, {
   '.listings--skip': {
     'click': ({state}) => state.onSkip()
+  },
+  '.hide-popup': {
+    'click': ({state}) => {
+      document.getElementById('apartment-search--popup').style.display = 'none';
+      // Check if any apartments available
+      let vacantUnits = state.allVacantUnits.filter((u) => {
+        return !u.taken && u.affordable;
+      });
+      if (vacantUnits.length == 0) {
+        state.onSkip();
+      }
+    }
   }
 });
 
@@ -347,8 +366,8 @@ const ApartmentListings = View(({tenant, units, maxSpaciousness}) => {
             right: [`Income/month💵`, `${Math.round(tenant.income).toLocaleString()}`]
           })}
           ${u.rentPerTenant/tenant.income >= 0.3 ? '<div class="listing--warning">⚠️ Spending over 30% of your income on rent</div>' : ''}
-          <div data-id="${i}" class="listing--select button ${u.affordable ? '' : 'disabled'}">
-            ${u.affordable ? 'Select' : 'Too Expensive'}
+          <div data-id="${i}" class="listing--select button ${u.affordable && !u.taken ? '' : 'disabled'}">
+            ${u.affordable ? (u.taken ? 'No longer available' : 'Apply') : 'Too Expensive'}
           </div>
         </div>`;
     }).join('')}</div>`;
@@ -359,10 +378,10 @@ const ApartmentListings = View(({tenant, units, maxSpaciousness}) => {
   }
 }, {
   '.listing--select': {
-    'click': ({state, props}) => {
+    'click': ({ev, state, props}) => {
       if (state.onSelect) {
         let unit = state.units[parseInt(props.id)];
-        if (unit.affordable) state.onSelect(unit);
+        if (unit.affordable) state.onSelect(unit, ev);
       };
     }
   }

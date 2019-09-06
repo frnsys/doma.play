@@ -58,7 +58,6 @@ function showApartments(el, map, parcels, onCellSelect) {
           cell.mesh.add(text);
         }
 
-        console.log(`WORK? ${p.tenantWork}`);
         if (p.tenantWork) {
           let workGeo = new THREE.ConeBufferGeometry(4, 8, 4);
           let workMat = new THREE.MeshBasicMaterial({
