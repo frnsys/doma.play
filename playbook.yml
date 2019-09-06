@@ -14,6 +14,8 @@
     src: ~/work/doma/doma.play/
     dest: /srv/app/
     delete: yes
+    rsync_opts:
+        - "--exclude=sim/target/release/deps"
 - name: Install dependencies (app)
   pip: requirements=/srv/app/requirements.txt executable=pip3
 - name: overwrite start.sh
