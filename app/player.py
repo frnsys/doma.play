@@ -71,7 +71,7 @@ def player_doma(id):
 @bp.route('/social/<id>', methods=['POST'])
 def player_social(id):
     """Player socialize"""
-    mgr.send_command('DOMAPreach', [id, 0.05, False])
+    mgr.send_command('DOMAPreach', [id, 0.005, False])
     return jsonify(success=True)
 
 

@@ -275,7 +275,7 @@ checkpoints:
   policy_results:
     n_steps: 1
   equity_results:
-    n_steps: 1
+    n_steps: 2 # needs to be at least 2 steps, since DOMA runs after landlords respond to offers
   act_2_end:
     n_steps: 12
   param_results:

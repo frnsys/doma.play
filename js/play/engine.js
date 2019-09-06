@@ -4,6 +4,9 @@ import uuid from 'uuid/v4';
 import Views from './components';
 import showApartments from './view/listings';
 
+let params = location.search.slice(1);
+let DEBUG = params.includes('debug');
+
 const sceneEl = document.getElementById('scene');
 const statusEl = document.getElementById('status');
 
@@ -229,7 +232,7 @@ class Engine {
       this.player.tenant.savings += elapsed * savings;
     }
 
-    if (scene.act) {
+    if (scene.act && !DEBUG) {
       this.loadAct(scene.act);
     }
 
@@ -401,7 +404,7 @@ class Engine {
                 this.waitForNextScene(scene, 0);
               });
             } else {
-              if ((Math.random() <= 0.2 && attempts > 2) || attempts >= 8) {
+              if ((DEBUG || Math.random() <= 0.2 && attempts > 2) || attempts >= 8) {
                 this.player.tenant.rent = u.rentPerTenant;
                 api.post(`/play/move/${this.id}`, {id: u.id}, (data) => {
                   this.waitForNextScene(scene, 0);

@@ -488,15 +488,18 @@ const EquityResults = View(({scene, results}) => `
     <div class="scene--body">
       <h3 class="scene--title">${scene.title}</h3>
       <ul class="equity-results--stats">
-        <li>💵${results.delta.raised.amount.toLocaleString()} raised</li>
-        <li>${results.delta.units.amount} unit${results.delta.units.amount == 1 ? '' : 's'} purchased</li>
-        <li>${results.delta.members.amount} new member${results.delta.members.amount == 1 ? '' : 's'}</li>
+        <li>💵${results.delta.raised.amount.toLocaleString()} raised ${hiSignP(results.delta.raised.percent, true)}</li>
+        <li>${results.delta.units.amount} unit${results.delta.units.amount == 1 ? '' : 's'} purchased ${hiSignP(results.delta.units.percent, true)}</li>
+        <li>${results.delta.members.amount} new member${results.delta.members.amount == 1 ? '' : 's'} ${hiSignP(results.delta.members.percent, true)}</li>
       </ul>
       ${results.delta.units.amount > 0 ? `
         <h4>Purchased units</h4>
         <ul class="equity-results--units">
           ${Object.keys(results.delta.neighbs).map((n) => {
-            return `<li>${results.delta.neighbs[n]} units in ${n}</li>`;
+            return `<li class="equity--results--neighb">
+              <div class="equity--results--neighb--units">${results.delta.neighbs[n]}</div>
+              <div class="equity-results--neighb--name">${n}</div>
+            </li>`;
           }).join('')}
         </ul>
       ` : ''}
