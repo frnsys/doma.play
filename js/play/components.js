@@ -231,12 +231,12 @@ const PlayerSummary = ({tenant, summary}) => `
   </ul>
   ${AnnotatedBar({
     p: tenant.rent/tenant.income,
-    left: [`💸Rent/month`, `${Math.round(tenant.rent).toLocaleString()}`],
-    right: [`Income/month💵`, `${Math.round(tenant.income).toLocaleString()}`]
+    left: [`💸Rent/month${tenant.delta ? ` ${hiSignP(tenant.delta.rent, false)}` : ''}`, `${Math.round(tenant.rent).toLocaleString()}`],
+    right: [`${tenant.delta ? `${hiSignP(tenant.delta.income, true)} ` : ''}Income/month💵`, `${Math.round(tenant.income).toLocaleString()}`]
   })}
   ${AnnotatedBar({
     p: tenant.savings/summary.avg.value,
-    left: [`💰Savings`, `${Math.round(tenant.savings).toLocaleString()}`],
+    left: [`💰Savings${tenant.delta ? ` ${hiSignP(tenant.delta.savings, true)}` : ''}`, `${Math.round(tenant.savings).toLocaleString()}`],
     right: [`Avg home value🏠`, `${Math.round(summary.avg.value).toLocaleString()}`]
   })}
 `;

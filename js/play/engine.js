@@ -11,7 +11,7 @@ const sceneEl = document.getElementById('scene');
 const statusEl = document.getElementById('status');
 
 function computeSavings(income) {
-  let x = income/20000;
+  let x = income/25000;
   let p = x/(x+1);
   return p * income;
 }
@@ -32,6 +32,7 @@ class Engine {
           next: (shares) => {
             let influence = (shares/this.player.tenant.savings)/5;
             api.post(`/play/doma/${this.id}`, {amount: shares, influence: influence}, () => {
+              this.player.tenant.savings -= shares;
               this.waitForNextScene(scene, 0);
             });
           }
@@ -278,7 +279,13 @@ class Engine {
         let me = data.players[this.id];
         delete data.players[this.id];
         let players = Object.values(data.players);
+        me.delta = {
+          savings: Math.round(util.percentChange(this.player.tenant.savings, me.savings)),
+          rent: Math.round(util.percentChange(this.player.tenant.rent, me.rent)),
+          income: Math.round(util.percentChange(this.player.tenant.income, me.income)),
+        }
         me.savings = this.player.tenant.savings;
+        this.player.tenant = me;
         Views.ActSummary(sceneEl, {
           summary, me, players,
           next: () => {

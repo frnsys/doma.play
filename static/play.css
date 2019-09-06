@@ -237,6 +237,7 @@ main {
 }
 .equity-results--neighb--name {
   font-size: 0.8em;
+  padding: 0 0.2em;
 }
 .equity-results h4 {
   margin-bottom: 0;
