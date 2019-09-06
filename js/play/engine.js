@@ -330,6 +330,7 @@ class Engine {
       Views.ApartmentListings(listingsEl, {});
       showApartments(stageEl, state.map, parcels, (p) => {
         Views.ApartmentListings(listingsEl, {
+          parcel: p,
           tenant: this.player.tenant,
           maxSpaciousness: maxSpaciousness,
           units: p.units,
@@ -341,7 +342,7 @@ class Engine {
                 this.waitForNextScene(scene, 0);
               });
             } else {
-              if (Math.random() <= 0.0) {
+              if (Math.random() <= 0.2) {
                 api.post(`/play/move/${this.id}`, {id: u.id}, (data) => {
                   this.waitForNextScene(scene, 0);
                 });

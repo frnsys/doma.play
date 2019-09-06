@@ -297,80 +297,83 @@ const ApartmentSearch = View(({vacancies, affordable}) => {
   }
 });
 
-const ApartmentListings = View(({tenant, units, maxSpaciousness}) => {
+const ApartmentListings = View(({parcel, tenant, units, maxSpaciousness}) => {
   if (units && units.length > 0) {
-    return `<div>${units.map((u, i) => {
-      let spac = u.spaciousness/maxSpaciousness;
-      let desc = '';
-      if (spac <= 0.3) {
-        desc += util.randomChoice([
-          'A cozy spot.',
-          'A little compact.',
-          'Spatially charming.',
-          'A space-efficient apartment.']);
-      } else if (spac < 0.7) {
-        desc += util.randomChoice([
-          'The apartment is quite spacious.',
-          'There\'s plenty of room.',
-          'The space is wide-open.',
-          'Very roomy.']);
-      } else {
-        desc += util.randomChoice([
-          'Absolutely cavernous space.',
-          'Extraordinarly vast rooms.',
-          'A tremendously expansive unit.',
-          'Unapologetically huge.',
-          'A chasmal apartment.']);
-      }
-      desc += ' ';
-      if (u.condition <= 0.3) {
-        desc += util.randomChoice([
-          'A fixer-upper.',
-          'Has old-school charm.',
-        ]);
-      } else if (u.condition <= 0.7) {
-        desc += util.randomChoice([
-          'Well-maintained.',
-          'Owner is responsive to tenant.',
-          'Repairs are timely.',
-          'In good condition.',
-        ]);
-      } else {
-        desc += util.randomChoice([
-          'Like new condition.',
-          'Absolutely pristine.',
-          'Recently renovated, with several upgrades.',
-          'Practically untouched, totally spotless.'
-        ]);
-      }
-      desc += ' ';
-      if (u.owner.type == 'Landlord') {
-        desc += `A ${util.randomChoice(LANDLORDS)} property.`
-      } else if (u.owner.type == 'DOMA') {
-        desc += `A DOMA property.`
-      } else {
-        desc += `Owned by a ${util.randomChoice(['small family', 'young couple', 'elderly couple', 'local resident'])}.`
-      }
-      return `
-        <div class="listing ${u.affordable ? '' : 'listing-unaffordable'}">
-          <div class="listing--title">1 bedroom in a ${u.occupancy}BR</div>
-          ${u.doma ? '<div class="listing--doma">📌 DOMA-owned apartment</div>': ''}
-          <div class="listing--elapsed">${u.monthsVacant > 0 ?
-            `Listed ${u.monthsVacant} month${u.monthsVacant == 1 ? '' : 's'} ago`
-            : `Just listed`
-          }</div>
-          <p>${desc}</p>
-          ${AnnotatedBar({
-            p: u.rentPerTenant/tenant.income,
-            left: [`💸Rent/month`, `${Math.round(u.rentPerTenant).toLocaleString()}`],
-            right: [`Income/month💵`, `${Math.round(tenant.income).toLocaleString()}`]
-          })}
-          ${u.rentPerTenant/tenant.income >= 0.3 ? '<div class="listing--warning">⚠️ Spending over 30% of your income on rent</div>' : ''}
-          <div data-id="${i}" class="listing--select button ${u.affordable && !u.taken ? '' : 'disabled'}">
-            ${u.affordable ? (u.taken ? 'No longer available' : 'Apply') : 'Too Expensive'}
-          </div>
-        </div>`;
-    }).join('')}</div>`;
+    return `<div>
+      <h2 class="listings--neighborhood">${parcel.neighb.name}</h2>
+      ${units.map((u, i) => {
+        let spac = u.spaciousness/maxSpaciousness;
+        let desc = '';
+        if (spac <= 0.3) {
+          desc += util.randomChoice([
+            'A cozy spot.',
+            'A little compact.',
+            'Spatially charming.',
+            'A space-efficient apartment.']);
+        } else if (spac < 0.7) {
+          desc += util.randomChoice([
+            'The apartment is quite spacious.',
+            'There\'s plenty of room.',
+            'The space is wide-open.',
+            'Very roomy.']);
+        } else {
+          desc += util.randomChoice([
+            'Absolutely cavernous space.',
+            'Extraordinarly vast rooms.',
+            'A tremendously expansive unit.',
+            'Unapologetically huge.',
+            'A chasmal apartment.']);
+        }
+        desc += ' ';
+        if (u.condition <= 0.3) {
+          desc += util.randomChoice([
+            'A fixer-upper.',
+            'Has old-school charm.',
+          ]);
+        } else if (u.condition <= 0.7) {
+          desc += util.randomChoice([
+            'Well-maintained.',
+            'Owner is responsive to tenant.',
+            'Repairs are timely.',
+            'In good condition.',
+          ]);
+        } else {
+          desc += util.randomChoice([
+            'Like new condition.',
+            'Absolutely pristine.',
+            'Recently renovated, with several upgrades.',
+            'Practically untouched, totally spotless.'
+          ]);
+        }
+        desc += ' ';
+        if (u.owner.type == 'Landlord') {
+          desc += `A ${util.randomChoice(LANDLORDS)} property.`
+        } else if (u.owner.type == 'DOMA') {
+          desc += `A DOMA property.`
+        } else {
+          desc += `Owned by a ${util.randomChoice(['small family', 'young couple', 'elderly couple', 'local resident'])}.`
+        }
+        return `
+          <div class="listing ${u.affordable ? '' : 'listing-unaffordable'}">
+            <div class="listing--title">1 bedroom in a ${u.occupancy}BR</div>
+            ${u.doma ? '<div class="listing--doma">📌 DOMA-owned apartment</div>': ''}
+            <div class="listing--elapsed">${u.monthsVacant > 0 ?
+              `Listed ${u.monthsVacant} month${u.monthsVacant == 1 ? '' : 's'} ago`
+              : `Just listed`
+            }</div>
+            <p>${desc}</p>
+            ${AnnotatedBar({
+              p: u.rentPerTenant/tenant.income,
+              left: [`💸Rent/month`, `${Math.round(u.rentPerTenant).toLocaleString()}`],
+              right: [`Income/month💵`, `${Math.round(tenant.income).toLocaleString()}`]
+            })}
+            ${u.rentPerTenant/tenant.income >= 0.3 ? '<div class="listing--warning">⚠️ Spending over 30% of your income on rent</div>' : ''}
+            <div data-id="${i}" class="listing--select button ${u.affordable && !u.taken ? '' : 'disabled'}">
+              ${u.affordable ? (u.taken ? 'No longer available' : 'Apply') : 'Too Expensive'}
+            </div>
+          </div>`;
+      }).join('')}
+    </div>`;
   } else {
     return `<div class="listings--help">
       Use the map to navigate the city. Click on a tile to view listings there.
