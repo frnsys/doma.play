@@ -271,7 +271,7 @@ class Manager:
         # This is totally arbitrary atm
         tenant.update({
             'name': weighted_choice(names),
-            'savings': random.random() * 0.25 * tenant['income'] * 12 * 5
+            'savings': tenant['income'] * 0.5
         })
 
         self.players[id, 'tenant:meta'] = {

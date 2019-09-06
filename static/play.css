@@ -265,7 +265,7 @@ table td:last-child {
 }
 .bar--label {
   font-size: 0.8em;
-  line-height: 1;
+  line-height: 1.1;
 }
 .bar-labeled .bar--label {
   width: 20%;
@@ -292,13 +292,16 @@ input[type=range] {
   margin-bottom: 2em;
 }
 
-.signed-good {
+.signed {
   color: #fff;
+  border-radius: 0.2em;
+  font-size: 0.8em;
+  padding: 0 0.2em;
+  background: #777;
+}
+.signed-good {
   background: #0cba58;
-  border-radius: 1em;
 }
 .signed-bad {
-  color: #fff;
   background: #ff1f1f;
-  border-radius: 1em;
 }

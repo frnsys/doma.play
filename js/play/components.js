@@ -76,18 +76,18 @@ function hiSignP(number, good) {
   let s = signed(number);
   if (number < 0) {
     if (good) {
-      return `<span class="signed-bad">${s}%</span>`
+      return `<span class="signed signed-bad">${s}%</span>`
     } else {
-      return `<span class="signed-good">${s}%</span>`
+      return `<span class="signed signed-good">${s}%</span>`
     }
   } else if (number > 0) {
     if (good) {
-      return `<span class="signed-good">${s}%</span>`
+      return `<span class="signed signed-good">${s}%</span>`
     } else {
-      return `<span class="signed-bad">${s}%</span>`
+      return `<span class="signed signed-bad">${s}%</span>`
     }
   } else {
-      return `<span>${s}%</span>`
+      return `<span class="signed">${s}%</span>`
   }
 }
 

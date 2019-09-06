@@ -7,10 +7,17 @@ import showApartments from './view/listings';
 const sceneEl = document.getElementById('scene');
 const statusEl = document.getElementById('status');
 
+function computeSavings(income) {
+  let x = income/20000;
+  let p = x/(x+1);
+  return p * income;
+}
+
 class Engine {
   constructor() {
     this.id = uuid();
     this.player = {};
+    this.time = 0;
 
     const equity_purchase = (scene) => {
       api.get('/state', (state) => {
@@ -73,14 +80,14 @@ class Engine {
               }
             }
           };
-          console.log('Neighborhoods');
-          console.log(this.neighborhoods);
+          // console.log('Neighborhoods');
+          // console.log(this.neighborhoods);
           results.delta.neighbs = Object.keys(prevStats.neighborhoods).reduce((acc, id) => {
             let prev = prevStats.neighborhoods[id].doma_units;
             let curr = stats.neighborhoods[id].doma_units;
             let delta = curr - prev;
             if (delta > 0) {
-              console.log(`Neighborhood: ${id}`);
+              // console.log(`Neighborhood: ${id}`);
               let neighb = this.neighborhoods[id].name;
               acc[neighb] = delta;
             }
@@ -173,7 +180,15 @@ class Engine {
     }, 4000);
   }
 
-  loadScene(scene) {
+  loadScene(scene, time) {
+    if (time && this.time !== time) {
+      let elapsed = time - this.time;
+      this.time = time;
+      let nonRent = this.player.tenant.income - this.player.tenant.rent;
+      let savings = computeSavings(nonRent);
+      this.player.tenant.savings += elapsed * savings;
+    }
+
     if (scene.act) {
       this.loadAct(scene.act);
     }
@@ -200,7 +215,7 @@ class Engine {
     }, (data) => {
       if (data.ok) {
         statusEl.style.display = 'none';
-        this.loadScene(data.scene);
+        this.loadScene(data.scene, data.time);
       } else {
         statusEl.style.display = 'block';
         statusEl.innerText = 'Waiting for other players...';
@@ -220,6 +235,7 @@ class Engine {
         let me = data.players[this.id];
         delete data.players[this.id];
         let players = Object.values(data.players);
+        me.savings = this.player.tenant.savings;
         Views.ActSummary(sceneEl, {
           summary, me, players,
           next: () => {
@@ -286,8 +302,7 @@ class Engine {
     api.post('/play/join', {id: this.id}, (data) => {
       this.neighborhoods = data.state.neighborhoods;
       this.player.tenant = data.tenant;
-      console.log(data.state);
-      console.log(this.player);
+      this.time = data.state.time;
       this.summary = this.summarize(data.state);
       Views.CitySummary(sceneEl, {
         summary: this.summary,
@@ -338,11 +353,13 @@ class Engine {
             // DOMA units always accept players
             if (u.owner.type == 'DOMA') {
               // TODO disable interactions?
+              this.player.tenant.rent = u.rentPerTenant;
               api.post(`/play/move/${this.id}`, {id: u.id}, (data) => {
                 this.waitForNextScene(scene, 0);
               });
             } else {
               if (Math.random() <= 0.2) {
+                this.player.tenant.rent = u.rentPerTenant;
                 api.post(`/play/move/${this.id}`, {id: u.id}, (data) => {
                   this.waitForNextScene(scene, 0);
                 });

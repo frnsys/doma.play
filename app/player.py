@@ -124,4 +124,9 @@ def next_scene():
     action_id = data['action_id']
     next_scene = mgr.next_scene(player_id, scene_id, action_id)
     ok = next_scene is not None
-    return jsonify(scene=next_scene, ok=ok)
+    if ok:
+        state = mgr.sim_state()
+        time = state['time']
+    else:
+        time = None
+    return jsonify(scene=next_scene, ok=ok, time=time)
