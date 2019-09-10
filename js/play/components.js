@@ -74,7 +74,9 @@ function signed(number) {
 
 function hiSignP(number, good) {
   let s = signed(number);
-  if (number < 0) {
+  if (!isFinite(number)) {
+    return `<span class="signed">N/A</span>`
+  } else if (number < 0) {
     if (good) {
       return `<span class="signed signed-bad">${s}%</span>`
     } else {
@@ -253,7 +255,7 @@ const PlayerSummary = ({tenant, summary, showDomaShare}) => `
   </ul>
   ${AnnotatedBar({
     p: tenant.rent/tenant.income,
-    left: [`💸Rent/month${tenant.delta ? ` ${hiSignP(tenant.delta.rent, false)}` : ''}`, `${Math.round(tenant.rent).toLocaleString()}`],
+    left: [`💸Rent/month${tenant.delta ? ` ${hiSignP(tenant.delta.rent, false)}` : ''}`, `${tenant.unit ? Math.round(tenant.rent).toLocaleString() : 'N/A'}`],
     right: [`${tenant.delta ? `${hiSignP(tenant.delta.income, true)} ` : ''}Income/month💵`, `${Math.round(tenant.income).toLocaleString()}`]
   })}
   ${showDomaShare ? AnnotatedBarBar({
