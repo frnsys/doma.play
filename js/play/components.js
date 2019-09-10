@@ -97,6 +97,14 @@ const Bar = ({p}) => `
   </div>
 `
 
+const BarBar = ({p, subP, subLabel}) => `
+  <div class="bar">
+    <div class="bar--fill" style="width:${Math.min(1, p)*100}%">
+      <div class="bar--subfill" style="width:${Math.min(1, subP)*100}%">${subLabel}</div>
+    </div>
+  </div>
+`
+
 const AnnotatedBar = ({p, left, right}) => `
   <div class="bar-annotated">
     <div class="bar-annotated--labels">
@@ -108,6 +116,20 @@ const AnnotatedBar = ({p, left, right}) => `
       </div>
     </div>
     ${Bar({p})}
+  </div>
+`
+
+const AnnotatedBarBar = ({p, subP, subLabel, left, right}) => `
+  <div class="bar-annotated">
+    <div class="bar-annotated--labels">
+      <div class="bar--label bar--label-left">
+        ${left.map((t) => `<div>${t}</div>`).join('')}
+      </div>
+      <div class="bar--label bar--label-right">
+        ${right.map((t) => `<div>${t}</div>`).join('')}
+      </div>
+    </div>
+    ${BarBar({p, subP, subLabel})}
   </div>
 `
 
@@ -220,7 +242,7 @@ const CitySummary = View(({summary}) => `
   }
 });
 
-const PlayerSummary = ({tenant, summary}) => `
+const PlayerSummary = ({tenant, summary, showDomaShare}) => `
   <ul>
     <li>
       ${tenant.unit && tenant.unit.neighborhood ?
@@ -234,7 +256,13 @@ const PlayerSummary = ({tenant, summary}) => `
     left: [`💸Rent/month${tenant.delta ? ` ${hiSignP(tenant.delta.rent, false)}` : ''}`, `${Math.round(tenant.rent).toLocaleString()}`],
     right: [`${tenant.delta ? `${hiSignP(tenant.delta.income, true)} ` : ''}Income/month💵`, `${Math.round(tenant.income).toLocaleString()}`]
   })}
-  ${AnnotatedBar({
+  ${showDomaShare ? AnnotatedBarBar({
+    p: tenant.savings/summary.avg.value,
+    subP: tenant.equity/tenant.savings,
+    subLabel: `🧱${tenant.equity} DOMA equity`,
+    left: [`💰Savings${tenant.delta ? ` ${hiSignP(tenant.delta.savings, true)}` : ''}`, `${Math.round(tenant.savings).toLocaleString()}`],
+    right: [`Avg home value🏠`, `${Math.round(summary.avg.value).toLocaleString()}`]
+  }) : AnnotatedBar({
     p: tenant.savings/summary.avg.value,
     left: [`💰Savings${tenant.delta ? ` ${hiSignP(tenant.delta.savings, true)}` : ''}`, `${Math.round(tenant.savings).toLocaleString()}`],
     right: [`Avg home value🏠`, `${Math.round(summary.avg.value).toLocaleString()}`]
@@ -390,7 +418,7 @@ const ApartmentListings = View(({parcel, tenant, units, maxSpaciousness}) => {
   }
 });
 
-const ActSummary = View(({summary, me, players}) => `
+const ActSummary = View(({summary, me, players, showDomaShare}) => `
   <div class="summary act-summary">
     <div class="scene--body">
       <h1>${summary.city}</h1>
@@ -412,7 +440,13 @@ const ActSummary = View(({summary, me, players}) => `
           <td>${summary.population.toLocaleString()}</td>
         </tr>
       </table>
-      ${AnnotatedBar({
+      ${showDomaShare ? AnnotatedBarBar({
+        p: summary.p.commons,
+        subP: summary.p.doma/summary.p.commons,
+        subLabel: `${(summary.p.doma*100).toFixed(1)}% DOMA`,
+        left: [`👥${(summary.p.commons*100).toFixed(1)}% ${hiSignP(Math.round(summary.delta.p.commons*100), true)}`, 'Commons'],
+        right: [`${hiSignP(Math.round(summary.delta.p.landlords*100), false)} ${(summary.p.landlords*100).toFixed(1)}%🎩`, 'Landlords']
+      }) : AnnotatedBar({
         p: summary.p.commons,
         left: [`👥${(summary.p.commons*100).toFixed(1)}% ${hiSignP(Math.round(summary.delta.p.commons*100), true)}`, 'Commons'],
         right: [`${hiSignP(Math.round(summary.delta.p.landlords*100), false)} ${(summary.p.landlords*100).toFixed(1)}%🎩`, 'Landlords']
@@ -424,13 +458,13 @@ const ActSummary = View(({summary, me, players}) => `
       })}
       <div class="player-summary">
         <h1>${me.name} (you)</h1>
-        ${PlayerSummary({tenant: me, summary})}
+        ${PlayerSummary({tenant: me, summary, showDomaShare})}
       </div>
       ${players.map((p) => {
         return `
           <div class="player-summary">
             <h1>${p.name}</h1>
-            ${PlayerSummary({tenant: p, summary})}
+            ${PlayerSummary({tenant: p, summary, showDomaShare: false})}
           </div>
         `
       }).join('')}

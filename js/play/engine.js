@@ -32,7 +32,7 @@ class Engine {
           next: (shares) => {
             let influence = (shares/this.player.tenant.savings)/5;
             api.post(`/play/doma/${this.id}`, {amount: shares, influence: influence}, () => {
-              this.player.tenant.savings -= shares;
+              this.player.tenant.equity = shares;
               this.waitForNextScene(scene, 0);
             });
           }
@@ -285,9 +285,11 @@ class Engine {
           income: Math.round(util.percentChange(this.player.tenant.income, me.income)),
         }
         me.savings = this.player.tenant.savings;
+        me.equity = this.player.tenant.equity;
         this.player.tenant = me;
         Views.ActSummary(sceneEl, {
           summary, me, players,
+          showDomaShare: scene.showDomaShare,
           next: () => {
             this.waitForNextScene(scene, 0);
           }
@@ -308,6 +310,7 @@ class Engine {
   deltaize(summary, prevSummary) {
     return {
       p: {
+        doma: summary.p.doma - prevSummary.p.doma,
         landlords: summary.p.landlords - prevSummary.p.landlords,
         commons: summary.p.commons - prevSummary.p.commons,
         affordable: summary.p.affordable - prevSummary.p.affordable,
@@ -323,8 +326,10 @@ class Engine {
 
   summarize(state) {
     // Excluding DOMA
+    let p_doma = 0;
     let p_landlords = Object.keys(state.stats.landlords).reduce((acc, id) => {
       if (id == -1) {
+        p_doma += state.stats.landlords[id].p_units;
         return acc;
       } else {
         return acc + state.stats.landlords[id].p_units;
@@ -333,10 +338,11 @@ class Engine {
     return {
       city: state.name,
       p: {
+        doma: p_doma,
         landlords: p_landlords,
         commons: 1 - p_landlords,
         affordable: state.stats.percent_affordable,
-        unaffordable: 1 -state.stats.percent_affordable,
+        unaffordable: 1 - state.stats.percent_affordable,
       },
       avg: {
         rent: Math.round(state.stats.mean_rent_per_tenant),

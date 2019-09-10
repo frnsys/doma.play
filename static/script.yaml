@@ -197,6 +197,7 @@ scenes:
   act_summary_2:
     title: "Act 2 Summary"
     checkpoint: "act_2_end"
+    showDomaShare: true
     actions:
       - name: "Start Act 3"
         next: "act_3"
@@ -265,6 +266,7 @@ scenes:
   act_summary_3:
     title: "Act 3 Summary"
     checkpoint: "final"
+    showDomaShare: true
     actions:
       - name: "The End"
         next: null
