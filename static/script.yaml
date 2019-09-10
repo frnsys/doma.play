@@ -89,32 +89,30 @@ scenes:
       - name: "Start Act 2"
         next: "act_2"
   act_2:
-    image: city.png
-    title: "An Epidemic"
-    description: "A year later and the housing problems of the city have only worsened. You consider some kind of action, but what's the best way forward?"
+    image: pin.png
+    title: "A Stake in the City"
+    description: "As you mull over the city's housing crisis, Linda calls you. She reminds you of the collective buyout of local apartments she is helping with, and asks you to participate. This could be a way to help with the housing crisis."
     actions:
-      - name: "Get a stake in the city"
-        next: "doma_intro"
-      - name: "Rent strike"
-        next: "strike_intro"
-      - name: "Petitioning"
-        next: "petition_intro"
+      - name: "Contribute to the fundraising"
+        next: "equity_purchase"
+      - name: "How else can I help?"
+        next: "housing_actions"
     act:
       title: "A Right to the City"
       description: "Why doesn't the city belong to its residents?"
       colors: ["#FEA74A", "#45535E"]
       number: 2
-  doma_intro:
-    image: pin.png
-    title: "A Stake in the City"
-    description: "You remember Linda describing a plan to organize a collective buyout of local apartments, so they can be managed by the community. Maybe this is what you should help with."
+  housing_actions:
+    image: city.png
+    title: "Intervention"
+    description: "You consider the other ways you can intervene."
     actions:
-      - name: "Let's do it"
-        next: "equity_purchase"
-      - name: "Nevermind, striking seems better"
+      - name: "Rent strike"
         next: "strike_intro"
-      - name: "Nevermind, petitioning seems better"
+      - name: "Petitioning"
         next: "petition_intro"
+      - name: "Nevermind, join the fundraising"
+        next: "equity_purchase"
   strike_intro:
     image: black_flag.png
     title: "Direct Action Gets the Goods"
@@ -123,7 +121,7 @@ scenes:
       - name: "Let's do it"
         next: "strike"
       - name: "Nevermind, a stake in the city seems better"
-        next: "doma_intro"
+        next: "equity_purchase"
       - name: "Nevermind, petitioning seems better"
         next: "petition_intro"
   petition_intro:
@@ -134,7 +132,7 @@ scenes:
       - name: "Let's do it"
         next: "petition"
       - name: "Nevermind, a stake in the city seems better"
-        next: "doma_intro"
+        next: "equity_purchase"
       - name: "Nevermind, striking seems better"
         next: "strike_intro"
   strike:
