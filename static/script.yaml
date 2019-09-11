@@ -246,7 +246,7 @@ scenes:
     description: "You found a place. The experience was different this time...all the housing action had its impact."
     actions:
       - name: "Continue"
-        next: "outro"
+        next: "doma_spread_the_word"
   apartment_search_success_doma_post:
     mood: 8
     image: house.png
@@ -254,7 +254,7 @@ scenes:
     description: "You're now a DOMA resident! Your shares significantly reduce the amount of rent you pay, and the rent that you do pay goes back to other residents in the area."
     actions:
       - name: "Continue"
-        next: "outro"
+        next: "doma_spread_the_word"
   apartment_search_failure_post:
     mood: -7
     image: prohibited.png
@@ -262,7 +262,26 @@ scenes:
     description: "Even after all these years, the rental market is still unforgiving...you weren't able to find a new place. Fortunately a friend has a comfortable couch available for you. Perhaps soon in the future things will be different."
     actions:
       - name: "Continue"
+        next: "doma_spread_the_word"
+  doma_spread_the_word:
+    image: word.png
+    title: "Keep Spreading the Word"
+    description: "You've heard stories of how DOMA has impacted people's lives. They use their dividends to lower their rent, to invest in their communities, and to make things easier. The more people know about DOMA, the greater the impact for everyone."
+    actions:
+      - name: "Pass"
         next: "outro"
+      - name: "Tell your friends"
+        cost:
+            mood: 3
+        next: "outro"
+      - name: "Tell your friends and family"
+        next: "outro"
+        cost:
+            mood: 6
+      - name: "Tell everyone on the street"
+        next: "outro"
+        cost:
+            mood: 9
   outro:
     image: sunset.png
     title: "What Next?"

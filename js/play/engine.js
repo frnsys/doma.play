@@ -144,6 +144,17 @@ class Engine {
       'policy_results': policy_results,
       'policy_results_strike': policy_results,
       'policy_results_petition': policy_results,
+      'doma_spread_the_word': (scene) => {
+        Views.BasicScene(sceneEl, {
+          scene, player: this.player,
+          onAction: (scene, action_id) => {
+            let amount = action_id * 0.1;
+            api.post(`/play/preach/${this.id}`, {amount}, () => {
+              this.waitForNextScene(scene, action_id);
+            });
+          }
+        });
+      },
       'doma_param_vote_equity': (scene) => {
         Views.EquityVote(sceneEl, {
           scene,
@@ -220,8 +231,7 @@ class Engine {
 
   changeMood(amt) {
     let notice = document.getElementById('toast');
-    let msg;
-    let bg;
+    let msg, bg;
     if (amt < 0) {
       bg = '#f25858';
     } else {
