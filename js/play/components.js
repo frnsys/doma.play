@@ -152,7 +152,7 @@ const Act = View(({act}) => `
   </div>
 `);
 
-const BasicScene = View(({scene}) => `
+const BasicScene = View(({scene, player}) => `
   <div>
     <div class="scene--stage">
       <img src="/static/scenes/${scene.image}">
@@ -162,7 +162,7 @@ const BasicScene = View(({scene}) => `
       <p class="scene--desc">${scene.description}</p>
       <div class="scene--actions">
         ${scene.actions.map((a, i) => {
-          return `<div class="button scene--action" data-id="${i}">${a.name}</div>`;
+          return `<div class="button ${a.cost && a.cost.mood > player.mood ? 'scene--action-disabled' : 'scene--action'}" data-id="${i}">${a.name}${a.cost ? `<span class="scene--action-cost">${-a.cost.mood}😶</span>` : ''}</div>`;
         }).join('')}
       </div>
     </div>
@@ -315,6 +315,7 @@ const ApartmentSearch = View(({vacancies, affordable}) => {
   },
   '.hide-popup': {
     'click': ({state}) => {
+      state.onHidePopup();
       document.getElementById('apartment-search--popup').style.display = 'none';
       // Check if any apartments available
       let vacantUnits = state.allVacantUnits.filter((u) => {

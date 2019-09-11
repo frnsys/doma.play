@@ -30,6 +30,7 @@ scenes:
     image: house.png
     title: "Success"
     description: "After an exhausting hunt you were finally able to find a place. It might not be ideal, but it's better than nothing."
+    mood: 6
     actions:
       - name: "Unwind at the bar"
         next: "bar"
@@ -37,6 +38,7 @@ scenes:
     image: prohibited.png
     title: "No Luck"
     description: "The rental market is unforgiving...you weren't able to find a new place. Fortunately a friend has a comfortable couch available for you. This is too common an outcome¸ but maybe things can change."
+    mood: -5
     actions:
       - name: "Unwind at the bar"
         next: "bar"
@@ -53,6 +55,8 @@ scenes:
     description: "Some people nearby overhear your conversation and walk over."
     actions:
       - name: "Stay awhile and listen"
+        cost:
+            mood: 2
         next: "bar_friends_2"
       - name: "I don't care"
         next: "bar_friends_ignore"
@@ -62,7 +66,11 @@ scenes:
     description: "They recently had a similarly difficult time finding a new place...in fact, you might have taken one of the places they were looking at. But they don't blame you. This rental market turns renters against each other, misdirecting their frustrations."
     actions:
       - name: "Comiserate"
+        cost:
+            mood: 2
         next: "bar_friends_3"
+      - name: "I don't care"
+        next: "bar_friends_ignore"
   bar_friends_3:
     image: moon.png
     title: "Closing Time"
@@ -81,6 +89,7 @@ scenes:
     image: luggage.png
     title: "Moving Out"
     description: "The next day you pack up your things. You have a feeling that it won't be long before you need to pack up and move all over again. But for now, you're relieved to have somewhere to stay."
+    mood: 6
     actions:
       - name: "Time flies"
         next: "act_summary_1"
@@ -97,6 +106,8 @@ scenes:
     actions:
       - name: "Contribute to the fundraising"
         next: "equity_purchase"
+        cost:
+            mood: 2
       - name: "How else can I help?"
         next: "housing_actions"
     act:
@@ -115,6 +126,8 @@ scenes:
         next: "petition_intro"
       - name: "Nevermind, join the fundraising"
         next: "equity_purchase"
+        cost:
+            mood: 2
   strike_intro:
     image: black_flag.png
     title: "Direct Action Gets the Goods"
@@ -122,8 +135,12 @@ scenes:
     actions:
       - name: "Let's do it"
         next: "strike"
+        cost:
+            mood: 3
       - name: "Nevermind, a stake in the city seems better"
         next: "equity_purchase"
+        cost:
+            mood: 2
       - name: "Nevermind, petitioning seems better"
         next: "petition_intro"
   petition_intro:
@@ -133,14 +150,19 @@ scenes:
     actions:
       - name: "Let's do it"
         next: "petition"
+        cost:
+            mood: 3
       - name: "Nevermind, a stake in the city seems better"
         next: "equity_purchase"
+        cost:
+            mood: 2
       - name: "Nevermind, striking seems better"
         next: "strike_intro"
   strike:
     image: black_flag.png
     title: "City-wide Rent Strike"
     description: "There's good participation in the rent strike. It goes on for some time, but the pressure seems to be taking its toll on the landlords."
+    mood: -1
     actions:
       - name: "Next"
         next: "policy_results_strike"
@@ -148,6 +170,7 @@ scenes:
     image: clipboard.png
     title: "Out Petitioning"
     description: "For the next several weeks you are on the street collecting signatures and raising support for policy to get the housing market under control. Public and legislator support seem to be growing."
+    mood: -1
     actions:
       - name: "Next"
         next: "policy_results_petition"
@@ -217,6 +240,7 @@ scenes:
       - name: "Success DOMA"
         next: "apartment_search_success_doma_post"
   apartment_search_success_post:
+    mood: 6
     image: house.png
     title: "Success"
     description: "You found a place. The experience was different this time...all the housing action had its impact."
@@ -224,6 +248,7 @@ scenes:
       - name: "Continue"
         next: "outro"
   apartment_search_success_doma_post:
+    mood: 8
     image: house.png
     title: "Success"
     description: "You're now a DOMA resident! Your shares significantly reduce the amount of rent you pay, and the rent that you do pay goes back to other residents in the area."
@@ -231,6 +256,7 @@ scenes:
       - name: "Continue"
         next: "outro"
   apartment_search_failure_post:
+    mood: -7
     image: prohibited.png
     title: "No Luck"
     description: "Even after all these years, the rental market is still unforgiving...you weren't able to find a new place. Fortunately a friend has a comfortable couch available for you. Perhaps soon in the future things will be different."
