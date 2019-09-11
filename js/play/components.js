@@ -414,7 +414,7 @@ const ApartmentListings = View(({parcel, tenant, units, maxSpaciousness}) => {
     'click': ({ev, state, props}) => {
       if (state.onSelect) {
         let unit = state.units[parseInt(props.id)];
-        if (unit.affordable) state.onSelect(unit, ev);
+        if (unit.affordable && !unit.taken) state.onSelect(unit, ev);
       };
     }
   }
