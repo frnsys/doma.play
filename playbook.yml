@@ -20,5 +20,5 @@
   pip: requirements=/srv/app/requirements.txt executable=pip3
 - name: overwrite start.sh
   copy:
-    content: "#!/bin/bash\ncd /srv/app\nredis-server &\ncd sim\n./target/release/doma_sim &\ncd ..\npython3 app.py &\nwait"
+    content: "#!/bin/bash\ncd /srv/app\nredis-server &\nsleep 10\ncd sim\n./target/release/doma_sim &\ncd ..\npython3 app.py &\nwait"
     dest: /usr/share/start.sh
