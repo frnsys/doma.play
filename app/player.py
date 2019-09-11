@@ -12,6 +12,13 @@ def play():
     """Player view"""
     return render_template('play.html')
 
+@bp.route('/reset')
+def reset():
+    """Emergency reset"""
+    mgr.reset()
+    return jsonify(success=True)
+
+
 @bp.route('/ready')
 def session_ready():
     return jsonify(success=mgr.is_ready())

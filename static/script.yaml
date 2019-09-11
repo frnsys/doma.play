@@ -24,6 +24,8 @@ scenes:
         next: "apartment_search_success"
       - name: "No Luck"
         next: "apartment_search_failure"
+      - name: "Success"
+        next: "apartment_search_success"
   apartment_search_success:
     image: house.png
     title: "Success"
@@ -201,7 +203,7 @@ scenes:
         next: "act_3"
   act_3:
     image: city.png
-    title: "TODO"
+    title: "A Free City"
     description: "The community housing platform continues to grow, but some crucial decisions need to be made about how it will continue to work. Members are to submit proposals for how housing funds are collected and distributed. You can focus on one of two aspects: distributing ownership of the housing, or implementing stricter controls on rent."
     actions:
       - name: "Search for a place"
@@ -212,52 +214,33 @@ scenes:
         next: "apartment_search_success_post"
       - name: "No Luck"
         next: "apartment_search_failure_post"
+      - name: "Success DOMA"
+        next: "apartment_search_success_doma_post"
   apartment_search_success_post:
     image: house.png
     title: "Success"
     description: "You found a place. The experience was different this time...all the housing action had its impact."
     actions:
       - name: "Continue"
-        next: "doma_param_vote_intro"
+        next: "outro"
+  apartment_search_success_doma_post:
+    image: house.png
+    title: "Success"
+    description: "You're now a DOMA resident! Your shares significantly reduce the amount of rent you pay, and the rent that you do pay goes back to other residents in the area."
+    actions:
+      - name: "Continue"
+        next: "outro"
   apartment_search_failure_post:
     image: prohibited.png
     title: "No Luck"
     description: "Even after all these years, the rental market is still unforgiving...you weren't able to find a new place. Fortunately a friend has a comfortable couch available for you. Perhaps soon in the future things will be different."
     actions:
       - name: "Continue"
-        next: "doma_param_vote_intro"
-  doma_param_vote_intro:
-    image: city.png
-    title: "Deciding Together"
-    description: "The community housing platform continues to grow, but some crucial decisions need to be made about how it will continue to work. Members are to submit proposals for how housing funds are collected and distributed. You can focus on one of two aspects: distributing ownership of the housing, or implementing stricter controls on rent."
-    actions:
-      - name: "Ownership distribution"
-        next: "doma_param_vote_equity"
-      - name: "Rent control"
-        next: "doma_param_vote_rent"
-  doma_param_vote_equity:
-    title: "Equity Generation"
-    image: vote.png
-    actions:
-      - name: "next"
-        next: "vote_results"
-  doma_param_vote_rent:
-    title: "Rent Control"
-    image: vote.png
-    actions:
-      - name: "next"
-        next: "vote_results"
-  vote_results:
-    title: "Voting Results"
-    image: scroll.png
-    checkpoint: "param_results"
-    actions:
-      - name: "next"
         next: "outro"
   outro:
     image: sunset.png
     title: "What Next?"
-    description: "The community's decision around the collective have been implemented. Many years will pass--and the housing market will continue to change. But because of what happened here, it could be for the better."
+    description: "Many years will pass, and the housing market will continue to change. But because of what happened here, it could be for the better."
     actions:
       - name: "Let's see what happens"
         next: "act_summary_3"

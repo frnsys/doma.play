@@ -217,7 +217,7 @@ class Manager:
 
     def remove_player(self, id):
         self.players.remove(id)
-        self.mgr.send_command('ReleaseTenant', id)
+        self.send_command('ReleaseTenant', id)
         active_tenants = json.loads(self.session['tenants:active'] or '{}')
         if id in active_tenants:
             del active_tenants[id]
