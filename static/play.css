@@ -76,8 +76,11 @@ main {
   margin: 1em 0 2em 0;
   text-align: left;
 }
-.scene--action {
+.scene--action, .scene--action-disabled {
   background: #B287B5;
+}
+.scene--action-disabled {
+  opacity: 0.5;
 }
 
 .button {
@@ -336,4 +339,33 @@ input[type=range] {
 }
 .signed-bad {
   background: #ff1f1f;
+}
+
+#hud {
+  position: fixed;
+  width: 100%;
+  max-width: 320px;
+  margin: 0 auto;
+  display: none;
+  padding: 0.25em 0.5em;
+  text-align: right;
+  z-index: 2;
+}
+
+.scene--action-cost {
+  margin-left: 0.25em;
+  font-size: 0.6em;
+  vertical-align: middle;
+}
+
+#toast {
+  position: absolute;
+  top: 0;
+  left: 0;
+  font-size: 0.7em;
+  border-radius: 0.2em;
+  padding: 0.5em;
+  background: #fff;
+  margin: 0.35em;
+  display: none;
 }

@@ -81,6 +81,12 @@ def player_social(id):
     mgr.send_command('DOMAPreach', [id, 0.005, False])
     return jsonify(success=True)
 
+@bp.route('/preach/<id>', methods=['POST'])
+def player_preach(id):
+    """Player preach about DOMA"""
+    data = request.get_json()
+    mgr.send_command('DOMAPreach', [id, data['amount'], True])
+    return jsonify(success=True)
 
 @bp.route('/vote/<id>', methods=['POST'])
 def player_vote(id):

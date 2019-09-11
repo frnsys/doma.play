@@ -7,6 +7,17 @@ import showApartments from './view/listings';
 let params = location.search.slice(1);
 let DEBUG = params.includes('debug');
 
+let MOODS = [
+  '🤮',
+  '😫',
+  '😣',
+  '😔',
+  '😐',
+  '🙂',
+  '😀',
+  '😁'
+];
+
 const sceneEl = document.getElementById('scene');
 const statusEl = document.getElementById('status');
 
@@ -21,6 +32,8 @@ class Engine {
     this.id = uuid();
     this.player = {};
     this.time = 0;
+    this.player.mood = 9;
+    this.setMood(this.player.mood);
 
     const equity_purchase = (scene) => {
       api.get('/state', (state) => {
@@ -110,7 +123,7 @@ class Engine {
       },
       'strike': (scene) => {
         Views.BasicScene(sceneEl, {
-          scene,
+          scene, player: this.player,
           onAction: () => {
             api.post(`/play/policy/${this.id}`, {policy: 'RentFreeze'}, () => {
               this.waitForNextScene(scene, 0);
@@ -120,7 +133,7 @@ class Engine {
       },
       'petition': (scene) => {
         Views.BasicScene(sceneEl, {
-          scene,
+          scene, player: this.player,
           onAction: () => {
             api.post(`/play/policy/${this.id}`, {policy: 'MarketTax'}, () => {
               this.waitForNextScene(scene, 0);
@@ -131,6 +144,17 @@ class Engine {
       'policy_results': policy_results,
       'policy_results_strike': policy_results,
       'policy_results_petition': policy_results,
+      'doma_spread_the_word': (scene) => {
+        Views.BasicScene(sceneEl, {
+          scene, player: this.player,
+          onAction: (scene, action_id) => {
+            let amount = action_id * 0.1;
+            api.post(`/play/preach/${this.id}`, {amount}, () => {
+              this.waitForNextScene(scene, action_id);
+            });
+          }
+        });
+      },
       'doma_param_vote_equity': (scene) => {
         Views.EquityVote(sceneEl, {
           scene,
@@ -171,7 +195,7 @@ class Engine {
             scene.description = 'There are quite a few patrons tonight. ' + scene.description;
           }
           Views.BasicScene(sceneEl, {
-            scene,
+            scene, player: this.player,
             onAction: (scene, actionId) => {
               if (actionId == 0) {
                 // Improve social parameter
@@ -197,12 +221,48 @@ class Engine {
             scene.description = `The group introduces themselves as ${names}. ` + scene.description;
           }
           Views.BasicScene(sceneEl, {
-            scene,
+            scene, player: this.player,
             onAction: this.waitForNextScene.bind(this)
           });
         });
       }
     };
+  }
+
+  changeMood(amt) {
+    let notice = document.getElementById('toast');
+    let msg, bg;
+    if (amt < 0) {
+      bg = '#f25858';
+    } else {
+      bg = '#32ae51';
+    }
+    if (amt <= -3) {
+      msg = 'That was exhausting.';
+    } else if (amt <= -2) {
+      msg = 'That was tiring.';
+    } else if (amt < 0) {
+      msg = 'That was a bit tiring.';
+    } else if (amt < 2) {
+      msg = 'You feel a bit more energized.';
+    } else if (amt < 5) {
+      msg = 'You feel more energized.';
+    } else {
+      msg = 'You feel rejuvinated.';
+    }
+
+    notice.innerText = msg;
+    notice.style.display = 'block';
+    notice.style.background = bg;
+    setTimeout(() => {
+      notice.style.display = 'none';
+    }, 2000);
+    this.setMood(this.mood+amt);
+  }
+
+  setMood(mood) {
+    this.mood = Math.min(Math.max(0, mood), MOODS.length-1);
+    document.getElementById('mood').innerText = MOODS[Math.floor(this.mood/2)];
   }
 
   loadAct(act) {
@@ -237,6 +297,10 @@ class Engine {
       this.loadAct(scene.act);
     }
 
+    if (scene.mood) {
+      this.changeMood(scene.mood);
+    }
+
     if (scene.id.startsWith('act_summary')) {
       this.summarizeAct(scene);
 
@@ -244,14 +308,20 @@ class Engine {
       this.scenes[scene.id](scene);
 
     } else {
+      document.getElementById('hud').style.display = 'block';
       Views.BasicScene(sceneEl, {
-        scene,
+        scene, player: this.player,
         onAction: this.waitForNextScene.bind(this)
       });
     }
   }
 
   waitForNextScene(scene, action_id) {
+    let action = scene.actions[action_id];
+    if (action.cost) {
+      this.changeMood(-action.cost.mood);
+    }
+
     api.post(`/play/next_scene`, {
       id: this.id,
       scene_id: scene.id,
@@ -388,6 +458,9 @@ class Engine {
       let {parcels, vacancies, affordable, maxSpaciousness, allVacantUnits} = this.parseParcels(state, freeDOMA);
       let el = Views.ApartmentSearch(sceneEl, {
         vacancies, affordable, allVacantUnits,
+        onHidePopup: () => {
+          this.changeMood(-1);
+        },
         onSkip: () => {
           this.player.couch = {
             neighborhood: util.randomChoice(Object.values(this.neighborhoods))
