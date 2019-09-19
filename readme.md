@@ -22,6 +22,8 @@ pip install -r requirements.txt
 - `npm start` to start the frontend and API server, then go to `localhost:8000` for the city view.
 - Run the simulation with `./sim/target/release/doma_sim`. The API server will interface with this via Redis.
 
+You can also view active player information at `/play/players`, useful for debugging.
+
 ## Designer
 
 Visit `/design` to access the map designer.

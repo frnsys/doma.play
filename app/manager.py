@@ -236,11 +236,20 @@ class Manager:
     def tenant(self, id):
         res = self.players[id, 'tenant']
         meta = self.players[id, 'tenant:meta']
+        ckpt = self.players[id, 'ckpt']
+        scene = self.players[id, 'scene']
+        last_action = self.players[id, 'last_action']
         data = {}
         if res is not None:
             data.update(json.loads(res))
         if meta is not None:
             data.update(json.loads(meta))
+        if ckpt is not None:
+            data['ckpt'] = ckpt
+        if scene is not None:
+            data['scene'] = scene
+        if last_action is not None:
+            data['last_action'] = last_action
         if not data:
             return None
         return data
@@ -287,6 +296,8 @@ class Manager:
         outcome = scene['actions'][action_id]
         next_scene_id = outcome.get('next')
 
+        self.players[player_id, 'last_action'] = datetime.utcnow().isoformat() + ' UTC'
+
         # Ending
         if not next_scene_id:
             self.reset()
@@ -305,7 +316,10 @@ class Manager:
                 return None
 
             elif self.session['next_step'] == TRUE:
+                self.players[player_id, 'scene'] = next_scene_id
                 return next_scene
             else:
                 return None
+
+        self.players[player_id, 'scene'] = next_scene_id
         return next_scene
