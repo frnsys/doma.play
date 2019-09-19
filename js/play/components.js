@@ -393,7 +393,13 @@ const ApartmentListings = View(({parcel, tenant, units, maxSpaciousness}) => {
               : `Just listed`
             }</div>
             <p>${desc}</p>
-            ${AnnotatedBar({
+            ${tenant.dividend ? AnnotatedBarBar({
+              p: u.rentPerTenant/tenant.income,
+              left: [`💸Rent/month`, `${Math.round(u.rentPerTenant).toLocaleString()}`],
+              subP: u.adjustedRentPerTenant/u.rentPerTenant,
+              subLabel: `${Math.round(u.adjustedRentPerTenant)} (-${Math.round((1 - u.adjustedRentPerTenant/u.rentPerTenant)*100)}%) after DOMA dividend`,
+              right: [`Income/month💵`, `${Math.round(tenant.income).toLocaleString()}`]
+            }): AnnotatedBar({
               p: u.rentPerTenant/tenant.income,
               left: [`💸Rent/month`, `${Math.round(u.rentPerTenant).toLocaleString()}`],
               right: [`Income/month💵`, `${Math.round(tenant.income).toLocaleString()}`]

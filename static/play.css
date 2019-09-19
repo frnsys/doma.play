@@ -312,7 +312,7 @@ table td:last-child {
 }
 .bar--subfill {
   position: absolute;
-  right: 0;
+  left: 0;
   max-width: 100%;
   height: 100%;
   background: rgba(255,255,255,0.1);
@@ -320,6 +320,10 @@ table td:last-child {
   white-space: nowrap;
   line-height: 3.8;
   font-size: 10px;
+}
+
+.listing .bar-annotated {
+  height: 3.5em;
 }
 
 input[type=range] {

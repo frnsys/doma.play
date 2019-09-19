@@ -444,10 +444,11 @@ class Engine {
   }
 
   searchApartments(scene, freeDOMA) {
-    api.get(`/play/tenant/${this.id}`, (data) => {
-      console.log(data);
+    api.get(`/play/tenant/${this.id}`, (player) => {
+      this.player.tenant.dividend = player.tenant.dividend;
+      console.log(player);
       api.get('/state', (state) => {
-        let {parcels, vacancies, affordable, maxSpaciousness, allVacantUnits} = this.parseParcels(state, freeDOMA);
+        let {parcels, vacancies, affordable, maxSpaciousness, allVacantUnits} = this.parseParcels(state, player.tenant, freeDOMA);
         let el = Views.ApartmentSearch(sceneEl, {
           vacancies, affordable, allVacantUnits,
           onHidePopup: () => {
@@ -477,13 +478,13 @@ class Engine {
               // DOMA units always accept players
               if (u.owner.type == 'DOMA') {
                 // TODO disable interactions?
-                this.player.tenant.rent = u.rentPerTenant;
+                this.player.tenant.rent = u.adjustedRentPerTenant;
                 api.post(`/play/move/${this.id}`, {id: u.id}, (data) => {
                   this.waitForNextScene(scene, 2);
                 });
               } else {
                 if ((DEBUG || Math.random() <= 0.2 && attempts > 2) || attempts >= 8) {
-                  this.player.tenant.rent = u.rentPerTenant;
+                  this.player.tenant.rent = u.adjustedRentPerTenant;
                   api.post(`/play/move/${this.id}`, {id: u.id}, (data) => {
                     this.waitForNextScene(scene, 0);
                   });
@@ -507,7 +508,7 @@ class Engine {
     });
   }
 
-  parseParcels(state, freeDOMA) {
+  parseParcels(state, player, freeDOMA) {
     let allVacantUnits = [];
     let tenant = this.player.tenant;
     let parcels = state.map.parcels;
@@ -531,7 +532,8 @@ class Engine {
             allVacantUnits = allVacantUnits.concat(vacantUnits);
             p.affordable = vacantUnits.filter((u) => {
               u.rentPerTenant = Math.round(u.rent/u.occupancy);
-              u.affordable = u.rentPerTenant <= tenant.income;
+              u.adjustedRentPerTenant = player.dividend ? Math.max(u.rentPerTenant - player.dividend, 0) : u.rentPerTenant;
+              u.affordable = u.adjustedRentPerTenant <= tenant.income;
               u.neighbDesirability = p.desirability;
               u.doma = u.owner.type == 'DOMA';
               return u.affordable;
