@@ -162,7 +162,7 @@ const BasicScene = View(({scene, player}) => `
       <p class="scene--desc">${scene.description}</p>
       <div class="scene--actions">
         ${scene.actions.map((a, i) => {
-          return `<div class="button ${a.cost && a.cost.mood > player.mood ? 'scene--action-disabled' : 'scene--action'}" data-id="${i}">${a.name}${a.cost ? `<span class="scene--action-cost">${-a.cost.mood}😶</span>` : ''}</div>`;
+          return `<div class="button ${a.cost && a.cost.energy > player.energy ? 'scene--action-disabled' : 'scene--action'}" data-id="${i}">${a.name}${a.cost ? `<span class="scene--action-cost">-${a.cost.energy}⚡</span>` : ''}</div>`;
         }).join('')}
       </div>
     </div>
@@ -487,7 +487,7 @@ const EquityPurchase = View(({scene, tenant, p_dividend, shares}) => `
     </div>
     <div class="scene--body">
       <h3 class="scene--title">${scene.title}</h3>
-      <p class="scene--desc">The collective is raising funds by selling 🧱equity in the collective's properties. Each 🧱equity share entitles you to ${Math.round(p_dividend * 100)}% of rental 💵dividends. You have 💵${Math.round(tenant.savings).toLocaleString()} in savings, how many 🧱equity shares do you want to buy?</p>
+      <p class="scene--desc">The collective is raising funds by selling 🧱equity in the collective's properties. Each 🧱equity share entitles you to a share of rental 💵dividends. You have 💵${Math.round(tenant.savings).toLocaleString()} in savings, how many 🧱equity shares do you want to buy?</p>
       <div class="bar-annotated--labels">
         <div class="bar--label bar--label-left">
           <div>💵0</div>

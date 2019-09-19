@@ -7,17 +7,7 @@ import showApartments from './view/listings';
 let params = location.search.slice(1);
 let DEBUG = params.includes('debug');
 
-let MOODS = [
-  '🤮',
-  '😫',
-  '😣',
-  '😔',
-  '😐',
-  '🙂',
-  '😀',
-  '😁'
-];
-
+const MAX_ENERGY = 10;
 const sceneEl = document.getElementById('scene');
 const statusEl = document.getElementById('status');
 
@@ -32,8 +22,8 @@ class Engine {
     this.id = uuid();
     this.player = {};
     this.time = 0;
-    this.player.mood = 9;
-    this.setMood(this.player.mood);
+    this.player.energy = 8;
+    this.setEnergy(this.player.energy);
 
     const equity_purchase = (scene) => {
       api.get('/state', (state) => {
@@ -229,7 +219,7 @@ class Engine {
     };
   }
 
-  changeMood(amt) {
+  changeEnergy(amt) {
     let notice = document.getElementById('toast');
     let msg, bg;
     if (amt < 0) {
@@ -257,12 +247,12 @@ class Engine {
     setTimeout(() => {
       notice.style.display = 'none';
     }, 2000);
-    this.setMood(this.mood+amt);
+    this.setEnergy(this.energy+amt);
   }
 
-  setMood(mood) {
-    this.mood = Math.min(Math.max(0, mood), MOODS.length-1);
-    document.getElementById('mood').innerText = MOODS[Math.floor(this.mood/2)];
+  setEnergy(energy) {
+    this.energy = Math.min(Math.max(0, energy), MAX_ENERGY);
+    document.getElementById('energy').innerText = [...Array(this.energy).keys()].map(() => '⚡').join('');
   }
 
   loadAct(act) {
@@ -297,8 +287,8 @@ class Engine {
       this.loadAct(scene.act);
     }
 
-    if (scene.mood) {
-      this.changeMood(scene.mood);
+    if (scene.energy) {
+      this.changeEnergy(scene.energy);
     }
 
     if (scene.id.startsWith('act_summary')) {
@@ -319,7 +309,7 @@ class Engine {
   waitForNextScene(scene, action_id) {
     let action = scene.actions[action_id];
     if (action.cost) {
-      this.changeMood(-action.cost.mood);
+      this.changeEnergy(-action.cost.energy);
     }
 
     api.post(`/play/next_scene`, {
@@ -454,61 +444,64 @@ class Engine {
   }
 
   searchApartments(scene, freeDOMA) {
-    api.get('/state', (state) => {
-      let {parcels, vacancies, affordable, maxSpaciousness, allVacantUnits} = this.parseParcels(state, freeDOMA);
-      let el = Views.ApartmentSearch(sceneEl, {
-        vacancies, affordable, allVacantUnits,
-        onHidePopup: () => {
-          this.changeMood(-1);
-        },
-        onSkip: () => {
-          this.player.couch = {
-            neighborhood: util.randomChoice(Object.values(this.neighborhoods))
-          };
-          this.waitForNextScene(scene, 1);
-        }
-      });
+    api.get(`/play/tenant/${this.id}`, (data) => {
+      console.log(data);
+      api.get('/state', (state) => {
+        let {parcels, vacancies, affordable, maxSpaciousness, allVacantUnits} = this.parseParcels(state, freeDOMA);
+        let el = Views.ApartmentSearch(sceneEl, {
+          vacancies, affordable, allVacantUnits,
+          onHidePopup: () => {
+            this.changeEnergy(-1);
+          },
+          onSkip: () => {
+            this.player.couch = {
+              neighborhood: util.randomChoice(Object.values(this.neighborhoods))
+            };
+            this.waitForNextScene(scene, 1);
+          }
+        });
 
-      let attempts = 0;
-      let stageEl = el.querySelector('#stage');
-      let listingsEl = el.querySelector('#listings');
-      Views.ApartmentListings(listingsEl, {});
-      showApartments(stageEl, state.map, parcels, (p) => {
-        Views.ApartmentListings(listingsEl, {
-          parcel: p,
-          tenant: this.player.tenant,
-          maxSpaciousness: maxSpaciousness,
-          units: p.units,
-          onSelect: (u, ev) => {
-            attempts += 1;
+        let attempts = 0;
+        let stageEl = el.querySelector('#stage');
+        let listingsEl = el.querySelector('#listings');
+        Views.ApartmentListings(listingsEl, {});
+        showApartments(stageEl, state.map, parcels, (p) => {
+          Views.ApartmentListings(listingsEl, {
+            parcel: p,
+            tenant: this.player.tenant,
+            maxSpaciousness: maxSpaciousness,
+            units: p.units,
+            onSelect: (u, ev) => {
+              attempts += 1;
 
-            // DOMA units always accept players
-            if (u.owner.type == 'DOMA') {
-              // TODO disable interactions?
-              this.player.tenant.rent = u.rentPerTenant;
-              api.post(`/play/move/${this.id}`, {id: u.id}, (data) => {
-                this.waitForNextScene(scene, 2);
-              });
-            } else {
-              if ((DEBUG || Math.random() <= 0.2 && attempts > 2) || attempts >= 8) {
+              // DOMA units always accept players
+              if (u.owner.type == 'DOMA') {
+                // TODO disable interactions?
                 this.player.tenant.rent = u.rentPerTenant;
                 api.post(`/play/move/${this.id}`, {id: u.id}, (data) => {
-                  this.waitForNextScene(scene, 0);
+                  this.waitForNextScene(scene, 2);
                 });
               } else {
-                u.taken = true;
-                let button = ev.target;
-                button.classList.add('disabled');
-                button.innerText = 'No longer available';
-                let popup = document.getElementById('apartment-search--popup');
-                popup.querySelector('p').innerText = util.randomChoice([
-                  'You call the landlord, who informs you that the place has already been taken.',
-                  'You apply—the landlord ended up going with another applicant.'
-                ]);
-                popup.style.display = 'flex';
+                if ((DEBUG || Math.random() <= 0.2 && attempts > 2) || attempts >= 8) {
+                  this.player.tenant.rent = u.rentPerTenant;
+                  api.post(`/play/move/${this.id}`, {id: u.id}, (data) => {
+                    this.waitForNextScene(scene, 0);
+                  });
+                } else {
+                  u.taken = true;
+                  let button = ev.target;
+                  button.classList.add('disabled');
+                  button.innerText = 'No longer available';
+                  let popup = document.getElementById('apartment-search--popup');
+                  popup.querySelector('p').innerText = util.randomChoice([
+                    'You call the landlord, who informs you that the place has already been taken.',
+                    'You apply—the landlord ended up going with another applicant.'
+                  ]);
+                  popup.style.display = 'flex';
+                }
               }
             }
-          }
+          });
         });
       });
     });
@@ -537,7 +530,7 @@ class Engine {
             let vacantUnits = p.vacancies.map((id) => state.units[id]);
             allVacantUnits = allVacantUnits.concat(vacantUnits);
             p.affordable = vacantUnits.filter((u) => {
-              u.rentPerTenant = Math.round(u.rent/(u.tenants + 1));
+              u.rentPerTenant = Math.round(u.rent/u.occupancy);
               u.affordable = u.rentPerTenant <= tenant.income;
               u.neighbDesirability = p.desirability;
               u.doma = u.owner.type == 'DOMA';
