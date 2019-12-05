@@ -190,6 +190,7 @@ const Splash = View(({ready}) => `
     <div class="scene--body">
       <h1>doma.play</h1>
       <h2>A game to beat the housing market</h2>
+      <p>In this online multiplayer game, your goal will be to join forces with other city dwellers to make your city more affordable, inclusive, and sustainable. Can you make it against the forces of the market?</p>
       <div class="button ${ready ? "" : "waiting"}">
         ${ready ? "Get started" : "Waiting for next session..."}
       </div>

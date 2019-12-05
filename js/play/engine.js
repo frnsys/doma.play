@@ -483,7 +483,7 @@ class Engine {
                   this.waitForNextScene(scene, 2);
                 });
               } else {
-                if ((DEBUG || Math.random() <= 0.2 && attempts > 2) || attempts >= 8) {
+                if ((DEBUG || Math.random() <= 0.2 && attempts > 2) || attempts >= 4) {
                   this.player.tenant.rent = u.adjustedRentPerTenant;
                   api.post(`/play/move/${this.id}`, {id: u.id}, (data) => {
                     this.waitForNextScene(scene, 0);

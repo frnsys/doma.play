@@ -188,9 +188,10 @@ main {
 }
 
 .splash h1 {
-  font-size: 3em;
+  font-size: 2.3em;
   font-family: 'IBM Plex Sans', sans-serif;
-  margin-bottom: 0;
+  margin: 0;
+  line-height: 1.1;
 }
 
 .splash h2 {
@@ -198,7 +199,11 @@ main {
   font-style: italic;
   font-size: 0.8em;
   color: #333;
-  margin: 0 0 4em 0;
+  margin: 0;
+}
+.splash p {
+  font-size: 0.8em;
+  margin: 0.75em 0 1.5em 0;
 }
 .splash--image img {
   width: 100%;
