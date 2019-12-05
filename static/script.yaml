@@ -1,16 +1,23 @@
 scenes:
   START:
-    image: tophat.png
+    image: house.png
     title: "There were no signs of trouble..."
-    description: "...until you learned that you were being evicted. Your landlord is somehow always both intensely overbearing and conspicuously absent--so this hostility is not unexpected. Now what?"
+    description: "You have been renting the same place for 6 years. While it's not cheap, you've got a fairly good deal compared to current rent levels around the city. Your daily commute is not too bad. You haven't been able to save much over the years, but fortunately you're not in debt. Overall, you're doing ok financially."
+    actions:
+      - name: "Days go by..."
+        next: "eviction"
+    act:
+      title: "Crushed by the Market"
+      description: "In which the player grapples with the harsh reality of housing in the city."
+      colors: ["#F06C8F", "#2972EC"]
+      number: 1
+  eviction:
+    image: tophat.png
+    title: "Eviction"
+    description: "A letter from your landlord arrives in your mailbox. It says they are increasing the rent by 70%: either you pay, or you have two months to leave your place. You definitely can't afford that, and you're baffled that they can do this legally... you have no choice but to move out."
     actions:
       - name: "Look for a new place"
         next: "apartment_search_intro"
-    act:
-      title: "The Market"
-      description: "In which the player grapples with the city's housing market."
-      colors: ["#F06C8F", "#2972EC"]
-      number: 1
   apartment_search_intro:
     image: house.png
     title: "Finding a new place"
@@ -28,7 +35,7 @@ scenes:
         next: "apartment_search_success"
   apartment_search_success:
     image: house.png
-    title: "Success"
+    title: "Success!"
     description: "After an exhausting hunt you were finally able to find a place. It might not be ideal, but it's better than nothing."
     energy: 3
     actions:

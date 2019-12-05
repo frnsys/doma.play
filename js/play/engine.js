@@ -409,7 +409,7 @@ class Engine {
         value: Math.round(state.stats.mean_value),
         income: Math.round(state.stats.mean_income)
       },
-      population: state.stats.population
+      population: state.stats.population * 1000 // Simulate larger populations
     }
   }
 

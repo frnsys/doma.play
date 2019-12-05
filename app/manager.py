@@ -271,7 +271,12 @@ class Manager:
                              if t['id'] not in active_tenants.values()
                              and t['unit']['id'] is not None]
 
-        tenant = random.choice(available_tenants)
+        # Filter tenants by income
+        valid_tenants = [t for t in tenants if t['income'] <= 3500]
+        if not valid_tenants:
+            valid_tenants = available_tenants
+
+        tenant = random.choice(valid_tenants)
         active_tenants[id] = tenant['id']
         self.session['tenants:active'] = active_tenants
 
@@ -280,7 +285,7 @@ class Manager:
         # This is totally arbitrary atm
         tenant.update({
             'name': weighted_choice(names),
-            'savings': tenant['income'] * 0.5
+            'savings': tenant['income'] * 0.25
         })
 
         self.players[id, 'tenant:meta'] = {
