@@ -1,4 +1,4 @@
 Flask==0.12.1
 redis==3.2.1
 APScheduler==3.6.0
-PyYAML==3.12
+PyYAML==5.1
