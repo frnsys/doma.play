@@ -37,6 +37,7 @@ const defaultCellData = {
   type: parcelTypes[0]
 }
 const defaultCity = {
+  name: 'New City',
   maxBedrooms: 4,
   pricePerSqm: 100,
   priceToRentRatio: 10,

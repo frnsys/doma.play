@@ -54,7 +54,7 @@ def status():
 def state():
     """Query current state"""
     state = json.loads(redis.get('state'))
-    state['key'] = redis.get('state_key').decode('utf8')
+    state['key'] = redis.get('state:key').decode('utf8')
     return jsonify(state)
 
 
