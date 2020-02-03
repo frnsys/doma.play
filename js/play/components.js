@@ -209,11 +209,6 @@ const CitySummary = View(({summary}) => `
       <h1>${summary.city}</h1>
       <p>A small group of landlords are expanding their ownership of the city. More and more people are facing a lifetime of rent as the city becomes increasingly unaffordable.</p>
       ${AnnotatedBar({
-        p: summary.p.commons,
-        left: [`👥${(summary.p.commons*100).toFixed(1)}%`, 'Commons'],
-        right: [`${(summary.p.landlords*100).toFixed(1)}%🎩`, 'Landlords']
-      })}
-      ${AnnotatedBar({
         p: summary.p.affordable,
         left: [`${(summary.p.affordable*100).toFixed(1)}%`, 'Affordable'],
         right: [`${(summary.p.unaffordable*100).toFixed(1)}%`, 'Unaffordable']
@@ -450,17 +445,6 @@ const ActSummary = View(({summary, me, players, showDomaShare}) => `
           <td>${summary.population.toLocaleString()}</td>
         </tr>
       </table>
-      ${showDomaShare ? AnnotatedBarBar({
-        p: summary.p.commons,
-        subP: summary.p.doma/summary.p.commons,
-        subLabel: `${(summary.p.doma*100).toFixed(1)}% DOMA`,
-        left: [`👥${(summary.p.commons*100).toFixed(1)}% ${hiSignP(Math.round(summary.delta.p.commons*100), true)}`, 'Commons'],
-        right: [`${hiSignP(Math.round(summary.delta.p.landlords*100), false)} ${(summary.p.landlords*100).toFixed(1)}%🎩`, 'Landlords']
-      }) : AnnotatedBar({
-        p: summary.p.commons,
-        left: [`👥${(summary.p.commons*100).toFixed(1)}% ${hiSignP(Math.round(summary.delta.p.commons*100), true)}`, 'Commons'],
-        right: [`${hiSignP(Math.round(summary.delta.p.landlords*100), false)} ${(summary.p.landlords*100).toFixed(1)}%🎩`, 'Landlords']
-      })}
       ${AnnotatedBar({
         p: summary.p.affordable,
         left: [`${(summary.p.affordable*100).toFixed(1)}% ${hiSignP(Math.round(summary.delta.p.affordable*100), true)}`, 'Affordable'],
