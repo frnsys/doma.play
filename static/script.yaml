@@ -2,7 +2,7 @@ scenes:
   START:
     image: house.png
     title: "There were no signs of trouble..."
-    description: "You have been renting the same place for six years. While it's not cheap, you've got a fairly good deal compared to current rent levels around the city. Your daily commute is not too bad. You haven't been able to save much over the years, but fortunately you're not in debt. Overall, you're doing ok financially."
+    description: "You have been renting the same place in {neighborhood} for six years. While it's not cheap, you've got a fairly good deal compared to current rent levels around the city. Your daily commute is not too bad. You haven't been able to save much over the years, but fortunately you're not in debt. Overall, you're doing ok financially."
     actions:
       - name: "But one day..."
         next: "eviction"
@@ -43,7 +43,7 @@ scenes:
   bar:
     image: beer.png
     title: "The Social Bar"
-    description: "People share similar experiences about the struggle for decent housing these days, and you all commiserate...But Linda brings up something new. Have you heard of Doma?"
+    description: "People share similar experiences about the struggle for decent housing these days, and you all commiserate...But Linda brings up something new.<br /><b>Have you heard of Doma?</b>"
     actions:
       - name: "No, tell me about it..."
         next: "bar_friends"
@@ -184,7 +184,7 @@ scenes:
     checkpoint: "equity_results"
     actions:
       - name: "next"
-        next: "act_summary_2"
+        next: "equity_results_explained"
   equity_results_explained:
     image: confetti.png
     title: "Results Explained"

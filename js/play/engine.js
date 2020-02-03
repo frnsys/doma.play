@@ -30,6 +30,7 @@ class Engine {
         this.state = state;
         Views.EquityPurchase(sceneEl, {
           scene,
+          city: state.namme,
           p_dividend: state.stats.doma_p_dividend,
           tenant: this.player.tenant,
           next: (shares) => {
@@ -101,6 +102,7 @@ class Engine {
             return acc;
           }, {});
           this.state = state;
+          this.crowdfundingResults = results;
 
           Views.EquityResults(sceneEl, {
             scene,
@@ -108,6 +110,23 @@ class Engine {
             next: () => {
               this.waitForNextScene(scene, 0);
             }
+          });
+        });
+      },
+      'equity_results_explained': (scene) => {
+        let results = this.crowdfundingResults;
+        api.get('/state', (state) => {
+          api.get(`/play/tenant/${this.id}`, (player) => {
+            this.state = state;
+            Views.EquityResultsExplained(sceneEl, {
+              scene,
+              state,
+              player,
+              results,
+              next: () => {
+                this.waitForNextScene(scene, 0);
+              }
+            });
           });
         });
       },
@@ -452,7 +471,7 @@ class Engine {
         let el = Views.ApartmentSearch(sceneEl, {
           vacancies, affordable, allVacantUnits,
           onHidePopup: () => {
-            this.changeEnergy(-1);
+            // this.changeEnergy(-1);
           },
           onSkip: () => {
             this.player.couch = {
