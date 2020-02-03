@@ -157,6 +157,11 @@ main {
 .apartment-search #stage {
   padding: 0;
   border-bottom: 1px solid black;
+  height: 70vh;
+}
+.apartment-search #details {
+  height: 30vh;
+  overflow-y: scroll;
 }
 .apartment-search .button {
   margin: 1em 0;

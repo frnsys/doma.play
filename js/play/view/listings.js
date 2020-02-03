@@ -114,7 +114,7 @@ function createScene(el) {
   // Setup scene
   const scene = new Scene({
     width: el.clientWidth,
-    height: 200,
+    height: el.clientHeight,
     brightness: 0.9
   });
   el.appendChild(scene.renderer.domElement);
