@@ -298,7 +298,7 @@ scenes:
   credits:
     image: city.png
     title: "Make Doma a Reality"
-    description: "Doma is a real project and it’s on the way to your city. Help us bring it there faster!"
+    description: "Doma is a real project and it’s on the way to your city. Help us bring it there faster!<br /><br />Join the community by signing up here:<br />NEWSLETTER FORM HERE<br />(no spam, we promise!)<br /><br />And check out our website, <a href='http://doma.city'>doma.city!</a><br /><br />Designed and developed by Olesia Kovalenko, Maksym Rokmaniko, Francesco Sebregondi, & Francis Tseng."
     actions:
       - name: "The End"
         next: null
