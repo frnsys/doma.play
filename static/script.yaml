@@ -30,7 +30,6 @@ scenes:
     image: house.png
     title: "Success!"
     description: "After an exhausting hunt you were finally able to find a place. It might not be ideal, but it's better than nothing."
-    energy: 3
     actions:
       - name: "Unwind at the bar"
         next: "bar"
@@ -38,7 +37,6 @@ scenes:
     image: prohibited.png
     title: "No Luck"
     description: "The rental market is unforgiving...you weren't able to find a new place. Fortunately a friend has a comfortable couch available for you. This is too common an outcome¸ but maybe things can change."
-    energy: -4
     actions:
       - name: "Unwind at the bar"
         next: "bar"
@@ -55,8 +53,6 @@ scenes:
     description: "So, from what I understood, Doma is a platform that allows people to pool their resources together and buy flats to be owned in common. Then, everybody gets a share of the rental income, plus the rents are kept low on the people who live in Doma flats. It’s like a housing cooperative, but for the digital age..."
     actions:
       - name: "Sounds interesting, tell me more..."
-        cost:
-            energy: 2
         next: "bar_friends_2"
   bar_friends_2:
     image: bar.png
@@ -64,8 +60,6 @@ scenes:
     description: "My friend Max works with them, so now I follow what they’re up to. Apparently they’re going to launch a crowdfunding campaign soon, to buy a first set of cheap flats in neighbourhoods that are not yet gentrified... Should I put you in the loop too?"
     actions:
       - name: "Yes, why not!"
-        cost:
-            energy: 2
         next: "bar_friends_3"
       - name: "I'm too poor to invest in anything..."
         next: "bar_friends_3"
@@ -112,8 +106,6 @@ scenes:
         next: "petition_intro"
       - name: "Nevermind, join the fundraising"
         next: "equity_purchase"
-        cost:
-            energy: 2
   strike_intro:
     image: black_flag.png
     title: "Direct Action Gets the Goods"
@@ -121,12 +113,8 @@ scenes:
     actions:
       - name: "Let's do it"
         next: "strike"
-        cost:
-            energy: 3
       - name: "Nevermind, a stake in the city seems better"
         next: "equity_purchase"
-        cost:
-            energy: 2
       - name: "Nevermind, petitioning seems better"
         next: "petition_intro"
   petition_intro:
@@ -136,12 +124,8 @@ scenes:
     actions:
       - name: "Let's do it"
         next: "petition"
-        cost:
-            energy: 3
       - name: "Nevermind, a stake in the city seems better"
         next: "equity_purchase"
-        cost:
-            energy: 2
       - name: "Nevermind, striking seems better"
         next: "strike_intro"
   strike:
@@ -259,7 +243,6 @@ scenes:
       - name: "Success Doma"
         next: "apartment_search_success_doma_post"
   apartment_search_success_post:
-    energy: 3
     image: house.png
     title: "Success"
     description: "You found a place. The experience was different this time...all the housing action had its impact."
@@ -267,7 +250,6 @@ scenes:
       - name: "Continue"
         next: "post_doma"
   apartment_search_success_doma_post:
-    energy: 5
     image: house.png
     title: "Success"
     description: "You're now a Doma resident! Your shares significantly reduce the amount of rent you pay, and the rent that you do pay goes back to other residents in the area."
@@ -275,7 +257,6 @@ scenes:
       - name: "Continue"
         next: "post_doma"
   apartment_search_failure_post:
-    energy: -4
     image: prohibited.png
     title: "No Luck"
     description: "Even after all these years, the rental market is still unforgiving...you weren't able to find a new place. Fortunately a friend has a comfortable couch available for you. Perhaps soon in the future things will be different."
