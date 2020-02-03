@@ -256,6 +256,12 @@ const control = {
     });
   },
 
+  reset: () => {
+    api.get('/play/reset', () => {
+      toast('Reset simulation.');
+    });
+  },
+
   // View map source
   source: () => {
     // Show export data
@@ -264,6 +270,7 @@ const control = {
   }
 };
 gui.add(control, 'save');
+gui.add(control, 'reset');
 gui.add(control, 'source');
 
 
