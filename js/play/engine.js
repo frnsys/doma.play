@@ -30,7 +30,7 @@ class Engine {
         this.state = state;
         Views.EquityPurchase(sceneEl, {
           scene,
-          city: state.namme,
+          city: state.name,
           p_dividend: state.stats.doma_p_dividend,
           tenant: this.player.tenant,
           next: (shares) => {
@@ -108,7 +108,13 @@ class Engine {
             scene,
             results,
             next: () => {
-              this.waitForNextScene(scene, 0);
+              if (results.delta.units.amount == 0) {
+                Views.GameOver(sceneEl, {
+                  city: state.name
+                });
+              } else {
+                this.waitForNextScene(scene, 0);
+              }
             }
           });
         });
