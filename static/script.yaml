@@ -194,7 +194,7 @@ scenes:
   doma_spread_the_word:
     image: word.png
     title: "Next Steps"
-    description: "Doma is run collectively. At every round of crowd-buying, Doma members vote to select the most interesting properties to buy. This way, Doma uses the collective intelligence and local knowledge of all of its members to find the best property deals across the city…  from which all of its members benefit fairly. Given the success of the first round of crowd-buying, there are going to be a few more in the coming months. Are you going to contribute actively?"
+    description: "Doma is run collectively. At every round of crowd-buying, Doma members vote to select the most interesting properties to buy. This way, Doma uses the collective intelligence and local knowledge of all of its members to find the best property deals across the city...  from which all of its members benefit fairly. Given the success of the first round of crowd-buying, there are going to be a few more in the coming months. Are you going to contribute actively?"
     actions:
       - name: "Meh...Don't really have time for that."
         next: "act_summary_2"
@@ -269,7 +269,7 @@ scenes:
     description: "You’re really enjoying your new life in a Doma unit. Finally, you found affordable housing in your city!<br /><br />You’re part of a growing community of cooperation and mutual support, which is starting to have a real impact on the everyday life of its members...<br /><br />You can’t help but wonder if this is going to last...if the city residents are going to join the Doma community massively, or if it the market forces are going to find a way to crush you again..."
     actions:
       - name: "Let's see..."
-        next: "doma_apply_more_info"
+        next: "act_summary_3"
   act_summary_3:
     title: "Act 3 Summary"
     checkpoint: "act_3_end"
@@ -281,7 +281,7 @@ scenes:
     title: "--"
     description: "--"
     actions:
-      - name: "--"
+      - name: "Results"
         next: "act_summary_4"
     act:
       title: "The City as a Commons?"
@@ -298,7 +298,7 @@ scenes:
   credits:
     image: city.png
     title: "Make Doma a Reality"
-    description: "Doma is a real project and it’s on your way to your city. Help us bring it there faster!"
+    description: "Doma is a real project and it’s on the way to your city. Help us bring it there faster!"
     actions:
       - name: "The End"
         next: null
@@ -312,8 +312,8 @@ checkpoints:
     n_steps: 2 # needs to be at least 2 steps, since Doma runs after landlords respond to offers
   act_2_end:
     n_steps: 24
-  act_2_end:
-    n_steps: 24
+  act_3_end:
+    n_steps: 120
   param_results:
     n_steps: 1
     defaults:

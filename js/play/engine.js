@@ -253,6 +253,35 @@ class Engine {
             onAction: this.waitForNextScene.bind(this)
           });
         });
+      },
+      'act_4': (scene) => {
+        api.get('/state', (state) => {
+          this.summary = this.summarize(state);
+          let success = this.summary.p.affordable >= 0.3;
+          if (success) {
+            scene.title = 'Commons it is!';
+            scene.description = `
+              10 years go by...<br /><br />
+              Doma has grown BIG. It counts ${state.stats.doma_members} members and ${state.stats.landlords[-1].n_units} housing units, ${Math.round(this.summary.p.doma*100)}% of all housing stock in the city!<br /><br />
+              This has had a big impact on the housing condition. There are lots of affordable flats to rent, and an option for people without much money to collectively access the benefits of home ownership. Remember how bad it was just 10 years ago?<br /><br />
+              At this rate of growth, It’s not going to be long before Doma takes over all of the Urbania’s housing stock!<br /><br />
+              Well done to you and all DOMA members! Collectively, you beat the housing market!
+            `;
+          } else {
+            scene.title = 'Oh well...';
+            scene.description = `;
+              10 years go by...<br /><br />
+              Doma hasn't really taken off. It counts ${state.stats.doma_members} members and ${state.stats.landlords[-1].n_units} housing units, ${Math.round(this.summary.p.doma*100)}% of all housing stock in the city.<br /><br />
+              The impact it had remained marginal, and most of the housing in ${state.name} has remained unaffordable. The situation hasn't changed much from how it was 10 years ago...<br /><br />
+              It’s a shame! It looks like the market forces was too strong this time...<br /><br />
+              Would the outcome be the same if you played differently next time?
+            `;
+          }
+          Views.BasicScene(sceneEl, {
+            scene, player: this.player,
+            onAction: this.waitForNextScene.bind(this)
+          });
+        });
       }
     };
   }
