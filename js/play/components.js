@@ -208,6 +208,7 @@ const Splash = View(({ready}) => `
 const CitySummary = View(({summary}) => `
   <div class="summary">
     <div class="scene--body">
+      <h3 class="summary--date">${summary.date.toLocaleString(undefined, {year: 'numeric', month: 'long'})}</h3>
       <p>Wealth is concentrating in the city of</p>
       <h1>${summary.city}</h1>
       <p>A small group of landlords are expanding their ownership of the city. More and more people are facing a lifetime of rent as the city becomes increasingly unaffordable.</p>
@@ -429,6 +430,7 @@ const ApartmentListings = View(({parcel, tenant, units, maxSpaciousness}) => {
 const ActSummary = View(({summary, me, players, showDomaShare}) => `
   <div class="summary act-summary">
     <div class="scene--body">
+      <h3 class="summary--date">${summary.date.toLocaleString(undefined, {year: 'numeric', month: 'long'})}</h3>
       <h1>${summary.city}</h1>
       <table>
         <tr>

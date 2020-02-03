@@ -214,6 +214,10 @@ main {
   background: linear-gradient(180deg, rgba(165,150,255,1) 0%, rgba(254,197,169,1) 100%);
   min-height: 100vh;
 }
+.summary--date {
+  margin: 0;
+  font-size: 0.8em;
+}
 
 .equity-results {
   background: #FED07E;

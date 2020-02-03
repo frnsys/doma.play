@@ -8,6 +8,7 @@ let params = location.search.slice(1);
 let DEBUG = params.includes('debug');
 
 const MAX_ENERGY = 10;
+const BURN_IN = 32;
 const sceneEl = document.getElementById('scene');
 const statusEl = document.getElementById('status');
 
@@ -384,6 +385,11 @@ class Engine {
         me.savings = this.player.tenant.savings;
         me.equity = this.player.tenant.equity;
         this.player.tenant = me;
+
+        let date = new Date();
+        let elapsedMonths = this.time - BURN_IN;
+        date.setMonth(date.getMonth() + elapsedMonths);
+        this.summary.date = date;
         Views.ActSummary(sceneEl, {
           summary, me, players,
           showDomaShare: scene.showDomaShare,
@@ -457,6 +463,11 @@ class Engine {
       this.player.tenant = data.tenant;
       this.time = data.state.time;
       this.summary = this.summarize(data.state);
+
+      let date = new Date();
+      let elapsedMonths = this.time - BURN_IN;
+      date.setMonth(date.getMonth() + elapsedMonths);
+      this.summary.date = date;
       Views.CitySummary(sceneEl, {
         summary: this.summary,
         next: () => {
@@ -483,7 +494,6 @@ class Engine {
   searchApartments(scene, freeDOMA) {
     api.get(`/play/tenant/${this.id}`, (player) => {
       this.player.tenant.dividend = player.tenant.dividend;
-      console.log(player);
       api.get('/state', (state) => {
         let {parcels, vacancies, affordable, maxSpaciousness, allVacantUnits} = this.parseParcels(state, player.tenant, freeDOMA);
         let el = Views.ApartmentSearch(sceneEl, {
