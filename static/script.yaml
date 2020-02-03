@@ -2,9 +2,9 @@ scenes:
   START:
     image: house.png
     title: "There were no signs of trouble..."
-    description: "You have been renting the same place for 6 years. While it's not cheap, you've got a fairly good deal compared to current rent levels around the city. Your daily commute is not too bad. You haven't been able to save much over the years, but fortunately you're not in debt. Overall, you're doing ok financially."
+    description: "You have been renting the same place for six years. While it's not cheap, you've got a fairly good deal compared to current rent levels around the city. Your daily commute is not too bad. You haven't been able to save much over the years, but fortunately you're not in debt. Overall, you're doing ok financially."
     actions:
-      - name: "Days go by..."
+      - name: "But one day..."
         next: "eviction"
     act:
       title: "Crushed by the Market"
@@ -13,17 +13,10 @@ scenes:
       number: 1
   eviction:
     image: tophat.png
-    title: "Eviction"
-    description: "A letter from your landlord arrives in your mailbox. It says they are increasing the rent by 70%: either you pay, or you have two months to leave your place. You definitely can't afford that, and you're baffled that they can do this legally... you have no choice but to move out."
+    title: "You're being evicted!"
+    description: "You get a letter from your landlord in your mailbox. It says they are doubling the rent: either you pay, or you have two months to leave your place. You definitely can't afford that, and you're baffled that they can do this legally... you have no choice but to move out."
     actions:
       - name: "Look for a new place"
-        next: "apartment_search_intro"
-  apartment_search_intro:
-    image: house.png
-    title: "Finding a new place"
-    description: "You're reminded of that sympathetic anxiety felt when friends mention they're looking for a new place. It's overwhelming now. Ideally you can find a place close to work, not too expensive, maybe in a nice neighborhood..."
-    actions:
-      - name: "Start the search"
         next: "apartment_search"
   apartment_search:
     actions:
@@ -52,53 +45,36 @@ scenes:
   bar:
     image: beer.png
     title: "The Social Bar"
-    description: "You recall your search to your friend Linda, who's working behind the bar. Why is it so difficult to find an affordable place? Linda describes her own experience, which is hauntingly similar."
+    description: "People share similar experiences about the struggle for decent housing these days, and you all commiserate...But Linda brings up something new. Have you heard of Doma?"
     actions:
-      - name: "Have another drink"
+      - name: "No, tell me about it..."
         next: "bar_friends"
   bar_friends:
     image: waving.png
-    title: "Eavesdropping"
-    description: "Some people nearby overhear your conversation and walk over."
+    title: "Doma?"
+    description: "So, from what I understood, Doma is a platform that allows people to pool their resources together and buy flats to be owned in common. Then, everybody gets a share of the rental income, plus the rents are kept low on the people who live in Doma flats. It’s like a housing cooperative, but for the digital age..."
     actions:
-      - name: "Stay awhile and listen"
+      - name: "Sounds interesting, tell me more..."
         cost:
             energy: 2
         next: "bar_friends_2"
-      - name: "I don't care"
-        next: "bar_friends_ignore"
   bar_friends_2:
     image: bar.png
-    title: "New Friends"
-    description: "They recently had a similarly difficult time finding a new place...in fact, you might have taken one of the places they were looking at. But they don't blame you. This rental market turns renters against each other, misdirecting their frustrations."
+    title: "Doma?"
+    description: "My friend Max works with them, so now I follow what they’re up to. Apparently they’re going to launch a crowdfunding campaign soon, to buy a first set of cheap flats in neighbourhoods that are not yet gentrified... Should I put you in the loop too?"
     actions:
-      - name: "Comiserate"
+      - name: "Yes, why not!"
         cost:
             energy: 2
         next: "bar_friends_3"
-      - name: "I don't care"
-        next: "bar_friends_ignore"
+      - name: "I'm too poor to invest in anything..."
+        next: "bar_friends_3"
   bar_friends_3:
     image: moon.png
     title: "Closing Time"
-    description: "It's getting late. Linda chips in as she closes down the bar. More and more people have had similar complaints, she says. Many have left the city altogether. As you head home, you wonder: will that be your only choice too?"
+    description: "Anyway, it’s getting late. As she closes down the bar, Linda sums it up: “More and more people are complaining about housing around here… many are leaving the city altogether. Something needs to be done about it…”"
     actions:
       - name: "Head home"
-        next: "pack_up"
-  bar_friends_ignore:
-    image: uninterested.png
-    title: "No Thanks"
-    description: "You brush the strangers off and close out your tab. You're exhausted from your search. Sleep sounds better than idle chit-chat."
-    actions:
-      - name: "Head home"
-        next: "pack_up"
-  pack_up:
-    image: luggage.png
-    title: "Moving Out"
-    description: "The next day you pack up your things. You have a feeling that it won't be long before you need to pack up and move all over again. But for now, you're relieved to have somewhere to stay."
-    energy: 3
-    actions:
-      - name: "Time flies"
         next: "act_summary_1"
   act_summary_1:
     title: "Act 1 Summary"
@@ -109,19 +85,22 @@ scenes:
   act_2:
     image: pin.png
     title: "A Stake in the City"
-    description: "As you mull over the city's housing crisis, Linda calls you. She reminds you of the collective buyout of local apartments she is helping with, and asks you to participate. This could be a way to help with the housing crisis."
+    description: "It’s been three months since you moved and this new situation is unsustainable. Your rent is higher, your commute is eternal, and at the end of the month you're left with even less money than before. You see your friends less due to distance now. There must be a way out of this impasse..."
     actions:
-      - name: "Contribute to the fundraising"
-        next: "equity_purchase"
-        cost:
-            energy: 2
-      - name: "How else can I help?"
-        next: "housing_actions"
+      - name: "What can I do?"
+        next: "doma_reminder"
     act:
-      title: "A Right to the City"
-      description: "Why doesn't the city belong to its residents?"
+      title: "A Stake in the City"
+      description: "In which the player discovers a new way to become a homeowner and to keep housing affordable across the city..."
       colors: ["#FEA74A", "#45535E"]
       number: 2
+  doma_reminder:
+    image: city.png
+    title: "A Reminder"
+    description: "You get an text from Linda, she reminds you about Doma, the platform for equitable housing. She included a link to a website where you can participate in the first crowdfunding campaign. Open it?"
+    actions:
+      - name: "Sure, let's have a look..."
+        next: "equity_purchase"
   housing_actions:
     image: city.png
     title: "Intervention"
@@ -181,10 +160,10 @@ scenes:
         next: "policy_results_petition"
   equity_purchase:
     image: cart.png
-    title: "Equity shares sale"
+    title: "Doma Crowdfunding Campaign"
     actions:
       - name: "next"
-        next: "policy_results"
+        next: "equity_results"
   policy_results:
     title: "Breaking News"
     image: newspaper.png
@@ -222,6 +201,22 @@ scenes:
     actions:
       - name: "next"
         next: "act_summary_2"
+  equity_results_explained:
+    image: confetti.png
+    title: "Results Explained"
+    actions:
+      - name: "What next?"
+        next: "doma_spread_the_word"
+  doma_spread_the_word:
+    image: word.png
+    title: "Next Steps"
+    description: "Doma is run collectively. At every round of crowd-buying, Doma members vote to select the most interesting properties to buy. This way, Doma uses the collective intelligence and local knowledge of all of its members to find the best property deals across the city…  from which all of its members benefit fairly. Given the success of the first round of crowd-buying, there are going to be a few more in the coming months. Are you going to contribute actively?"
+    actions:
+      - name: "Meh...Don't really have time for that."
+        next: "act_summary_2"
+      - name: "For sure! I know the city like my pocket."
+        next: "outro"
+        next: "act_summary_2"
   act_summary_2:
     title: "Act 2 Summary"
     checkpoint: "act_2_end"
@@ -231,10 +226,29 @@ scenes:
         next: "act_3"
   act_3:
     image: city.png
-    title: "A Free City"
-    description: "The community housing platform continues to grow, but some crucial decisions need to be made about how it will continue to work. Members are to submit proposals for how housing funds are collected and distributed. You can focus on one of two aspects: distributing ownership of the housing, or implementing stricter controls on rent."
+    title: "Run This Town"
+    description: "Two years have passed, and Doma is having a great success. Through multiple rounds of crowd-buying of housing, your community now counts {nMembers} members, and collectively you own a portfolio of {nDoma} properties!"
     actions:
-      - name: "Search for a place"
+      - name: "That's great!"
+        next: "doma_apply_intro"
+    act:
+      title: "Run This Town"
+      description: "In which the player experiences how collective ownership of housing improves everyday life in the city..."
+      colors: ["#F06C8F", "#2972EC"]
+      number: 3
+  doma_apply_intro:
+    image: city.png
+    title: "Doma Application"
+    description: "You’re an early member of Doma, and you’ve been an active contributor to nearly every crowd-buying round since you joined. By doing so, you earned a lot of community credits! So much so that you just received an amazing notification: You can now apply to live in a Doma unit yourself!"
+    actions:
+      - name: "Tell me more..."
+        next: "doma_apply_more_info"
+  doma_apply_more_info:
+    image: city.png
+    title: "Doma Application"
+    description: "Living in a Doma unit means that your landlord is your community. Rents are cheaper than market price, units are renovated to good standards, and maintenance is managed by the community itself. Plus, for every rent you pay, you receive extra Doma tokens – which in turn give you access to a share of the total rental income of Doma properties. Effectively, this means that over time, your rent goes down, and you build up equity just by paying your rent! Want to have a look at the units available?"
+    actions:
+      - name: "Sure, that sounds awesome!"
         next: "apartment_search_post"
   apartment_search_post:
     actions:
@@ -242,7 +256,7 @@ scenes:
         next: "apartment_search_success_post"
       - name: "No Luck"
         next: "apartment_search_failure_post"
-      - name: "Success DOMA"
+      - name: "Success Doma"
         next: "apartment_search_success_doma_post"
   apartment_search_success_post:
     energy: 3
@@ -251,15 +265,15 @@ scenes:
     description: "You found a place. The experience was different this time...all the housing action had its impact."
     actions:
       - name: "Continue"
-        next: "doma_spread_the_word"
+        next: "post_doma"
   apartment_search_success_doma_post:
     energy: 5
     image: house.png
     title: "Success"
-    description: "You're now a DOMA resident! Your shares significantly reduce the amount of rent you pay, and the rent that you do pay goes back to other residents in the area."
+    description: "You're now a Doma resident! Your shares significantly reduce the amount of rent you pay, and the rent that you do pay goes back to other residents in the area."
     actions:
       - name: "Continue"
-        next: "doma_spread_the_word"
+        next: "post_doma"
   apartment_search_failure_post:
     energy: -4
     image: prohibited.png
@@ -267,50 +281,58 @@ scenes:
     description: "Even after all these years, the rental market is still unforgiving...you weren't able to find a new place. Fortunately a friend has a comfortable couch available for you. Perhaps soon in the future things will be different."
     actions:
       - name: "Continue"
-        next: "doma_spread_the_word"
-  doma_spread_the_word:
-    image: word.png
-    title: "Keep Spreading the Word"
-    description: "You've heard stories of how DOMA has impacted people's lives. They use their dividends to lower their rent, to invest in their communities, and to make things easier. The more people know about DOMA, the greater the impact for everyone."
+        next: "post_doma"
+  post_doma:
+    image: city.png
+    title: "Life is Good"
+    description: "You’re really enjoying your new life in a Doma unit. Finally, you found affordable housing in your city! You’re part of a growing community of cooperation and mutual support, which is starting to have a real impact on the everyday life of its members...You can’t help but wonder if this is going to last… if the city residents are going to join the Doma community massively, or if it the market forces are going to find a way to crush you again..."
     actions:
-      - name: "Pass"
-        next: "outro"
-      - name: "Tell your friends"
-        cost:
-            energy: 2
-        next: "outro"
-      - name: "Tell your friends and family"
-        next: "outro"
-        cost:
-            energy: 4
-      - name: "Tell everyone on the street"
-        next: "outro"
-        cost:
-            energy: 8
-  outro:
-    image: sunset.png
-    title: "What Next?"
-    description: "Many years will pass, and the housing market will continue to change. But because of what happened here, it could be for the better."
-    actions:
-      - name: "Let's see what happens"
-        next: "act_summary_3"
+      - name: "Let's see..."
+        next: "doma_apply_more_info"
   act_summary_3:
     title: "Act 3 Summary"
+    checkpoint: "act_3_end"
+    actions:
+      - name: "Start Act 4"
+        next: "act_4"
+  act_4:
+    image: city.png
+    title: "--"
+    description: "--"
+    actions:
+      - name: "--"
+        next: "act_summary_4"
+    act:
+      title: "The City as a Commons?"
+      description: "In which the player finds out the long-term impact of Doma, based on the collective actions of its members over many years..."
+      colors: ["#F06C8F", "#2972EC"]
+      number: 4
+  act_summary_4:
+    title: "Act 4 Summary"
     checkpoint: "final"
     showDomaShare: true
+    actions:
+      - name: "What Now?"
+        next: "credits"
+  credits:
+    image: city.png
+    title: "Make Doma a Reality"
+    description: "Doma is a real project and it’s on your way to your city. Help us bring it there faster!"
     actions:
       - name: "The End"
         next: null
 
 checkpoints:
   act_1_end:
-    n_steps: 24
+    n_steps: 3
   policy_results:
     n_steps: 1
   equity_results:
-    n_steps: 2 # needs to be at least 2 steps, since DOMA runs after landlords respond to offers
+    n_steps: 2 # needs to be at least 2 steps, since Doma runs after landlords respond to offers
   act_2_end:
-    n_steps: 12
+    n_steps: 24
+  act_2_end:
+    n_steps: 24
   param_results:
     n_steps: 1
     defaults:
