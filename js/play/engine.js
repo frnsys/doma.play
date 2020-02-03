@@ -240,6 +240,18 @@ class Engine {
             onAction: this.waitForNextScene.bind(this)
           });
         });
+      },
+      'act_3': (scene) => {
+        api.get('/state', (state) => {
+          let desc = scene.description;
+          desc = desc.replace('{nMembers}', state.stats.doma_members);
+          desc = desc.replace('{nDoma}', state.stats.landlords['-1'].n_units);
+          scene.description = desc;
+          Views.BasicScene(sceneEl, {
+            scene, player: this.player,
+            onAction: this.waitForNextScene.bind(this)
+          });
+        });
       }
     };
   }

@@ -223,14 +223,14 @@ scenes:
   doma_apply_intro:
     image: city.png
     title: "Doma Application"
-    description: "You’re an early member of Doma, and you’ve been an active contributor to nearly every crowd-buying round since you joined. By doing so, you earned a lot of community credits! So much so that you just received an amazing notification: You can now apply to live in a Doma unit yourself!"
+    description: "You’re an early member of Doma, and you’ve been an active contributor to nearly every crowd-buying round since you joined. By doing so, you earned a lot of community credits!<br /><br />So much so that you just received an amazing notification: You can now apply to live in a Doma unit yourself!"
     actions:
       - name: "Tell me more..."
         next: "doma_apply_more_info"
   doma_apply_more_info:
     image: city.png
     title: "Doma Application"
-    description: "Living in a Doma unit means that your landlord is your community. Rents are cheaper than market price, units are renovated to good standards, and maintenance is managed by the community itself. Plus, for every rent you pay, you receive extra Doma tokens – which in turn give you access to a share of the total rental income of Doma properties. Effectively, this means that over time, your rent goes down, and you build up equity just by paying your rent! Want to have a look at the units available?"
+    description: "Living in a Doma unit means that your landlord is your community. Rents are cheaper than market price, units are renovated to good standards, and maintenance is managed by the community itself. Plus, for every rent you pay, you receive extra Doma tokens – which in turn give you access to a share of the total rental income of Doma properties.<br /><br />Effectively, this means that over time, your rent goes down, and you build up equity just by paying your rent!<br /><br />Want to have a look at the units available?"
     actions:
       - name: "Sure, that sounds awesome!"
         next: "apartment_search_post"
@@ -266,7 +266,7 @@ scenes:
   post_doma:
     image: city.png
     title: "Life is Good"
-    description: "You’re really enjoying your new life in a Doma unit. Finally, you found affordable housing in your city! You’re part of a growing community of cooperation and mutual support, which is starting to have a real impact on the everyday life of its members...You can’t help but wonder if this is going to last… if the city residents are going to join the Doma community massively, or if it the market forces are going to find a way to crush you again..."
+    description: "You’re really enjoying your new life in a Doma unit. Finally, you found affordable housing in your city!<br /><br />You’re part of a growing community of cooperation and mutual support, which is starting to have a real impact on the everyday life of its members...<br /><br />You can’t help but wonder if this is going to last...if the city residents are going to join the Doma community massively, or if it the market forces are going to find a way to crush you again..."
     actions:
       - name: "Let's see..."
         next: "doma_apply_more_info"
