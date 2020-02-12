@@ -67,8 +67,11 @@ def state_key():
 
 if __name__ == '__main__':
     import atexit
+    import logging
     from apscheduler.schedulers.background import BackgroundScheduler
     from app.manager import Manager
+
+    logging.getLogger('apscheduler.executors.default').setLevel(logging.WARNING)
 
     mgr = Manager()
 

@@ -3,9 +3,15 @@ import yaml
 import redis
 import random
 import config
+import logging
 from datetime import datetime
 from collections import defaultdict
 from .util import weighted_choice, force_vote
+
+logging.basicConfig(level=logging.INFO,
+                    format='%(asctime)s:%(levelname)s:%(message)s',
+                    datefmt='%Y-%m-%d %H:%M:%S %Z')
+logger = logging.getLogger(__name__)
 
 names = json.load(open('static/names.json'))['frequency']
 script = yaml.load(open('static/script.yaml'))
@@ -180,7 +186,7 @@ class Manager:
                     self.send_command('ReleaseTenants')
 
                 # Send the run command to the simulation
-                print('SENDING RUN COMMAND:', ckpt['n_steps'])
+                logger.info('SENDING RUN COMMAND: {}'.format(ckpt['n_steps']))
                 self.send_command('Run', ckpt['n_steps'])
 
                 # Track the state key so we can see when it changes,
@@ -190,7 +196,7 @@ class Manager:
                 # Avoid sending multiple run commands at once
                 self.session['run_cmd_sent'] = TRUE
 
-                print(self.queued_commands())
+                logger.info(self.queued_commands())
 
             # Check if sim done running
             elif self.session['state_key'] != state_key:
@@ -227,10 +233,10 @@ class Manager:
             self.reset()
 
     def prune_players(self):
-        print('Pruning players...')
+        logger.info('Pruning players...')
         self.players.prune()
         if not self.players.active():
-            print('NO ACTIVE PLAYERS', self.session['started'] == TRUE)
+            logger.info('NO ACTIVE PLAYERS {}'.format(self.session['started'] == TRUE))
             if self.session['started'] == TRUE: self.reset()
 
     def tenant(self, id):
@@ -264,6 +270,11 @@ class Manager:
         # Get tenants
         tenants = [json.loads(r.decode('utf8')) for r
                    in self.r.lrange('tenants', 0, -1)]
+        max_income = max(t['income'] for t in tenants)
+        min_income = min(t['income'] for t in tenants)
+        range = max_income - min_income
+        upper = min_income + (range*0.5)
+        lower = min_income + (range*0.2)
 
         # Get tenants not claimed by players
         active_tenants = json.loads(self.session['tenants:active'] or '{}')
@@ -272,7 +283,7 @@ class Manager:
                              and t['unit']['id'] is not None]
 
         # Filter tenants by income
-        valid_tenants = [t for t in tenants if t['income'] <= 3500]
+        valid_tenants = [t for t in tenants if t['income'] >= lower and t['income'] <= upper]
         if not valid_tenants:
             valid_tenants = available_tenants
 

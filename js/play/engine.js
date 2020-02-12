@@ -9,6 +9,7 @@ let DEBUG = params.includes('debug');
 
 const MAX_ENERGY = 10;
 const BURN_IN = 32;
+const MAX_VACANCIES = [4,5,6,7];
 const sceneEl = document.getElementById('scene');
 const statusEl = document.getElementById('status');
 
@@ -62,8 +63,8 @@ class Engine {
     };
 
     this.scenes = {
-      'apartment_search': (scene) => this.searchApartments(scene, false),
-      'apartment_search_post': (scene) => this.searchApartments(scene, true),
+      'apartment_search': (scene) => this.searchApartments(scene, false, false),
+      'apartment_search_post': (scene) => this.searchApartments(scene, true, true),
       'equity_purchase': equity_purchase,
       'equity_purchase_later': equity_purchase,
       'equity_results': (scene) => {
@@ -520,11 +521,11 @@ class Engine {
     }, 5000)
   }
 
-  searchApartments(scene, freeDOMA) {
+  searchApartments(scene, freeDOMA, includeDOMA) {
     api.get(`/play/tenant/${this.id}`, (player) => {
       this.player.tenant.dividend = player.tenant.dividend;
       api.get('/state', (state) => {
-        let {parcels, vacancies, affordable, maxSpaciousness, allVacantUnits} = this.parseParcels(state, player.tenant, freeDOMA);
+        let {parcels, vacancies, affordable, maxSpaciousness, allVacantUnits} = this.parseParcels(state, player.tenant, freeDOMA, includeDOMA);
         let el = Views.ApartmentSearch(sceneEl, {
           vacancies, affordable, allVacantUnits,
           onHidePopup: () => {
@@ -584,7 +585,7 @@ class Engine {
     });
   }
 
-  parseParcels(state, player, freeDOMA) {
+  parseParcels(state, player, freeDOMA, includeDOMA) {
     let allVacantUnits = [];
     let tenant = this.player.tenant;
     let parcels = state.map.parcels;
@@ -602,8 +603,11 @@ class Engine {
             p.vacancies = state.buildings[`${r}_${c}`].units
               .filter((uId) => {
                 let u = state.units[uId];
-                return u.occupancy > u.tenants || freeDOMA && u.owner.type == 'DOMA';
+                let isDOMA = u.owner.type == 'DOMA';
+                return (u.occupancy > u.tenants || freeDOMA && isDOMA) && (includeDOMA || !isDOMA);
               });
+            let maxVacancy = MAX_VACANCIES[Math.floor(Math.random() * MAX_VACANCIES.length)];
+            p.vacancies = p.vacancies.slice(0, maxVacancy);
             let vacantUnits = p.vacancies.map((id) => state.units[id]);
             allVacantUnits = allVacantUnits.concat(vacantUnits);
             p.affordable = vacantUnits.filter((u) => {

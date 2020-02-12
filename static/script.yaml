@@ -43,21 +43,21 @@ scenes:
   bar:
     image: beer.png
     title: "The Social Bar"
-    description: "People share similar experiences about the struggle for decent housing these days, and you all commiserate...But Linda brings up something new.<br /><b>Have you heard of Doma?</b>"
+    description: "People share similar experiences about the struggle for decent housing these days, and you all commiserate...But Linda brings up something new.<br />\"Have you heard of <b>Doma</b>?\""
     actions:
       - name: "No, tell me about it..."
         next: "bar_friends"
   bar_friends:
-    image: waving.png
+    image: linda_1.png
     title: "Doma?"
-    description: "So, from what I understood, Doma is a platform that allows people to pool their resources together and buy flats to be owned in common. Then, everybody gets a share of the rental income, plus the rents are kept low on the people who live in Doma flats. It’s like a housing cooperative, but for the digital age..."
+    description: "\"So, from what I understood, Doma is a platform that allows people to pool their resources together and buy flats to be owned in common. Then, everybody gets a share of the rental income, plus the rents are kept low on the people who live in Doma flats. It’s like a housing cooperative, but for the digital age...\""
     actions:
       - name: "Sounds interesting, tell me more..."
         next: "bar_friends_2"
   bar_friends_2:
-    image: bar.png
+    image: linda_2.png
     title: "Doma?"
-    description: "My friend Max works with them, so now I follow what they’re up to. Apparently they’re going to launch a crowdfunding campaign soon, to buy a first set of cheap flats in neighbourhoods that are not yet gentrified... Should I put you in the loop too?"
+    description: "\"My friend Max works with them, so now I follow what they’re up to. Apparently they’re going to launch a crowdfunding campaign soon, to buy a first set of cheap flats in neighbourhoods that are not yet gentrified... Should I put you in the loop too?\""
     actions:
       - name: "Yes, why not!"
         next: "bar_friends_3"
@@ -298,7 +298,7 @@ scenes:
   credits:
     image: city.png
     title: "Make Doma a Reality"
-    description: "Doma is a real project and it’s on the way to your city. Help us bring it there faster!<br /><br />Join the community by signing up here:<br />NEWSLETTER FORM HERE<br />(no spam, we promise!)<br /><br />And check out our website, <a href='http://doma.city'>doma.city!</a><br /><br />Designed and developed by Olesia Kovalenko, Maksym Rokmaniko, Francesco Sebregondi, & Francis Tseng."
+    description: "Doma is a real project and it’s on the way to your city. Help us bring it there faster!<br /><br />Join the community by signing up here:<br />NEWSLETTER FORM HERE<br />(no spam, we promise!)<br /><br />And check out our website, <a href='http://doma.city'>doma.city!</a><br /><br />Doma is a project cofounded by Maksym Rokmaniko and Francesco Sebregondi. Development support by Olesia Kovalenko.<br />The game you just played was designed and developed by Francis Tseng."
     actions:
       - name: "The End"
         next: null
