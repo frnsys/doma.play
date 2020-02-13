@@ -38,6 +38,8 @@ Basic usage:
 
 ![](static/designer.gif)
 
+__IMPORTANT NOTE__: The neighborhood ids must be contiguous starting from 0, e.g. 0, 1, 2, 3, .... You may need to manually edit the map source to fix this.
+
 ---
 
 # Simulation design
