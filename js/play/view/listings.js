@@ -26,14 +26,16 @@ const mutedTextMat = new THREE.MeshLambertMaterial({
 });
 
 function showApartments(el, map, parcels, onCellSelect) {
-  const grid = new Grid(map.cols, map.rows, cellSize);
+  let colShift = map.offset.col ? 1 : 0;
+  let rowShift = map.offset.row ? 1 : 0;
+  const grid = new Grid(map.cols+colShift, map.rows+rowShift, cellSize);
   const loader = new THREE.FontLoader();
 
   loader.load('/static/helvetiker_bold.typeface.json', (font) => {
-    Object.keys(parcels).forEach((r) => {
-      Object.keys(parcels[r]).forEach((c) => {
+    Object.keys(parcels).forEach((c) => {
+      Object.keys(parcels[c]).forEach((r) => {
         let text;
-        let p = parcels[r][c];
+        let p = parcels[c][r];
         let color = parcelColors[p.type];
         if (p.hasUnits && p.neighb) {
           color = parseInt(p.neighb.color.substr(1), 16);
@@ -53,7 +55,7 @@ function showApartments(el, map, parcels, onCellSelect) {
             text.position.multiplyScalar(-1);
           }
         }
-        let cell = grid.setCellAt(c, r, color);
+        let cell = grid.setCellAt(parseInt(c)+colShift, parseInt(r)+rowShift, color);
         if (text) {
           cell.mesh.add(text);
         }
