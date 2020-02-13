@@ -305,7 +305,7 @@ scenes:
 
 checkpoints:
   act_1_end:
-    n_steps: 3
+    n_steps: 1
   policy_results:
     n_steps: 1
   equity_results:
@@ -321,4 +321,4 @@ checkpoints:
         p_rent_share: 0.1
         rent_income_limit: 0.5
   final:
-    n_steps: 360
+    n_steps: 1
