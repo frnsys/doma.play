@@ -206,11 +206,6 @@ class Engine {
       'bar_friends': (scene) => {
         api.get('/play/players', (data) => {
           let n = Object.keys(data.players).length;
-          if (n <= 1) {
-            scene.description = 'The bar is pretty empty, but a couple bodies linger about. ' + scene.description;
-          } else {
-            scene.description = 'There are quite a few patrons tonight. ' + scene.description;
-          }
           Views.BasicScene(sceneEl, {
             scene, player: this.player,
             onAction: (scene, actionId) => {
