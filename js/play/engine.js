@@ -37,6 +37,7 @@ class Engine {
           tenant: this.player.tenant,
           next: (shares) => {
             let influence = (shares/this.player.tenant.savings)/5;
+            this.playerFirstPurchasedShares = shares;
             api.post(`/play/doma/${this.id}`, {amount: shares, influence: influence}, () => {
               this.player.tenant.equity = shares;
               this.waitForNextScene(scene, 0);
@@ -131,6 +132,7 @@ class Engine {
               state,
               player,
               results,
+              shares: this.playerFirstPurchasedShares, // Hack to ignore dynamics of accumulating shares
               next: () => {
                 this.waitForNextScene(scene, 0);
               }
