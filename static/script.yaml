@@ -77,8 +77,8 @@ scenes:
       - name: "Start Act 2"
         next: "act_2"
   act_2:
-    image: pin.png
-    title: "A Stake in the City"
+    image: worried.png
+    title: "It's a Hard Knock Life"
     description: "It’s been three months since you moved and this new situation is unsustainable. Your rent is higher, your commute is eternal, and at the end of the month you're left with even less money than before. You see your friends less due to distance now. There must be a way out of this impasse..."
     actions:
       - name: "What can I do?"
