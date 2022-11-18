@@ -22,6 +22,6 @@
     "@babel/preset-react": "^7.0.0-beta.39",
     "babel-loader": "^8.0.0-beta.0",
     "concurrently": "^3.5.0",
-    "webpack": "^2.6.1"
+    "webpack": "^5.75.0"
   }
 }
